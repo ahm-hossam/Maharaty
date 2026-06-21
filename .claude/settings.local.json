@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(awk 'NR==170' app/\\\\\\(main\\\\\\)/jobs.tsx)",
+      "Bash(awk 'NR==170' src/app/\\\\\\(main\\\\\\)/jobs.tsx)",
+      "Bash(awk 'NR>=165 && NR<=175' src/app/\\\\\\(main\\\\\\)/jobs.tsx)",
+      "Bash(awk 'NR>=168 && NR<=172')",
+      "Bash(python3 -c ' *)"
+    ]
+  }
+}

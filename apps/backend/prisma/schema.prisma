@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String?  @unique
+  password  String
+  avatar    String?
+  role      Role     @default(USER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userSkills       UserSkill[]
+  courseProgresses CourseProgress[]
+  assessmentResults AssessmentResult[]
+  notifications    Notification[]
+  refreshTokens    RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model SkillCategory {
+  id      String  @id @default(cuid())
+  name    String
+  nameAr  String
+  icon    String?
+  skills  Skill[]
+}
+
+model Skill {
+  id          String        @id @default(cuid())
+  name        String
+  nameAr      String
+  description String?
+  icon        String?
+  isActive    Boolean       @default(true)
+  categoryId  String
+  category    SkillCategory @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime      @default(now())
+
+  userSkills  UserSkill[]
+  courses     Course[]
+  assessments Assessment[]
+}
+
+model UserSkill {
+  id       String     @id @default(cuid())
+  userId   String
+  skillId  String
+  level    SkillLevel @default(BEGINNER)
+  progress Int        @default(0)
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill    Skill      @relation(fields: [skillId], references: [id])
+
+  @@unique([userId, skillId])
+}
+
+model Course {
+  id          String     @id @default(cuid())
+  title       String
+  titleAr     String
+  description String?
+  thumbnail   String?
+  duration    Int
+  level       SkillLevel
+  skillId     String
+  skill       Skill      @relation(fields: [skillId], references: [id])
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+
+  progresses CourseProgress[]
+}
+
+model CourseProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  courseId    String
+  progress    Int       @default(0)
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course      Course    @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+}
+
+model Assessment {
+  id           String  @id @default(cuid())
+  title        String
+  titleAr      String
+  skillId      String
+  skill        Skill   @relation(fields: [skillId], references: [id])
+  duration     Int
+  passingScore Int     @default(70)
+  isActive     Boolean @default(true)
+
+  questions         Question[]
+  assessmentResults AssessmentResult[]
+}
+
+model Question {
+  id           String     @id @default(cuid())
+  text         String
+  textAr       String
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  options      Option[]
+  correctOptionId String
+}
+
+model Option {
+  id         String   @id @default(cuid())
+  text       String
+  textAr     String
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model AssessmentResult {
+  id           String     @id @default(cuid())
+  userId       String
+  assessmentId String
+  score        Int
+  passed       Boolean
+  completedAt  DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessment   Assessment @relation(fields: [assessmentId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

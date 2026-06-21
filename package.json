@@ -1,0 +1,24 @@
+{
+  "name": "maharaty",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "mobile": "npm run dev --workspace=apps/mobile",
+    "web": "npm run dev --workspace=apps/web",
+    "backend": "npm run dev --workspace=apps/backend",
+    "dev": "concurrently \"npm run web\" \"npm run backend\"",
+    "build:web": "npm run build --workspace=apps/web",
+    "build:backend": "npm run build --workspace=apps/backend"
+  },
+  "devDependencies": {
+    "ajv": "^8.20.0",
+    "concurrently": "^9.0.0"
+  },
+  "dependencies": {
+    "react-native-webview": "13.12.5"
+  }
+}
