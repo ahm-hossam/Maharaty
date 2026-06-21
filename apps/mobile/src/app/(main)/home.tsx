@@ -14,8 +14,12 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRef, useState, useEffect } from 'react'
 import { useRouter } from 'expo-router'
-import { COLORS, FONT, RADIUS, SHADOW, FS } from '@/constants/theme'
+import { useQuery } from '@tanstack/react-query'
+import { COLORS, FONT, RADIUS, SHADOW, FS } from '../../constants/theme'
 import { usePathStore } from '../../store/pathStore'
+import { useAuthStore } from '../../store/authStore'
+import { useActivity } from '../../hooks/useActivity'
+import { api } from '../../services/api'
 
 const { width } = Dimensions.get('window')
 const CARD_SIZE = (width - 60) / 2
@@ -167,20 +171,37 @@ const PATHS = [
   { step: 6, title: 'التفاعل مع المجتمع',             icon: 'people',        color: '#2F6CFF', route: '/(main)/community' },
 ]
 
-const NOTIFS = [
-  { id: '1', icon: 'briefcase',        color: '#F59E0B', title: 'وظيفة جديدة تناسبك', body: 'مطور تطبيقات — شركة iCareer · السعودية', time: 'منذ ٥ دقائق', unread: true },
-  { id: '2', icon: 'star',             color: '#2F6CFF', title: 'أكملت تقييم الشخصية!', body: 'نتيجتك: شخصية تحليلية — راجع تقريرك', time: 'منذ ساعة', unread: true },
-  { id: '3', icon: 'people',           color: '#9D4EDD', title: 'تعليق جديد على مشاركتك', body: 'علّق أحمد خالد على مشاركتك في المجتمع', time: 'منذ ٣ ساعات', unread: true },
-  { id: '4', icon: 'document-text',    color: '#00A896', title: 'سيرتك الذاتية جاهزة', body: 'تم إنشاء نسخة AI من سيرتك — اضغط للمعاينة', time: 'أمس', unread: false },
-  { id: '5', icon: 'mic',              color: '#FF3B6B', title: 'تقرير المقابلة التدريبية', body: 'درجتك ٨٧٪ — تحسّن بنسبة ١٢٪ عن الجلسة السابقة', time: 'أمس', unread: false },
+// Fallback notifications shown when API hasn't loaded yet
+const FALLBACK_NOTIFS = [
+  { id: '1', icon: 'briefcase',     color: '#F59E0B', title: 'وظيفة جديدة تناسبك',       body: 'مطور تطبيقات — شركة iCareer · السعودية',              time: 'منذ ٥ دقائق', unread: true },
+  { id: '2', icon: 'star',          color: '#2F6CFF', title: 'أكملت تقييم الشخصية!',     body: 'نتيجتك: شخصية تحليلية — راجع تقريرك',                 time: 'منذ ساعة',    unread: true },
+  { id: '3', icon: 'people',        color: '#9D4EDD', title: 'تعليق جديد على مشاركتك',   body: 'علّق أحمد خالد على مشاركتك في المجتمع',               time: 'منذ ٣ ساعات', unread: true },
+  { id: '4', icon: 'document-text', color: '#00A896', title: 'سيرتك الذاتية جاهزة',       body: 'تم إنشاء نسخة AI من سيرتك — اضغط للمعاينة',          time: 'أمس',         unread: false },
+  { id: '5', icon: 'mic',           color: '#FF3B6B', title: 'تقرير المقابلة التدريبية', body: 'درجتك ٨٧٪ — تحسّن بنسبة ١٢٪ عن الجلسة السابقة',     time: 'أمس',         unread: false },
 ]
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { completed, completeStep } = usePathStore()
+  const { user } = useAuthStore()
+  const { trackActivity } = useActivity()
   const doneCount = completed.length
   const pct = Math.round((doneCount / PATHS.length) * 100)
+
+  // Track LOGIN activity once on mount
+  useEffect(() => {
+    trackActivity('LOGIN')
+  }, [])
+
+  // Fetch notifications from API
+  const { data: notifData } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => api.get('/notifications').then((r) => r.data.data),
+  })
+
+  const notifs = (notifData && notifData.length > 0) ? notifData : FALLBACK_NOTIFS
+  const unreadCount = notifs.filter((n: any) => n.unread).length
 
   // Drawer
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -242,6 +263,17 @@ export default function HomeScreen() {
     ]).start(() => setNotifOpen(false))
   }
 
+  const handleNotifPress = async (notif: any) => {
+    try {
+      await api.patch(`/notifications/${notif.id}/read`)
+    } catch {
+      // fire-and-forget
+    }
+  }
+
+  // First name from user store (fall back gracefully)
+  const firstName = user?.name?.split(' ')[0] ?? 'أهلاً'
+
   return (
     <View style={[S.root, { paddingTop: insets.top }]}>
 
@@ -250,7 +282,9 @@ export default function HomeScreen() {
         {/* Bell — left (end in RTL) */}
         <TouchableOpacity style={S.iconBtn} onPress={openNotif}>
           <Ionicons name="notifications-outline" size={22} color={COLORS.textSecondary} />
-          <View style={S.badge}><Text style={S.badgeText}>3</Text></View>
+          {unreadCount > 0 && (
+            <View style={S.badge}><Text style={S.badgeText}>{unreadCount}</Text></View>
+          )}
         </TouchableOpacity>
 
         {/* Logo */}
@@ -276,12 +310,7 @@ export default function HomeScreen() {
           {/* Ambient glow */}
           <View style={S.heroGlow} />
 
-          <View style={S.heroLiveRow}>
-            <Text style={S.heroLiveText}>متصل الآن</Text>
-            <LiveDot />
-          </View>
-
-          <Text style={S.heroGreeting}>مرحباً، أحمد!</Text>
+          <Text style={S.heroGreeting}>مرحباً، {firstName}!</Text>
           <Text style={S.heroSub}>استمر في رحلة تطوير مهاراتك</Text>
 
           {/* Progress card */}
@@ -397,7 +426,17 @@ export default function HomeScreen() {
 
           {/* Footer */}
           <View style={[S.drawerFooter, { paddingBottom: insets.bottom + 20 }]}>
-            <TouchableOpacity style={S.logoutRow}>
+            <TouchableOpacity
+              style={S.logoutRow}
+              onPress={async () => {
+                closeDrawer()
+                setTimeout(async () => {
+                  await useAuthStore.getState().logout()
+                  router.replace('/(auth)/login')
+                }, 260)
+              }}
+              activeOpacity={0.75}
+            >
               <Ionicons name="log-out-outline" size={18} color={COLORS.error} />
               <Text style={S.logoutText}>تسجيل الخروج</Text>
             </TouchableOpacity>
@@ -482,17 +521,24 @@ export default function HomeScreen() {
               <Ionicons name="close" size={18} color={COLORS.textMuted} />
             </TouchableOpacity>
             <Text style={S.notifTitle}>الإشعارات</Text>
-            <View style={S.notifBadgePill}>
-              <Text style={S.notifBadgePillText}>3</Text>
-            </View>
+            {unreadCount > 0 && (
+              <View style={S.notifBadgePill}>
+                <Text style={S.notifBadgePillText}>{unreadCount}</Text>
+              </View>
+            )}
           </View>
 
           <View style={S.notifDivider} />
 
           {/* List */}
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 8 }}>
-            {NOTIFS.map((n) => (
-              <TouchableOpacity key={n.id} style={[S.notifRow, n.unread && S.notifRowUnread]} activeOpacity={0.75}>
+            {notifs.map((n: any) => (
+              <TouchableOpacity
+                key={n.id}
+                style={[S.notifRow, n.unread && S.notifRowUnread]}
+                activeOpacity={0.75}
+                onPress={() => handleNotifPress(n)}
+              >
                 {/* Icon circle */}
                 <View style={[S.notifIcon, { backgroundColor: n.color + '18' }]}>
                   <Ionicons name={n.icon as any} size={18} color={n.color} />

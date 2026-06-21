@@ -3,7 +3,6 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import { ValidationPipe, VersioningType } from '@nestjs/common'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { ConfigService } from '@nestjs/config'
-import helmet from '@fastify/helmet'
 import { AppModule } from './app.module'
 
 async function bootstrap() {
@@ -14,11 +13,22 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService)
 
-  await app.register(helmet)
+  // Register @fastify/helmet if available
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const helmet = require('@fastify/helmet')
+    await app.register(helmet)
+  } catch {
+    // @fastify/helmet not installed, skipping
+  }
 
+  const rawOrigins = configService.get<string>('CORS_ORIGINS', '*')
+  const origins = rawOrigins === '*' ? true : rawOrigins.split(',').map((o) => o.trim())
   app.enableCors({
-    origin: configService.get('CORS_ORIGINS', '*'),
+    origin: origins,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' })

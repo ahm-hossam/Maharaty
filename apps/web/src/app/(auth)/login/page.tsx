@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { api } from '@/lib/axios'
+import { useAuthStore } from '@/store/authStore'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -9,13 +11,29 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    await new Promise(r => setTimeout(r, 800))
-    localStorage.setItem('admin_token', 'mock_token')
-    router.push('/overview')
+    setError('')
+    try {
+      const res = await api.post('/auth/login', { email, password })
+      const { accessToken, refreshToken, user } = res.data.data
+      if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+        setError('ليس لديك صلاحيات الوصول إلى لوحة التحكم')
+        setLoading(false)
+        return
+      }
+      useAuthStore.getState().setAuth(accessToken, refreshToken, user)
+      router.push('/overview')
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } }
+      setError(
+        axiosErr?.response?.data?.message ?? 'البريد الإلكتروني أو كلمة المرور غير صحيحة'
+      )
+      setLoading(false)
+    }
   }
 
   return (
@@ -44,6 +62,12 @@ export default function LoginPage() {
             <h2 className="text-2xl font-bold text-slate-800">تسجيل الدخول</h2>
             <p className="text-slate-500 text-sm mt-1">أدخل بياناتك للوصول إلى لوحة التحكم</p>
           </div>
+
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-right">
+              <p className="text-sm font-semibold text-red-700">{error}</p>
+            </div>
+          )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
@@ -92,12 +116,6 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
-            </div>
-
-            <div className="flex justify-start">
-              <button type="button" className="text-sm text-indigo-600 font-semibold hover:text-indigo-800 transition-colors">
-                نسيت كلمة المرور؟
-              </button>
             </div>
 
             <button

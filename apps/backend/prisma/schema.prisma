@@ -20,6 +20,26 @@ enum SkillLevel {
   EXPERT
 }
 
+enum ContentType {
+  COURSE
+  ARTICLE
+  VIDEO
+}
+
+enum ActivityType {
+  REGISTER
+  LOGIN
+  VIEW_COURSE
+  COMPLETE_COURSE
+  START_ASSESSMENT
+  COMPLETE_ASSESSMENT
+  BUILD_CV
+  PRACTICE_INTERVIEW
+  VIEW_JOBS
+  VIEW_COMMUNITY
+  PATH_STEP_COMPLETE
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String
@@ -32,11 +52,14 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  userSkills       UserSkill[]
-  courseProgresses CourseProgress[]
+  userSkills        UserSkill[]
+  courseProgresses  CourseProgress[]
   assessmentResults AssessmentResult[]
-  notifications    Notification[]
-  refreshTokens    RefreshToken[]
+  notifications     Notification[]
+  refreshTokens     RefreshToken[]
+  activities        Activity[]
+  pushTokens        PushToken[]
+  contentProgress   ContentProgress[]
 }
 
 model RefreshToken {
@@ -49,11 +72,11 @@ model RefreshToken {
 }
 
 model SkillCategory {
-  id      String  @id @default(cuid())
-  name    String
-  nameAr  String
-  icon    String?
-  skills  Skill[]
+  id     String  @id @default(cuid())
+  name   String
+  nameAr String
+  icon   String?
+  skills Skill[]
 }
 
 model Skill {
@@ -128,12 +151,12 @@ model Assessment {
 }
 
 model Question {
-  id           String     @id @default(cuid())
-  text         String
-  textAr       String
-  assessmentId String
-  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  options      Option[]
+  id              String     @id @default(cuid())
+  text            String
+  textAr          String
+  assessmentId    String
+  assessment      Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  options         Option[]
   correctOptionId String
 }
 
@@ -161,7 +184,60 @@ model Notification {
   userId    String
   title     String
   body      String
+  type      String   @default("in-app")
   isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Content {
+  id          String      @id @default(cuid())
+  type        ContentType
+  title       String?
+  titleAr     String
+  description String?
+  thumbnail   String?
+  url         String?
+  duration    Int?
+  category    String?
+  isPublished Boolean     @default(false)
+  createdBy   String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  progresses ContentProgress[]
+  activities Activity[]
+}
+
+model ContentProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  contentId   String
+  progress    Int       @default(0)
+  completedAt DateTime?
+  lastSeenAt  DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content     Content   @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contentId])
+}
+
+model Activity {
+  id        String       @id @default(cuid())
+  userId    String
+  type      ActivityType
+  meta      Json?
+  contentId String?
+  createdAt DateTime     @default(now())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   Content?     @relation(fields: [contentId], references: [id])
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  platform  String
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

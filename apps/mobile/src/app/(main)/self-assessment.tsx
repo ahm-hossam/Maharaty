@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useState, useRef, useEffect } from 'react'
 import { COLORS, RADIUS, SHADOW, FONT, FS } from '@/constants/theme'
+import { useActivity } from '../../hooks/useActivity'
 
 // ─── Assessment Questions ─────────────────────────────────────
 
@@ -206,7 +207,7 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
           style={IS.startBtn}
         >
           <Text style={IS.startBtnText}>ابدأ التقييم</Text>
-          <Ionicons name="arrow-back" size={20} color="#fff" />
+          <Ionicons name="chevron-forward" size={20} color="#fff" />
         </LinearGradient>
       </TouchableOpacity>
     </ScrollView>
@@ -541,11 +542,16 @@ type Phase = 'intro' | 'quiz' | 'result'
 export default function SelfAssessmentScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { trackActivity } = useActivity()
 
   const [phase, setPhase]     = useState<Phase>('intro')
   const [qIndex, setQIndex]   = useState(0)
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [profile, setProfile] = useState<CareerProfile | null>(null)
+
+  useEffect(() => {
+    trackActivity('START_ASSESSMENT')
+  }, [])
 
   const btnScale = useRef(new Animated.Value(1)).current
 
@@ -563,6 +569,7 @@ export default function SelfAssessmentScreen() {
       const topType = computeTopProfile(answers)
       setProfile(PROFILES[topType])
       setPhase('result')
+      trackActivity('COMPLETE_ASSESSMENT', { riasecType: topType })
     }
   }
 
@@ -587,7 +594,9 @@ export default function SelfAssessmentScreen() {
           {phase === 'intro' ? 'اختبار الشخصية المهنية' : phase === 'quiz' ? 'التقييم' : 'نتيجتك'}
         </Text>
         {phase === 'quiz' && (
-          <Text style={SC.skipBtn} onPress={goNext}>تخطّ</Text>
+          <TouchableOpacity style={SC.skipBtn} onPress={goNext} activeOpacity={0.7}>
+            <Text style={SC.skipBtnText}>تخطّ</Text>
+          </TouchableOpacity>
         )}
         {phase !== 'quiz' && <View style={{ width: 42 }} />}
       </View>
@@ -627,7 +636,7 @@ export default function SelfAssessmentScreen() {
                   <Text style={[SC.nextBtnText, !canProceed && { color: COLORS.textMuted }]}>
                     {qIndex === QUESTIONS.length - 1 ? 'عرض النتيجة' : 'التالي'}
                   </Text>
-                  <Ionicons name={qIndex === QUESTIONS.length - 1 ? 'checkmark-circle' : 'arrow-back'} size={18} color={canProceed ? '#fff' : COLORS.textMuted} />
+                  <Ionicons name={qIndex === QUESTIONS.length - 1 ? 'checkmark-circle' : 'chevron-forward'} size={18} color={canProceed ? '#fff' : COLORS.textMuted} />
                 </LinearGradient>
               </TouchableOpacity>
             </Animated.View>
@@ -655,7 +664,13 @@ const SC = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   headerTitle: { flex: 1, fontSize: FS.xl, fontWeight: '800', color: COLORS.text, textAlign: 'right', fontFamily: FONT.extrabold },
-  skipBtn: { fontSize: FS.sm, color: COLORS.textMuted, fontWeight: '600', fontFamily: FONT.semibold },
+  skipBtn: {
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderRadius: RADIUS.full,
+    borderWidth: 1, borderColor: 'rgba(47,108,255,0.30)',
+    backgroundColor: 'rgba(47,108,255,0.08)',
+  },
+  skipBtnText: { fontSize: FS.sm, color: COLORS.primary, fontWeight: '600', fontFamily: FONT.semibold },
 
   footer: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

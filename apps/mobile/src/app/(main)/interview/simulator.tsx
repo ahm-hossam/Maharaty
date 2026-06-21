@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { COLORS, RADIUS, SHADOW, FONT, FS, TEXT_SHADOW, SCRIM } from '@/constants/theme'
 import { evaluateAnswer, EvaluatorOutput } from '@/services/mockAi'
+import { useActivity } from '../../../hooks/useActivity'
 
 const { width, height } = Dimensions.get('window')
 
@@ -406,7 +407,7 @@ function FeedbackSheet({ visible, onClose, evaluation, question }: {
               style={FBS.nextGrad}
             >
               <Text style={FBS.nextText}>السؤال التالي</Text>
-              <Ionicons name="arrow-back" size={18} color="#fff" />
+              <Ionicons name="chevron-forward" size={18} color="#fff" />
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -607,6 +608,11 @@ type SimState = 'ready' | 'thinking' | 'answering' | 'evaluating' | 'feedback' |
 export default function InterviewSimulatorScreen() {
   const insets  = useSafeAreaInsets()
   const router  = useRouter()
+  const { trackActivity } = useActivity()
+
+  useEffect(() => {
+    trackActivity('PRACTICE_INTERVIEW')
+  }, [])
 
   const [state, setState]       = useState<SimState>('ready')
   const [qIndex, setQIndex]     = useState(0)

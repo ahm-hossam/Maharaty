@@ -12,7 +12,10 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
-import { COLORS, FONT, RADIUS, SHADOW, FS } from '@/constants/theme'
+import { useQuery } from '@tanstack/react-query'
+import { COLORS, FONT, RADIUS, SHADOW, FS } from '../../../constants/theme'
+import { api } from '../../../services/api'
+import { useActivity } from '../../../hooks/useActivity'
 
 const { width } = Dimensions.get('window')
 
@@ -28,77 +31,116 @@ const CATEGORIES = [
   { label: 'مبيعات',       icon: 'trending-up',   color: '#10B981' },
 ]
 
-const COURSES = [
+// Static fallback data shown when API returns empty or during development
+const STATIC_COURSES = [
   {
-    title: 'مهارات الذكاء الاصطناعي 2026',
+    id: 'static-1',
+    titleAr: 'مهارات الذكاء الاصطناعي 2026',
     icon: 'sparkles',
     views: '14K',
-    cat: 'برمجة وتقنية',
+    category: 'برمجة وتقنية',
     color: COLORS.primary,
   },
   {
-    title: 'كيف تكتب CV احترافي',
+    id: 'static-2',
+    titleAr: 'كيف تكتب CV احترافي',
     icon: 'document-text',
     views: '9K',
-    cat: 'مهارات مهنية',
+    category: 'مهارات مهنية',
     color: '#10B981',
   },
   {
-    title: 'أسئلة المقابلة الأكثر شيوعاً',
+    id: 'static-3',
+    titleAr: 'أسئلة المقابلة الأكثر شيوعاً',
     icon: 'mic',
     views: '21K',
-    cat: 'مهارات مهنية',
+    category: 'مهارات مهنية',
     color: COLORS.secondary,
   },
   {
-    title: 'أساسيات التسويق الرقمي',
+    id: 'static-4',
+    titleAr: 'أساسيات التسويق الرقمي',
     icon: 'megaphone',
     views: '7K',
-    cat: 'تسويق رقمي',
+    category: 'تسويق رقمي',
     color: '#F97316',
   },
   {
-    title: 'مهارات Excel المتقدمة',
+    id: 'static-5',
+    titleAr: 'مهارات Excel المتقدمة',
     icon: 'grid',
     views: '7K',
-    cat: 'إدارة أعمال',
+    category: 'إدارة أعمال',
     color: '#8B5CF6',
   },
 ]
 
 // ─── Course Card ──────────────────────────────────────────────
 
-function CourseCard({ course }: { course: typeof COURSES[0] }) {
+interface CourseItem {
+  id: string
+  titleAr: string
+  icon?: string
+  views?: string
+  category: string
+  color: string
+  duration?: string
+  thumbnail?: string
+  type?: string
+}
+
+function CourseCard({ course, onPress }: { course: CourseItem; onPress: () => void }) {
+  const color = course.color || COLORS.primary
+  const icon  = course.icon || 'school'
+
   return (
-    <View style={S.courseCard}>
+    <TouchableOpacity style={S.courseCard} onPress={onPress} activeOpacity={0.78}>
       {/* Row: icon + content */}
       <View style={S.courseRow}>
         {/* Icon circle */}
         <LinearGradient
-          colors={[course.color, course.color + 'AA']}
+          colors={[color, color + 'AA']}
           style={S.courseIconCircle}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <Ionicons name={course.icon as any} size={20} color="#fff" />
+          <Ionicons name={icon as any} size={20} color="#fff" />
         </LinearGradient>
 
         {/* Text block */}
         <View style={S.courseTextBlock}>
           <Text style={S.courseTitle} numberOfLines={2}>
-            {course.title}
+            {course.titleAr}
           </Text>
           <View style={S.courseMeta}>
-            {/* Views */}
-            <View style={S.courseViewsRow}>
-              <Ionicons name="eye-outline" size={12} color={COLORS.textMuted} />
-              <Text style={S.courseViews}>{course.views} مشاهدة</Text>
-            </View>
+            {/* Duration/views */}
+            {(course.views || course.duration) && (
+              <View style={S.courseViewsRow}>
+                <Ionicons name="eye-outline" size={12} color={COLORS.textMuted} />
+                <Text style={S.courseViews}>{course.views || course.duration}</Text>
+              </View>
+            )}
             {/* Category badge */}
-            <View style={[S.courseBadge, { backgroundColor: course.color + '22', borderColor: course.color + '55' }]}>
-              <Text style={[S.courseBadgeText, { color: course.color }]}>{course.cat}</Text>
+            <View style={[S.courseBadge, { backgroundColor: color + '22', borderColor: color + '55' }]}>
+              <Text style={[S.courseBadgeText, { color }]}>{course.category}</Text>
             </View>
           </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  )
+}
+
+// ─── Skeleton shimmer card ────────────────────────────────────
+
+function SkeletonCard() {
+  return (
+    <View style={[S.courseCard, S.skeletonCard]}>
+      <View style={S.courseRow}>
+        <View style={S.skeletonIcon} />
+        <View style={S.skeletonTextBlock}>
+          <View style={S.skeletonLine} />
+          <View style={[S.skeletonLine, { width: '60%', marginTop: 8 }]} />
         </View>
       </View>
     </View>
@@ -110,8 +152,29 @@ function CourseCard({ course }: { course: typeof COURSES[0] }) {
 export default function LearningHubScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { trackActivity } = useActivity()
   const [activeCategory, setActiveCategory] = useState('الكل')
   const [searchQuery, setSearchQuery] = useState('')
+
+  const { data: apiResponse, isLoading } = useQuery({
+    queryKey: ['content', 'COURSE'],
+    queryFn: () => api.get('/content').then((r) => r.data.data),
+  })
+
+  // API returns { content: [...], pagination: {...} }
+  const rawCourses: CourseItem[] = Array.isArray(apiResponse)
+    ? apiResponse
+    : (apiResponse?.content ?? [])
+
+  const courses = rawCourses.filter((c: CourseItem) =>
+    activeCategory === 'الكل' || c.category === activeCategory
+  ).filter((c: CourseItem) =>
+    !searchQuery || c.titleAr?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const handleCoursePress = (course: CourseItem) => {
+    trackActivity('VIEW_COURSE', { contentId: course.id, title: course.titleAr })
+  }
 
   return (
     <View style={[S.root, { paddingTop: insets.top }]}>
@@ -231,9 +294,23 @@ export default function LearningHubScreen() {
 
         {/* ── Course Cards ── */}
         <View style={S.courseList}>
-          {COURSES.map((course, index) => (
-            <CourseCard key={index} course={course} />
-          ))}
+          {isLoading
+            ? [1, 2, 3].map((k) => <SkeletonCard key={k} />)
+            : courses.length === 0
+              ? (
+                <View style={S.emptyState}>
+                  <Ionicons name="school-outline" size={40} color={COLORS.textMuted} />
+                  <Text style={S.emptyText}>لا توجد دورات منشورة حالياً</Text>
+                  <Text style={S.emptySubText}>ترقّب! قريباً سيتم إضافة محتوى جديد</Text>
+                </View>
+              )
+              : courses.map((course: CourseItem) => (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  onPress={() => handleCoursePress(course)}
+                />
+              ))}
         </View>
 
         {/* ── Coming Soon Card ── */}
@@ -475,6 +552,23 @@ const S = StyleSheet.create({
     gap: 12,
     marginBottom: 24,
   },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    gap: 8,
+  },
+  emptyText: {
+    fontSize: FS.md,
+    fontFamily: FONT.bold,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  emptySubText: {
+    fontSize: FS.sm,
+    fontFamily: FONT.regular,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+  },
 
   courseCard: {
     backgroundColor: COLORS.surface,
@@ -543,6 +637,29 @@ const S = StyleSheet.create({
     fontSize: FS.xs,
     fontFamily: FONT.semibold,
     textAlign: 'right',
+  },
+
+  // ── Skeleton shimmer ──
+  skeletonCard: {
+    backgroundColor: COLORS.surface,
+  },
+  skeletonIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.md,
+    backgroundColor: 'rgba(15,18,33,0.07)',
+    flexShrink: 0,
+  },
+  skeletonTextBlock: {
+    flex: 1,
+    gap: 8,
+  },
+  skeletonLine: {
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: 'rgba(15,18,33,0.07)',
+    width: '85%',
+    alignSelf: 'flex-end',
   },
 
   // ── Coming soon ──
