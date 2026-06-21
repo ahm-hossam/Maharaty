@@ -202,7 +202,7 @@ export default function CareerQuizScreen() {
           <TouchableOpacity style={styles.startQuizBtn} onPress={() => { animateIn(); setPhase('quiz') }}>
             <LinearGradient colors={['#4F46E5', '#7C3AED']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.startQuizGrad}>
               <Text style={styles.startQuizText}>ابدأ التقييم</Text>
-              <Ionicons name="arrow-back" size={22} color="#fff" />
+              <Ionicons name="chevron-forward" size={22} color="#fff" />
             </LinearGradient>
           </TouchableOpacity>
         </View>

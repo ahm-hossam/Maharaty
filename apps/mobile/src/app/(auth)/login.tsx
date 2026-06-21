@@ -7,13 +7,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
-import { COLORS, FONT, RADIUS, SHADOW, FS } from '@/constants/theme'
+import { COLORS, FONT, RADIUS, SHADOW, FS } from '../../constants/theme'
+import { api } from '../../services/api'
+import { useAuthStore } from '../../store/authStore'
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets()
@@ -21,9 +24,24 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleLogin = () => {
-    router.replace('/(main)/home')
+  const handleLogin = async () => {
+    if (!email || !password) return
+    setLoading(true)
+    setError('')
+    try {
+      const { data } = await api.post('/auth/login', { email, password })
+      const { accessToken, refreshToken, user } = data.data
+      await useAuthStore.getState().setTokens(accessToken, refreshToken)
+      useAuthStore.getState().setUser(user)
+      router.replace('/(main)/home')
+    } catch (e: any) {
+      setError(e.response?.data?.message ?? 'حدث خطأ، حاول مجدداً')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -38,8 +56,8 @@ export default function LoginScreen() {
         end={{ x: 1, y: 1 }}
         style={[styles.gradientBg, { paddingTop: insets.top }]}
       >
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-forward" size={22} color="#fff" />
+        <TouchableOpacity style={[styles.backBtn, { top: insets.top + 10 }]} onPress={() => router.back()}>
+          <Ionicons name="chevron-forward" size={22} color="#fff" />
         </TouchableOpacity>
         <View style={styles.logoSection}>
           <View style={styles.logoCircle}>
@@ -100,16 +118,29 @@ export default function LoginScreen() {
           <Text style={styles.forgotText}>نسيت كلمة المرور؟</Text>
         </TouchableOpacity>
 
+        {error ? (
+          <View style={styles.errorWrap}>
+            <Ionicons name="alert-circle-outline" size={16} color={COLORS.error} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
         {/* Login Button */}
-        <TouchableOpacity onPress={handleLogin} activeOpacity={0.88}>
+        <TouchableOpacity onPress={handleLogin} activeOpacity={0.88} disabled={loading}>
           <LinearGradient
             colors={[COLORS.primary, COLORS.secondary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.loginBtn}
           >
-            <Text style={styles.loginBtnText}>تسجيل الدخول</Text>
-            <Ionicons name="arrow-back" size={20} color="#fff" />
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Text style={styles.loginBtnText}>تسجيل الدخول</Text>
+                <Ionicons name="chevron-forward" size={20} color="#fff" />
+              </>
+            )}
           </LinearGradient>
         </TouchableOpacity>
 
@@ -135,8 +166,14 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.canvas },
 
-  gradientBg: { height: 280, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 0 },
-  backBtn: { position: 'absolute', top: 0, right: 20, padding: 10, marginTop: 16 },
+  gradientBg: { minHeight: 280, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 0 },
+  backBtn: {
+    position: 'absolute', right: 20,
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
+    justifyContent: 'center', alignItems: 'center',
+  },
 
   logoSection: { alignItems: 'center', paddingBottom: 40 },
   logoCircle: { width: 80, height: 80, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)', justifyContent: 'center', alignItems: 'center', marginBottom: 14 },
@@ -155,8 +192,11 @@ const styles = StyleSheet.create({
   inputIcon: { padding: 2 },
   input: { flex: 1, height: 52, fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.text },
 
-  forgotBtn: { alignSelf: 'flex-start', marginBottom: 24 },
+  forgotBtn: { alignSelf: 'flex-start', marginBottom: 16 },
   forgotText: { fontSize: FS.sm, color: COLORS.primary, fontFamily: FONT.semibold },
+
+  errorWrap: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12, justifyContent: 'flex-end' },
+  errorText: { fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.error, textAlign: 'right' },
 
   loginBtn: { height: 56, borderRadius: RADIUS.xl, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, ...SHADOW.md },
   loginBtnText: { fontSize: FS.lg, fontFamily: FONT.bold, color: '#fff' },

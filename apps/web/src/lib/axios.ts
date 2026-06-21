@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useAuthStore } from '@/store/authStore'
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/v1',
@@ -6,7 +7,7 @@ export const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token')
+  const token = useAuthStore.getState().accessToken
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
@@ -18,20 +19,27 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true
       try {
-        const refreshToken = localStorage.getItem('refresh_token')
+        const { refreshToken } = useAuthStore.getState()
+        if (!refreshToken) throw new Error('No refresh token')
         const { data } = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
-          { refreshToken },
+          `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/v1'}/auth/refresh`,
+          { refreshToken }
         )
-        localStorage.setItem('access_token', data.data.accessToken)
-        original.headers.Authorization = `Bearer ${data.data.accessToken}`
+        const newAccessToken = data.data.accessToken
+        useAuthStore.getState().setAuth(
+          newAccessToken,
+          refreshToken,
+          useAuthStore.getState().user!
+        )
+        original.headers.Authorization = `Bearer ${newAccessToken}`
         return api(original)
       } catch {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-        window.location.href = '/login'
+        useAuthStore.getState().clearAuth()
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login'
+        }
       }
     }
     return Promise.reject(error)
-  },
+  }
 )

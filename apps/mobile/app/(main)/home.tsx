@@ -213,10 +213,10 @@ export default function HomeScreen() {
           {/* Ambient glow */}
           <View style={S.heroGlow} />
 
-          <View style={S.heroLiveRow}>
+          {/* <View style={S.heroLiveRow}>
             <Text style={S.heroLiveText}>متصل الآن</Text>
             <LiveDot />
-          </View>
+          </View> */}
 
           <Text style={S.heroGreeting}>مرحباً، أحمد!</Text>
           <Text style={S.heroSub}>استمر في رحلة تطوير مهاراتك</Text>

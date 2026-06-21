@@ -7,13 +7,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
-import { COLORS, FONT, RADIUS, SHADOW, FS } from '@/constants/theme'
+import { COLORS, FONT, RADIUS, SHADOW, FS } from '../../constants/theme'
+import { api } from '../../services/api'
+import { useAuthStore } from '../../store/authStore'
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets()
@@ -22,9 +25,24 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleRegister = () => {
-    router.replace('/(main)/home')
+  const handleRegister = async () => {
+    if (!name || !email || !password) return
+    setLoading(true)
+    setError('')
+    try {
+      const { data } = await api.post('/auth/register', { name, email, password })
+      const { accessToken, refreshToken, user } = data.data
+      await useAuthStore.getState().setTokens(accessToken, refreshToken)
+      useAuthStore.getState().setUser(user)
+      router.replace('/(main)/home')
+    } catch (e: any) {
+      setError(e.response?.data?.message ?? 'حدث خطأ، حاول مجدداً')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -39,8 +57,8 @@ export default function RegisterScreen() {
         end={{ x: 1, y: 1 }}
         style={[styles.gradientBg, { paddingTop: insets.top }]}
       >
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-forward" size={22} color="#fff" />
+        <TouchableOpacity style={[styles.backBtn, { top: insets.top + 10 }]} onPress={() => router.back()}>
+          <Ionicons name="chevron-forward" size={22} color="#fff" />
         </TouchableOpacity>
         <View style={styles.logoSection}>
           <View style={styles.logoCircle}>
@@ -110,15 +128,28 @@ export default function RegisterScreen() {
           </View>
         </View>
 
-        <TouchableOpacity onPress={handleRegister} activeOpacity={0.88} style={{ marginTop: 8 }}>
+        {error ? (
+          <View style={styles.errorWrap}>
+            <Ionicons name="alert-circle-outline" size={16} color={COLORS.error} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
+        <TouchableOpacity onPress={handleRegister} activeOpacity={0.88} style={{ marginTop: 8 }} disabled={loading}>
           <LinearGradient
             colors={[COLORS.secondary, COLORS.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.registerBtn}
           >
-            <Text style={styles.registerBtnText}>إنشاء الحساب</Text>
-            <Ionicons name="arrow-back" size={20} color="#fff" />
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Text style={styles.registerBtnText}>إنشاء الحساب</Text>
+                <Ionicons name="chevron-forward" size={20} color="#fff" />
+              </>
+            )}
           </LinearGradient>
         </TouchableOpacity>
 
@@ -143,8 +174,14 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.canvas },
 
-  gradientBg: { height: 260, justifyContent: 'flex-end', alignItems: 'center' },
-  backBtn: { position: 'absolute', top: 0, right: 20, padding: 10, marginTop: 16 },
+  gradientBg: { minHeight: 260, justifyContent: 'flex-end', alignItems: 'center' },
+  backBtn: {
+    position: 'absolute', right: 20,
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
+    justifyContent: 'center', alignItems: 'center',
+  },
 
   logoSection: { alignItems: 'center', paddingBottom: 36 },
   logoCircle: { width: 76, height: 76, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
@@ -162,6 +199,9 @@ const styles = StyleSheet.create({
   inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, borderWidth: 1.5, borderColor: COLORS.surfaceBorder, paddingHorizontal: 14, gap: 10 },
   inputIcon: { padding: 2 },
   input: { flex: 1, height: 52, fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.text },
+
+  errorWrap: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12, justifyContent: 'flex-end' },
+  errorText: { fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.error, textAlign: 'right' },
 
   registerBtn: { height: 56, borderRadius: RADIUS.xl, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, ...SHADOW.md },
   registerBtnText: { fontSize: FS.lg, fontFamily: FONT.bold, color: '#fff' },

@@ -14,7 +14,12 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRef, useState, useEffect } from 'react'
 import { useRouter } from 'expo-router'
-import { COLORS, FONT, RADIUS, SHADOW, FS } from '@/constants/theme'
+import { useQuery } from '@tanstack/react-query'
+import { COLORS, FONT, RADIUS, SHADOW, FS } from '../../constants/theme'
+import { usePathStore } from '../../store/pathStore'
+import { useAuthStore } from '../../store/authStore'
+import { useActivity } from '../../hooks/useActivity'
+import { api } from '../../services/api'
 
 const { width } = Dimensions.get('window')
 const CARD_SIZE = (width - 60) / 2
@@ -157,17 +162,46 @@ function LiveDot() {
 
 // ─── Main Screen ──────────────────────────────────────────────
 
-const NOTIFS = [
-  { id: '1', icon: 'briefcase',        color: '#F59E0B', title: 'وظيفة جديدة تناسبك', body: 'مطور تطبيقات — شركة iCareer · السعودية', time: 'منذ ٥ دقائق', unread: true },
-  { id: '2', icon: 'star',             color: '#2F6CFF', title: 'أكملت تقييم الشخصية!', body: 'نتيجتك: شخصية تحليلية — راجع تقريرك', time: 'منذ ساعة', unread: true },
-  { id: '3', icon: 'people',           color: '#9D4EDD', title: 'تعليق جديد على مشاركتك', body: 'علّق أحمد خالد على مشاركتك في المجتمع', time: 'منذ ٣ ساعات', unread: true },
-  { id: '4', icon: 'document-text',    color: '#00A896', title: 'سيرتك الذاتية جاهزة', body: 'تم إنشاء نسخة AI من سيرتك — اضغط للمعاينة', time: 'أمس', unread: false },
-  { id: '5', icon: 'mic',              color: '#FF3B6B', title: 'تقرير المقابلة التدريبية', body: 'درجتك ٨٧٪ — تحسّن بنسبة ١٢٪ عن الجلسة السابقة', time: 'أمس', unread: false },
+const PATHS = [
+  { step: 1, title: 'تقييم المهارات واكتشاف الذات', icon: 'bulb',          color: '#9D4EDD', route: '/(main)/self-assessment' },
+  { step: 2, title: 'بناء السيرة الذاتية',           icon: 'document-text', color: '#2F6CFF', route: '/(main)/cv/builder' },
+  { step: 3, title: 'تدريب المقابلات',                icon: 'mic',           color: '#FF3B6B', route: '/(main)/interview/simulator' },
+  { step: 4, title: 'البحث عن الدورات',               icon: 'school',        color: '#00A896', route: '/(main)/jobs' },
+  { step: 5, title: 'التقديم للوظائف',                icon: 'briefcase',     color: '#F59E0B', route: '/(main)/jobs/portals' },
+  { step: 6, title: 'التفاعل مع المجتمع',             icon: 'people',        color: '#2F6CFF', route: '/(main)/community' },
+]
+
+// Fallback notifications shown when API hasn't loaded yet
+const FALLBACK_NOTIFS = [
+  { id: '1', icon: 'briefcase',     color: '#F59E0B', title: 'وظيفة جديدة تناسبك',       body: 'مطور تطبيقات — شركة iCareer · السعودية',              time: 'منذ ٥ دقائق', unread: true },
+  { id: '2', icon: 'star',          color: '#2F6CFF', title: 'أكملت تقييم الشخصية!',     body: 'نتيجتك: شخصية تحليلية — راجع تقريرك',                 time: 'منذ ساعة',    unread: true },
+  { id: '3', icon: 'people',        color: '#9D4EDD', title: 'تعليق جديد على مشاركتك',   body: 'علّق أحمد خالد على مشاركتك في المجتمع',               time: 'منذ ٣ ساعات', unread: true },
+  { id: '4', icon: 'document-text', color: '#00A896', title: 'سيرتك الذاتية جاهزة',       body: 'تم إنشاء نسخة AI من سيرتك — اضغط للمعاينة',          time: 'أمس',         unread: false },
+  { id: '5', icon: 'mic',           color: '#FF3B6B', title: 'تقرير المقابلة التدريبية', body: 'درجتك ٨٧٪ — تحسّن بنسبة ١٢٪ عن الجلسة السابقة',     time: 'أمس',         unread: false },
 ]
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { completed, completeStep } = usePathStore()
+  const { user } = useAuthStore()
+  const { trackActivity } = useActivity()
+  const doneCount = completed.length
+  const pct = Math.round((doneCount / PATHS.length) * 100)
+
+  // Track LOGIN activity once on mount
+  useEffect(() => {
+    trackActivity('LOGIN')
+  }, [])
+
+  // Fetch notifications from API
+  const { data: notifData } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => api.get('/notifications').then((r) => r.data.data),
+  })
+
+  const notifs = (notifData && notifData.length > 0) ? notifData : FALLBACK_NOTIFS
+  const unreadCount = notifs.filter((n: any) => n.unread).length
 
   // Drawer
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -194,6 +228,26 @@ export default function HomeScreen() {
     ]).start(() => setDrawerOpen(false))
   }
 
+  // Path sheet
+  const [pathOpen, setPathOpen] = useState(false)
+  const pathSlide   = useRef(new Animated.Value(600)).current
+  const pathOverlay = useRef(new Animated.Value(0)).current
+
+  const openPath = () => {
+    setPathOpen(true)
+    Animated.parallel([
+      Animated.spring(pathSlide, { toValue: 0, useNativeDriver: true, damping: 18, stiffness: 180 }),
+      Animated.timing(pathOverlay, { toValue: 1, duration: 260, useNativeDriver: true }),
+    ]).start()
+  }
+
+  const closePath = () => {
+    Animated.parallel([
+      Animated.timing(pathSlide, { toValue: 600, duration: 240, useNativeDriver: true }),
+      Animated.timing(pathOverlay, { toValue: 0, duration: 240, useNativeDriver: true }),
+    ]).start(() => setPathOpen(false))
+  }
+
   const openNotif = () => {
     setNotifOpen(true)
     Animated.parallel([
@@ -209,6 +263,17 @@ export default function HomeScreen() {
     ]).start(() => setNotifOpen(false))
   }
 
+  const handleNotifPress = async (notif: any) => {
+    try {
+      await api.patch(`/notifications/${notif.id}/read`)
+    } catch {
+      // fire-and-forget
+    }
+  }
+
+  // First name from user store (fall back gracefully)
+  const firstName = user?.name?.split(' ')[0] ?? 'أهلاً'
+
   return (
     <View style={[S.root, { paddingTop: insets.top }]}>
 
@@ -217,7 +282,9 @@ export default function HomeScreen() {
         {/* Bell — left (end in RTL) */}
         <TouchableOpacity style={S.iconBtn} onPress={openNotif}>
           <Ionicons name="notifications-outline" size={22} color={COLORS.textSecondary} />
-          <View style={S.badge}><Text style={S.badgeText}>3</Text></View>
+          {unreadCount > 0 && (
+            <View style={S.badge}><Text style={S.badgeText}>{unreadCount}</Text></View>
+          )}
         </TouchableOpacity>
 
         {/* Logo */}
@@ -243,25 +310,26 @@ export default function HomeScreen() {
           {/* Ambient glow */}
           <View style={S.heroGlow} />
 
-          <View style={S.heroLiveRow}>
-            <Text style={S.heroLiveText}>متصل الآن</Text>
-            <LiveDot />
-          </View>
-
-          <Text style={S.heroGreeting}>مرحباً، أحمد!</Text>
+          <Text style={S.heroGreeting}>مرحباً، {firstName}!</Text>
           <Text style={S.heroSub}>استمر في رحلة تطوير مهاراتك</Text>
 
           {/* Progress card */}
-          <View style={S.progressCard}>
+          <TouchableOpacity style={S.progressCard} onPress={openPath} activeOpacity={0.78}>
             <View style={S.progressRow}>
-              <Text style={S.progressLabel}>0 / 6 مسارات مكتملة</Text>
-              <Text style={S.progressPct}>0%</Text>
+              <Text style={S.progressLabel}>{doneCount} / {PATHS.length} مسارات مكتملة</Text>
+              <Text style={S.progressPct}>{pct}%</Text>
             </View>
             <View style={S.progressTrack}>
-              <View style={S.progressFill} />
+              <View style={[S.progressFill, { width: `${pct}%` as any }]} />
             </View>
-            <Text style={S.progressHint}>أكمل مسارك الأول للبدء!</Text>
-          </View>
+            <Text style={S.progressHint}>
+              {doneCount === 0
+                ? 'أكمل مسارك الأول للبدء!'
+                : doneCount === PATHS.length
+                ? '🎉 أتممت جميع المسارات!'
+                : `تبقّى ${PATHS.length - doneCount} خطوات`}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* ── Quick stats strip ── */}
@@ -358,11 +426,83 @@ export default function HomeScreen() {
 
           {/* Footer */}
           <View style={[S.drawerFooter, { paddingBottom: insets.bottom + 20 }]}>
-            <TouchableOpacity style={S.logoutRow}>
+            <TouchableOpacity
+              style={S.logoutRow}
+              onPress={async () => {
+                closeDrawer()
+                setTimeout(async () => {
+                  await useAuthStore.getState().logout()
+                  router.replace('/(auth)/login')
+                }, 260)
+              }}
+              activeOpacity={0.75}
+            >
               <Ionicons name="log-out-outline" size={18} color={COLORS.error} />
               <Text style={S.logoutText}>تسجيل الخروج</Text>
             </TouchableOpacity>
           </View>
+        </Animated.View>
+      </Modal>
+
+      {/* ── Career Path Sheet ── */}
+      <Modal visible={pathOpen} transparent animationType="none" onRequestClose={closePath}>
+        <Animated.View style={[S.overlay, { opacity: pathOverlay }]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={closePath} />
+        </Animated.View>
+        <Animated.View style={[S.pathSheet, { paddingBottom: insets.bottom + 20, transform: [{ translateY: pathSlide }] }]}>
+          <View style={S.notifHandle} />
+
+          {/* Header */}
+          <View style={S.pathHeader}>
+            <TouchableOpacity onPress={closePath} style={S.notifCloseBtn}>
+              <Ionicons name="close" size={18} color={COLORS.textMuted} />
+            </TouchableOpacity>
+            <View style={{ flex: 1, alignItems: 'flex-end' }}>
+              <Text style={S.pathTitle}>مسار التطوير المهني</Text>
+              <Text style={S.pathSub}>6 خطوات نحو وظيفة أحلامك</Text>
+            </View>
+          </View>
+
+          <View style={S.notifDivider} />
+
+          {/* Steps */}
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 12 }}>
+            {PATHS.map((p, i) => {
+              const done = completed.includes(p.step)
+              return (
+                <TouchableOpacity
+                  key={p.step}
+                  style={[S.pathRow, done && S.pathRowDone]}
+                  activeOpacity={0.75}
+                  onPress={() => { completeStep(p.step); closePath(); router.push(p.route as any) }}
+                >
+                  {/* Connector line */}
+                  {i < PATHS.length - 1 && (
+                    <View style={[S.pathConnector, { borderColor: done ? p.color + '60' : p.color + '30' }]} />
+                  )}
+
+                  {/* Step circle */}
+                  <View style={[
+                    S.pathCircle,
+                    { backgroundColor: done ? p.color + '22' : p.color + '18', borderColor: done ? p.color : p.color + '40' },
+                  ]}>
+                    {done
+                      ? <Ionicons name="checkmark" size={20} color={p.color} />
+                      : <Ionicons name={p.icon as any} size={20} color={p.color} />
+                    }
+                  </View>
+
+                  {/* Text */}
+                  <View style={S.pathBody}>
+                    <Text style={S.pathStep}>{done ? 'مكتملة ✓' : `الخطوة ${p.step}`}</Text>
+                    <Text style={[S.pathStepTitle, done && { color: COLORS.textSecondary }]}>{p.title}</Text>
+                  </View>
+
+                  {!done && <Ionicons name="chevron-back" size={16} color={COLORS.textMuted} />}
+                </TouchableOpacity>
+              )
+            })}
+          </ScrollView>
         </Animated.View>
       </Modal>
 
@@ -381,17 +521,24 @@ export default function HomeScreen() {
               <Ionicons name="close" size={18} color={COLORS.textMuted} />
             </TouchableOpacity>
             <Text style={S.notifTitle}>الإشعارات</Text>
-            <View style={S.notifBadgePill}>
-              <Text style={S.notifBadgePillText}>3</Text>
-            </View>
+            {unreadCount > 0 && (
+              <View style={S.notifBadgePill}>
+                <Text style={S.notifBadgePillText}>{unreadCount}</Text>
+              </View>
+            )}
           </View>
 
           <View style={S.notifDivider} />
 
           {/* List */}
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 8 }}>
-            {NOTIFS.map((n) => (
-              <TouchableOpacity key={n.id} style={[S.notifRow, n.unread && S.notifRowUnread]} activeOpacity={0.75}>
+            {notifs.map((n: any) => (
+              <TouchableOpacity
+                key={n.id}
+                style={[S.notifRow, n.unread && S.notifRowUnread]}
+                activeOpacity={0.75}
+                onPress={() => handleNotifPress(n)}
+              >
                 {/* Icon circle */}
                 <View style={[S.notifIcon, { backgroundColor: n.color + '18' }]}>
                   <Ionicons name={n.icon as any} size={18} color={n.color} />
@@ -580,6 +727,50 @@ const S = StyleSheet.create({
   drawerFooter: { borderTopWidth: 1, borderTopColor: 'rgba(15,18,33,0.07)', padding: 24 },
   logoutRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 10 },
   logoutText: { fontSize: FS.md, fontFamily: FONT.bold, fontWeight: '700', color: COLORS.error },
+
+  // ── Career path sheet ────────────────────────────────────────
+  pathSheet: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: RADIUS.xxxl, borderTopRightRadius: RADIUS.xxxl,
+    maxHeight: '80%',
+    shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08, shadowRadius: 16, elevation: 24,
+  },
+  pathHeader: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 16, gap: 12,
+  },
+  pathTitle: {
+    fontSize: FS.lg, fontFamily: FONT.black, fontWeight: '900', color: COLORS.text,
+  },
+  pathSub: {
+    fontSize: FS.xs, fontFamily: FONT.medium, color: COLORS.textMuted, marginTop: 2,
+  },
+  pathRow: {
+    flexDirection: 'row-reverse', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 16, gap: 14, position: 'relative',
+  },
+  pathRowDone: {
+    backgroundColor: 'rgba(15,18,33,0.025)',
+  },
+  pathConnector: {
+    position: 'absolute', right: 47, top: 62, bottom: -16,
+    width: 2, borderLeftWidth: 2, borderStyle: 'dashed',
+  },
+  pathCircle: {
+    width: 48, height: 48, borderRadius: 24,
+    borderWidth: 1.5, justifyContent: 'center', alignItems: 'center', flexShrink: 0,
+  },
+  pathBody: { flex: 1, gap: 2 },
+  pathStep: {
+    fontSize: FS.xs, fontFamily: FONT.semibold, color: COLORS.textMuted,
+    textAlign: 'right', letterSpacing: 0.4,
+  },
+  pathStepTitle: {
+    fontSize: FS.md, fontFamily: FONT.bold, fontWeight: '700',
+    color: COLORS.text, textAlign: 'right',
+  },
 
   // ── Notifications sheet ──────────────────────────────────────
   notifSheet: {

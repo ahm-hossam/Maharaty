@@ -11,6 +11,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { COLORS, FONT, RADIUS, SHADOW, FS } from '@/constants/theme'
+import { useEffect } from 'react'
+import { useActivity } from '../../hooks/useActivity'
 
 const JOB_PORTALS = [
   {
@@ -42,6 +44,11 @@ const JOB_PORTALS = [
 export default function JobsScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { trackActivity } = useActivity()
+
+  useEffect(() => {
+    trackActivity('VIEW_JOBS')
+  }, [])
 
   const handleBrowse = (url: string) => {
     Linking.openURL(url)

@@ -21,6 +21,7 @@ import { COLORS, RADIUS, SHADOW, FONT, FS } from '@/constants/theme'
 import { useCvStore } from '@/store/cvStore'
 import { getCvSuggestions, CvSuggestion } from '@/services/mockAi'
 import type { ExperienceItem, EducationItem, SkillItem } from '@/store/cvStore'
+import { useActivity } from '../../../hooks/useActivity'
 
 const STEPS = [
   { id: 0, label: 'معلومات شخصية', icon: 'person' },
@@ -860,9 +861,19 @@ export default function CvBuilderScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { currentStep, setStep } = useCvStore()
+  const { trackActivity } = useActivity()
   const [previewVisible, setPreviewVisible] = useState(false)
   const [formatSelected, setFormatSelected] = useState(false)
   const [cvFormat, setCvFormat] = useState<CvFormatType>('زمنية')
+
+  useEffect(() => {
+    trackActivity('BUILD_CV')
+  }, [])
+
+  // Must be declared before any conditional return (Rules of Hooks)
+  const scaleNext = useRef(new Animated.Value(1)).current
+  const pressNext = () => Animated.spring(scaleNext, { toValue: 0.96, useNativeDriver: true, speed: 60 }).start()
+  const releaseNext = () => Animated.spring(scaleNext, { toValue: 1, useNativeDriver: true, speed: 40 }).start()
 
   if (!formatSelected) {
     return (
@@ -879,11 +890,6 @@ export default function CvBuilderScreen() {
 
   const goNext = () => { if (currentStep < 5) setStep((currentStep + 1) as any) }
   const goPrev = () => { if (currentStep > 0) setStep((currentStep - 1) as any) }
-
-  // Micro-scale animation for primary button
-  const scaleNext = useRef(new Animated.Value(1)).current
-  const pressNext = () => Animated.spring(scaleNext, { toValue: 0.96, useNativeDriver: true, speed: 60 }).start()
-  const releaseNext = () => Animated.spring(scaleNext, { toValue: 1, useNativeDriver: true, speed: 40 }).start()
 
   return (
     <View style={[S.root, { paddingTop: insets.top }]}>

@@ -8,9 +8,11 @@ import {
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'expo-router'
 import { COLORS, FONT, RADIUS, SHADOW, FS } from '@/constants/theme'
+import { useActivity } from '../../hooks/useActivity'
+import { useAuthStore } from '../../store/authStore'
 
 const POSTS = [
   {
@@ -48,8 +50,13 @@ const POSTS = [
 export default function CommunityScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const [isLoggedIn] = useState(false)
+  const { trackActivity } = useActivity()
+  const isLoggedIn = useAuthStore((s) => s.isAuthenticated)
   const [likedPosts, setLikedPosts] = useState<string[]>([])
+
+  useEffect(() => {
+    trackActivity('VIEW_COMMUNITY')
+  }, [])
 
   const toggleLike = (id: string) => {
     setLikedPosts(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
