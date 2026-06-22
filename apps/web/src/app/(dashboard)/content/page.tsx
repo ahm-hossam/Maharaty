@@ -134,7 +134,7 @@ function ThumbnailField({ value, onChange }: { value: string; onChange: (url: st
           <img src={value} alt="thumbnail" className="w-full h-full object-cover"
             onError={e => (e.currentTarget.style.display = 'none')} />
           <button type="button" onClick={() => onChange('')}
-            className="absolute top-2 left-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             ✕
           </button>
         </div>
@@ -378,7 +378,7 @@ function CourseForm({ initial, onClose }: { initial?: Content; onClose: () => vo
       {/* Level */}
       <div>
         <label className="block text-sm font-semibold text-slate-700 text-right mb-2">مستوى الدورة</label>
-        <div className="flex gap-2 flex-row-reverse">
+        <div className="flex gap-2 ">
           {(['beginner', 'intermediate', 'advanced'] as const).map(lv => (
             <button key={lv} type="button" onClick={() => setLevel(lv)}
               className={`flex-1 h-10 rounded-xl text-sm font-semibold border-2 transition-all ${level === lv ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}>
@@ -397,7 +397,7 @@ function CourseForm({ initial, onClose }: { initial?: Content; onClose: () => vo
         </div>
         <div className="space-y-2">
           {whatYouLearn.map((item, i) => (
-            <div key={i} className="flex items-center gap-2 flex-row-reverse">
+            <div key={i} className="flex items-center gap-2 ">
               <input dir="rtl" value={item} onChange={e => { const a = [...whatYouLearn]; a[i] = e.target.value; setWhatYouLearn(a) }}
                 placeholder={`نقطة تعليمية ${i + 1}...`} className={INPUT_CLS + ' flex-1'} />
               <button type="button" onClick={() => setWhatYouLearn(w => w.filter((_, j) => j !== i))}
@@ -418,7 +418,7 @@ function CourseForm({ initial, onClose }: { initial?: Content; onClose: () => vo
         </div>
         <div className="space-y-2">
           {requirements.map((item, i) => (
-            <div key={i} className="flex items-center gap-2 flex-row-reverse">
+            <div key={i} className="flex items-center gap-2 ">
               <input dir="rtl" value={item} onChange={e => { const a = [...requirements]; a[i] = e.target.value; setRequirements(a) }}
                 placeholder={`متطلب ${i + 1}...`} className={INPUT_CLS + ' flex-1'} />
               <button type="button" onClick={() => setRequirements(r => r.filter((_, j) => j !== i))}
@@ -659,7 +659,7 @@ function TypeSelector({ onSelect }: { onSelect: (t: ContentType) => void }) {
       <div className="grid grid-cols-1 gap-4">
         {(Object.entries(TYPE_CONFIG) as [ContentType, typeof TYPE_CONFIG.VIDEO][]).map(([type, cfg]) => (
           <button key={type} type="button" onClick={() => onSelect(type)}
-            className={`flex items-center gap-4 flex-row-reverse p-4 border-2 rounded-2xl transition-all shadow-sm hover:shadow-md ${cfg.color} ${cfg.hover}`}>
+            className={`flex items-center gap-4  p-4 border-2 rounded-2xl transition-all shadow-sm hover:shadow-md ${cfg.color} ${cfg.hover}`}>
             <div className="flex-shrink-0">{cfg.icon}</div>
             <div className="text-right flex-1">
               <p className="font-bold text-base">{cfg.label}</p>

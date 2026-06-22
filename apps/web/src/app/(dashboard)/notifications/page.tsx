@@ -26,7 +26,7 @@ function NotifPreview({
   return (
     <div className="bg-slate-900 rounded-2xl p-4 text-white">
       <p className="text-xs text-slate-400 mb-3 text-right">معاينة الإشعار</p>
-      <div className="bg-white/10 rounded-xl p-4 flex items-start gap-3 flex-row-reverse">
+      <div className="bg-white/10 rounded-xl p-4 flex items-start gap-3 ">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0">
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -192,7 +192,7 @@ export default function NotificationsPage() {
                           setSelectedUserName(u.name)
                           setUserSearch(u.name)
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors flex-row-reverse text-right"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors  text-right"
                       >
                         <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
                           {u.name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase()}
@@ -216,7 +216,7 @@ export default function NotificationsPage() {
                 <label className="block text-sm font-semibold text-slate-700 text-right mb-2">
                   المستلمون
                 </label>
-                <div className="flex items-center gap-3 mb-3 flex-row-reverse">
+                <div className="flex items-center gap-3 mb-3 ">
                   <input
                     type="checkbox"
                     id="bulk-all"
@@ -277,7 +277,7 @@ export default function NotificationsPage() {
               <label className="block text-sm font-semibold text-slate-700 text-right mb-2">
                 نوع الإشعار
               </label>
-              <div className="flex items-center gap-2 flex-row-reverse">
+              <div className="flex items-center gap-2 ">
                 {TYPE_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
@@ -348,7 +348,7 @@ export default function NotificationsPage() {
               ].map((n, i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl flex-row-reverse"
+                  className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl "
                 >
                   <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

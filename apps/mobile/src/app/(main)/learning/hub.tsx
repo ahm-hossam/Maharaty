@@ -376,7 +376,7 @@ export default function LearningHubScreen() {
         </View>
 
         {/* ── Coming Soon Card ── */}
-        <View style={S.comingSoonWrapper}>
+        {/* <View style={S.comingSoonWrapper}>
           <View style={S.comingSoonCard}>
             <LinearGradient
               colors={[COLORS.primary + '22', COLORS.primary + '08']}
@@ -391,7 +391,7 @@ export default function LearningHubScreen() {
               <Text style={S.comingSoonSub}>نعمل على إضافة دورات ومسارات تعليمية جديدة</Text>
             </LinearGradient>
           </View>
-        </View>
+        </View> */}
 
       </ScrollView>
     </View>

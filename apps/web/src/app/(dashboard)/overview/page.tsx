@@ -38,7 +38,7 @@ function SkeletonRow() {
     <tr className="animate-pulse">
       {/* Reversed column order for RTL: user | email | date | activities | status */}
       <td className="px-6 py-4">
-        <div className="flex items-center gap-3 flex-row-reverse">
+        <div className="flex items-center gap-3 ">
           <div className="w-9 h-9 bg-slate-200 rounded-xl" />
           <div className="w-24 h-4 bg-slate-200 rounded" />
         </div>
@@ -296,7 +296,7 @@ export default function OverviewPage() {
             href="/users"
             className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
           >
-            → عرض الكل
+            عرض الكل ←
           </a>
         </div>
         <div className="overflow-x-auto">
@@ -328,7 +328,7 @@ export default function OverviewPage() {
                       <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
                         {/* المستخدم — rightmost */}
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-3 flex-row-reverse">
+                          <div className="flex items-center gap-3">
                             <div
                               className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
                               style={{ backgroundColor: color }}
@@ -343,14 +343,14 @@ export default function OverviewPage() {
                           {new Date(user.createdAt).toLocaleDateString('ar-EG')}
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center justify-end gap-1.5">
+                          <div className="flex items-center justify-start gap-1.5">
+                            <span className="text-sm text-slate-500 font-medium">{activityCount}</span>
                             <div className="w-24 bg-slate-100 rounded-full h-1.5">
                               <div
                                 className="bg-indigo-500 h-1.5 rounded-full"
                                 style={{ width: `${Math.min(activityCount * 10, 100)}%` }}
                               />
                             </div>
-                            <span className="text-sm text-slate-500 font-medium">{activityCount}</span>
                           </div>
                         </td>
                         {/* الحالة — leftmost */}
@@ -363,7 +363,7 @@ export default function OverviewPage() {
                             }`}
                           >
                             {user.isActive && (
-                              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full ml-1.5" />
+                              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5" />
                             )}
                             {user.isActive ? 'نشط' : 'غير نشط'}
                           </span>

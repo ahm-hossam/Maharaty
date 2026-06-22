@@ -37,7 +37,7 @@ function BannerPreview({ form }: { form: BannerConfig }) {
         </div>
 
         {/* bottom row */}
-        <div className="flex items-center justify-between mt-4 flex-row-reverse">
+        <div className="flex items-center justify-between mt-4 ">
           {form.contentTitle && (
             <span className="text-white/80 text-xs bg-black/20 px-3 py-1 rounded-full">
               {form.contentTitle}
@@ -116,7 +116,7 @@ export default function BannerPage() {
 
             {/* Active toggle */}
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-              <div className="flex items-center justify-between flex-row-reverse">
+              <div className="flex items-center justify-between ">
                 <div className="text-right">
                   <p className="font-bold text-slate-800">تفعيل البانر</p>
                   <p className="text-xs text-slate-500 mt-0.5">
@@ -188,7 +188,7 @@ export default function BannerPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 text-right mb-1">لون البداية</label>
-                  <div className="flex items-center gap-2 flex-row-reverse">
+                  <div className="flex items-center gap-2 ">
                     <input type="color" value={form.bgColor1} onChange={e => patch({ bgColor1: e.target.value })}
                       className="w-11 h-11 rounded-xl border-2 border-slate-200 cursor-pointer p-0.5 bg-white" />
                     <span className="text-xs text-slate-500 font-mono">{form.bgColor1}</span>
@@ -196,7 +196,7 @@ export default function BannerPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 text-right mb-1">لون النهاية</label>
-                  <div className="flex items-center gap-2 flex-row-reverse">
+                  <div className="flex items-center gap-2 ">
                     <input type="color" value={form.bgColor2} onChange={e => patch({ bgColor2: e.target.value })}
                       className="w-11 h-11 rounded-xl border-2 border-slate-200 cursor-pointer p-0.5 bg-white" />
                     <span className="text-xs text-slate-500 font-mono">{form.bgColor2}</span>
@@ -236,7 +236,7 @@ export default function BannerPage() {
                   </div>
 
                   {/* category pills mock */}
-                  <div className="px-4 py-3 flex gap-2 flex-row-reverse overflow-hidden">
+                  <div className="px-4 py-3 flex gap-2  overflow-hidden">
                     {['الكل', 'برمجة', 'تسويق'].map(l => (
                       <span key={l} className={`text-xs px-3 py-1 rounded-full font-semibold whitespace-nowrap ${l === 'الكل' ? 'text-white' : 'bg-slate-100 text-slate-500'}`}
                         style={l === 'الكل' ? { background: form.bgColor1 } : {}}>
@@ -262,7 +262,7 @@ export default function BannerPage() {
                   {/* course list mock */}
                   <div className="px-4 pb-6 space-y-2">
                     {[1, 2].map(i => (
-                      <div key={i} className="h-16 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3 px-3 flex-row-reverse">
+                      <div key={i} className="h-16 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3 px-3 ">
                         <div className="w-10 h-10 rounded-lg bg-slate-200 flex-shrink-0" />
                         <div className="flex-1 space-y-1.5">
                           <div className="h-3 bg-slate-200 rounded w-4/5 ml-auto" />
