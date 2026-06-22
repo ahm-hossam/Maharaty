@@ -11,6 +11,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { AdminModule } from './modules/admin/admin.module'
 import { ContentModule } from './modules/content/content.module'
 import { ActivitiesModule } from './modules/activities/activities.module'
+import { UploadModule } from './modules/upload/upload.module'
+import { BannerModule } from './modules/banner/banner.module'
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { ActivitiesModule } from './modules/activities/activities.module'
     AdminModule,
     ContentModule,
     ActivitiesModule,
+    UploadModule,
+    BannerModule,
   ],
 })
 export class AppModule {}

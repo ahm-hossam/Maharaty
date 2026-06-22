@@ -50,11 +50,9 @@ function SkeletonCard() {
 function SkeletonRow() {
   return (
     <tr className="animate-pulse">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <td key={i} className="px-6 py-4">
-          <div className="h-4 bg-slate-200 rounded w-24" />
-        </td>
-      ))}
+      <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-28" /><div className="h-3 bg-slate-100 rounded w-36 mt-1" /></td>
+      <td className="px-6 py-4"><div className="h-5 bg-slate-200 rounded-full w-24" /></td>
+      <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-20" /></td>
     </tr>
   )
 }
@@ -181,11 +179,12 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
         {/* User Growth Line Chart */}
         <div className="xl:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+          {/* Title RIGHT (first in DOM), badge LEFT (second) */}
           <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-slate-800">نمو المستخدمين</h3>
             <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
               آخر 30 يوماً
             </span>
-            <h3 className="text-lg font-bold text-slate-800">نمو المستخدمين</h3>
           </div>
           {isLoading ? (
             <div className="h-[220px] bg-slate-100 rounded-xl animate-pulse" />
@@ -306,15 +305,10 @@ export default function AnalyticsPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50">
-                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">
-                  الوقت
-                </th>
-                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">
-                  النشاط
-                </th>
-                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">
-                  المستخدم
-                </th>
+                {/* RTL order: المستخدم rightmost, الوقت leftmost */}
+                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">المستخدم</th>
+                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">النشاط</th>
+                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">الوقت</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -337,26 +331,21 @@ export default function AnalyticsPage() {
                         key={a.id ?? i}
                         className="hover:bg-slate-50/50 transition-colors"
                       >
-                        <td className="px-6 py-4 text-sm text-slate-400 text-right">
-                          {new Date(a.createdAt).toLocaleString('ar-EG', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                        {/* المستخدم — rightmost */}
+                        <td className="px-6 py-4">
+                          <p className="text-sm font-semibold text-slate-800 text-right">{a.user?.name ?? '—'}</p>
+                          <p className="text-xs text-slate-400 text-right">{a.user?.email ?? ''}</p>
                         </td>
                         <td className="px-6 py-4">
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700">
                             {ACTIVITY_LABELS[a.type] ?? a.type}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <p className="text-sm font-semibold text-slate-800 text-right">
-                            {a.user?.name ?? '—'}
-                          </p>
-                          <p className="text-xs text-slate-400 text-right">
-                            {a.user?.email ?? ''}
-                          </p>
+                        {/* الوقت — leftmost */}
+                        <td className="px-6 py-4 text-sm text-slate-400 text-right">
+                          {new Date(a.createdAt).toLocaleString('ar-EG', {
+                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                          })}
                         </td>
                       </tr>
                     )

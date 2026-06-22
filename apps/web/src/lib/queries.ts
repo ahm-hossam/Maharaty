@@ -27,9 +27,11 @@ export interface Content {
   titleAr: string
   description?: string
   category?: string
+  thumbnail?: string
   isPublished: boolean
   duration?: number
   url?: string
+  meta?: Record<string, unknown>
   createdAt: string
 }
 
@@ -93,6 +95,14 @@ export function useUser(id: string) {
     queryKey: ['user', id],
     queryFn: () => api.get(`/users/${id}`).then((r) => r.data.data),
     enabled: !!id,
+  })
+}
+
+export function useCategories() {
+  return useQuery<string[]>({
+    queryKey: ['content', 'categories'],
+    queryFn: () => api.get('/content/categories').then((r) => r.data.data),
+    staleTime: 60_000,
   })
 }
 
@@ -175,9 +185,11 @@ export function useCreateContent() {
       titleAr: string
       description?: string
       category?: string
+      thumbnail?: string
       duration?: number
       url?: string
       isPublished: boolean
+      meta?: Record<string, unknown>
     }) => api.post('/content', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['content'] }),
   })
@@ -195,9 +207,11 @@ export function useUpdateContent() {
       titleAr?: string
       description?: string
       category?: string
+      thumbnail?: string
       duration?: number
       url?: string
       isPublished?: boolean
+      meta?: Record<string, unknown>
     }) => api.patch(`/content/${id}`, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['content'] }),
   })
@@ -208,6 +222,33 @@ export function useDeleteContent() {
   return useMutation({
     mutationFn: (id: string) => api.delete(`/content/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['content'] }),
+  })
+}
+
+export interface BannerConfig {
+  isActive: boolean
+  title: string
+  subtitle: string
+  ctaText: string
+  bgColor1: string
+  bgColor2: string
+  contentId?: string | null
+  contentType?: string | null
+  contentTitle?: string | null
+}
+
+export function useBanner() {
+  return useQuery<BannerConfig>({
+    queryKey: ['banner'],
+    queryFn: () => api.get('/banner').then((r) => r.data.data),
+  })
+}
+
+export function useUpdateBanner() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Partial<BannerConfig>) => api.put('/banner', data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['banner'] }),
   })
 }
 

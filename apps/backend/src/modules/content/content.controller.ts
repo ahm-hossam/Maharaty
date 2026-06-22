@@ -44,6 +44,14 @@ export class ContentController {
     return { success: true, data }
   }
 
+  @Get('categories')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get distinct categories' })
+  async getCategories() {
+    const data = await this.contentService.findCategories()
+    return { success: true, data }
+  }
+
   @Get('admin/all')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiOperation({ summary: 'List all content including unpublished (admin)' })
@@ -58,6 +66,14 @@ export class ContentController {
     @Query('limit') limit?: number,
   ) {
     const data = await this.contentService.findAll({ type, category, page, limit })
+    return { success: true, data }
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get single content item with full meta' })
+  async findOne(@Param('id') id: string) {
+    const data = await this.contentService.findOne(id)
     return { success: true, data }
   }
 
