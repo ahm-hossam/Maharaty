@@ -13,8 +13,9 @@ import { useRouter } from 'expo-router'
 import { useState, useRef, useEffect } from 'react'
 import { COLORS, RADIUS, SHADOW, FONT, FS } from '@/constants/theme'
 import { useActivity } from '../../hooks/useActivity'
+import { api } from '../../services/api'
 
-// ─── Assessment Questions ─────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────
 
 type RiasecType = 'R' | 'I' | 'A' | 'S' | 'E' | 'C'
 
@@ -25,7 +26,9 @@ interface AssessmentQuestion {
   dimension: string
 }
 
-const QUESTIONS: AssessmentQuestion[] = [
+// ─── Fallback questions (used if API unavailable) ─────────────
+
+const FALLBACK_QUESTIONS: AssessmentQuestion[] = [
   { id: '1',  text: 'أستمتع بتنفيذ مشاريع تقنية أو يدوية ملموسة وأقيس تقدمي بنتائج واضحة.', category: 'R', dimension: 'البراعة التنفيذية' },
   { id: '2',  text: 'أتميز في تحليل البيانات والمعلومات المعقدة للوصول إلى استنتاجات دقيقة.', category: 'I', dimension: 'التفكير التحليلي' },
   { id: '3',  text: 'لديّ قدرة على ابتكار حلول وأساليب غير تقليدية في بيئة العمل.', category: 'A', dimension: 'الإبداع والابتكار' },
@@ -46,15 +49,8 @@ const QUESTIONS: AssessmentQuestion[] = [
 // ─── Result Profiles ──────────────────────────────────────────
 
 interface CareerProfile {
-  type: string
-  title: string
-  subtitle: string
-  gradient: [string, string]
-  icon: string
-  traits: string[]
-  careers: string[]
-  strengths: string[]
-  developmentAreas: string[]
+  type: string; title: string; subtitle: string; gradient: [string, string]; icon: string
+  traits: string[]; careers: string[]; strengths: string[]; developmentAreas: string[]
 }
 
 const PROFILES: Record<RiasecType, CareerProfile> = {
@@ -108,33 +104,17 @@ const PROFILES: Record<RiasecType, CareerProfile> = {
   },
 }
 
-// ─── Scale options ────────────────────────────────────────────
-
-interface ScaleOption {
-  value: number
-  label: string
-  sublabel: string
-}
-
-const SCALE_OPTIONS: ScaleOption[] = [
-  { value: 1, label: 'لا ينطبق',    sublabel: 'Not at all' },
-  { value: 2, label: 'نادراً',       sublabel: 'Rarely' },
-  { value: 3, label: 'أحياناً',      sublabel: 'Sometimes' },
-  { value: 4, label: 'غالباً',       sublabel: 'Often' },
-  { value: 5, label: 'دائماً',       sublabel: 'Always' },
-]
-
 // ─── Score computation ────────────────────────────────────────
 
-function computeTopProfile(answers: Record<string, number>): RiasecType {
+function computeTopProfile(answers: Record<string, number>, questions: AssessmentQuestion[]): RiasecType {
   const totals: Record<RiasecType, number> = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }
-  QUESTIONS.forEach((q) => { totals[q.category] = (totals[q.category] || 0) + (answers[q.id] || 0) })
+  questions.forEach((q) => { totals[q.category] = (totals[q.category] || 0) + (answers[q.id] || 0) })
   return (Object.entries(totals).sort(([, a], [, b]) => b - a)[0][0] as RiasecType)
 }
 
-// ─── Intro screen ─────────────────────────────────────────────
+// ─── Intro Screen ─────────────────────────────────────────────
 
-function IntroScreen({ onStart }: { onStart: () => void }) {
+function IntroScreen({ onStart, questionCount }: { onStart: () => void; questionCount: number }) {
   const glowAnim = useRef(new Animated.Value(0.4)).current
 
   useEffect(() => {
@@ -147,21 +127,16 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
   }, [])
 
   const features = [
-    { icon: 'bulb-outline',      text: '15 سؤالاً مُصمَّماً بعناية لكشف نمطك المهني' },
+    { icon: 'bulb-outline',      text: `${questionCount} سؤالاً مُصمَّماً بعناية لكشف نمطك المهني` },
     { icon: 'analytics-outline', text: 'تحليل RIASEC الذي يستخدمه 2000+ مرشد مهني' },
     { icon: 'compass-outline',   text: 'مسارات وظيفية مُوصى بها بناءً على شخصيتك' },
   ]
 
   return (
     <ScrollView contentContainerStyle={IS.content} showsVerticalScrollIndicator={false}>
-      {/* Hero orb */}
       <View style={IS.orbWrap}>
         <Animated.View style={[IS.orbGlow, { opacity: glowAnim }]} />
-        <LinearGradient
-          colors={[COLORS.primary, COLORS.secondary]}
-          style={IS.orb}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        >
+        <LinearGradient colors={[COLORS.primary, COLORS.secondary]} style={IS.orb} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
           <Ionicons name="compass" size={52} color="#fff" />
         </LinearGradient>
       </View>
@@ -171,7 +146,6 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
         تقييم علمي يبني خارطة مهنية دقيقة لمسارك الوظيفي، مستنداً إلى منهج Holland RIASEC المُعتمد دولياً.
       </Text>
 
-      {/* Feature list */}
       <View style={IS.featuresList}>
         {features.map((f, i) => (
           <View key={i} style={IS.featureRow}>
@@ -183,12 +157,11 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
         ))}
       </View>
 
-      {/* Stat chips */}
       <View style={IS.statsCard}>
         <Text style={IS.statsCardLabel}>نظرة عامة على التقييم</Text>
         <View style={IS.statsRow}>
           {[
-            { num: '15', label: 'سؤال' },
+            { num: String(questionCount), label: 'سؤال' },
             { num: '6', label: 'أبعاد' },
             { num: '5 دق', label: 'تقريباً' },
           ].map((s, i) => (
@@ -201,11 +174,7 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
       </View>
 
       <TouchableOpacity onPress={onStart} activeOpacity={0.9} style={IS.startBtnWrap}>
-        <LinearGradient
-          colors={[COLORS.primary, COLORS.secondary]}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={IS.startBtn}
-        >
+        <LinearGradient colors={[COLORS.primary, COLORS.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={IS.startBtn}>
           <Text style={IS.startBtnText}>ابدأ التقييم</Text>
           <Ionicons name="chevron-forward" size={20} color="#fff" />
         </LinearGradient>
@@ -223,47 +192,22 @@ const IS = StyleSheet.create({
     shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 1, shadowRadius: 40,
   },
   orb: { width: 100, height: 100, borderRadius: 30, justifyContent: 'center', alignItems: 'center' },
-
   title: { fontSize: FS.h2, fontWeight: '900', color: COLORS.text, textAlign: 'center', marginBottom: 14, fontFamily: FONT.black },
   subtitle: { fontSize: FS.md, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 26, marginBottom: 36, fontFamily: FONT.regular },
-
   featuresList: { width: '100%', gap: 14, marginBottom: 32 },
   featureRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 14 },
   featureIcon: {
     width: 44, height: 44, borderRadius: RADIUS.lg,
-    backgroundColor: 'rgba(47,108,255,0.14)',
-    borderWidth: 1, borderColor: 'rgba(47,108,255,0.28)',
+    backgroundColor: 'rgba(47,108,255,0.14)', borderWidth: 1, borderColor: 'rgba(47,108,255,0.28)',
     justifyContent: 'center', alignItems: 'center',
   },
   featureText: { flex: 1, fontSize: FS.md, color: COLORS.textSecondary, textAlign: 'right', lineHeight: 22, fontFamily: FONT.regular },
-
-  statsCard: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
-    borderRadius: RADIUS.xxl,
-    padding: 20,
-    width: '100%',
-    marginBottom: 40,
-  },
-  statsCardLabel: {
-    fontSize: FS.xs,
-    fontWeight: '800',
-    fontFamily: FONT.extrabold,
-    color: COLORS.textMuted,
-    textAlign: 'right',
-    marginBottom: 16,
-    letterSpacing: 0.8,
-  },
+  statsCard: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, borderRadius: RADIUS.xxl, padding: 20, width: '100%', marginBottom: 40 },
+  statsCardLabel: { fontSize: FS.xs, fontWeight: '800', fontFamily: FONT.extrabold, color: COLORS.textMuted, textAlign: 'right', marginBottom: 16, letterSpacing: 0.8 },
   statsRow: { flexDirection: 'row-reverse', gap: 12 },
-  statChip: {
-    flex: 1, backgroundColor: COLORS.surface,
-    borderWidth: 1, borderColor: COLORS.surfaceBorder,
-    borderRadius: RADIUS.xl, paddingVertical: 16, alignItems: 'center', gap: 4,
-  },
+  statChip: { flex: 1, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, borderRadius: RADIUS.xl, paddingVertical: 16, alignItems: 'center', gap: 4 },
   statNum: { fontSize: FS.xl, fontWeight: '900', color: COLORS.primary, fontFamily: FONT.black },
   statLabel: { fontSize: FS.xs, color: COLORS.textMuted, fontWeight: '600', fontFamily: FONT.semibold },
-
   startBtnWrap: { width: '100%', borderRadius: RADIUS.full, overflow: 'hidden' },
   startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 20, borderRadius: RADIUS.full },
   startBtnText: { fontSize: FS.lg, color: '#fff', fontWeight: '900', fontFamily: FONT.black },
@@ -271,21 +215,23 @@ const IS = StyleSheet.create({
 
 // ─── Question Screen ──────────────────────────────────────────
 
+const DIMENSION_COLORS: Record<string, string> = {
+  'البراعة التنفيذية': '#F59E0B',
+  'التفكير التحليلي': COLORS.primary,
+  'الإبداع والابتكار': '#EC4899',
+  'الكفاءة التواصلية': COLORS.teal,
+  'الكفاءة القيادية': '#FF3B6B',
+  'الدقة التنظيمية': '#10B981',
+}
+
 function QuestionScreen({
-  question,
-  qIndex,
-  total,
-  selected,
-  onSelect,
+  question, qIndex, total, selected, onSelect,
 }: {
-  question: AssessmentQuestion
-  qIndex: number
-  total: number
-  selected: number | undefined
-  onSelect: (v: number) => void
+  question: AssessmentQuestion; qIndex: number; total: number; selected: number | undefined; onSelect: (v: number) => void
 }) {
   const slideAnim = useRef(new Animated.Value(60)).current
   const fadeAnim  = useRef(new Animated.Value(0)).current
+  const circleScales = useRef([1,2,3,4,5].map(() => new Animated.Value(1))).current
 
   useEffect(() => {
     slideAnim.setValue(60); fadeAnim.setValue(0)
@@ -295,20 +241,22 @@ function QuestionScreen({
     ]).start()
   }, [qIndex])
 
-  const DIMENSION_COLORS: Record<string, string> = {
-    'البراعة التنفيذية': '#F59E0B',
-    'التفكير التحليلي': COLORS.primary,
-    'الإبداع والابتكار': '#EC4899',
-    'الكفاءة التواصلية': COLORS.teal,
-    'الكفاءة القيادية': '#FF3B6B',
-    'الدقة التنظيمية': '#10B981',
-  }
   const dimColor = DIMENSION_COLORS[question.dimension] || COLORS.primary
+
+  const handlePress = (v: number) => {
+    // Bounce animation on selected circle
+    const idx = v - 1
+    Animated.sequence([
+      Animated.spring(circleScales[idx], { toValue: 0.85, useNativeDriver: true, speed: 80 }),
+      Animated.spring(circleScales[idx], { toValue: 1,    useNativeDriver: true, speed: 50 }),
+    ]).start()
+    onSelect(v)
+  }
 
   return (
     <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
       <ScrollView contentContainerStyle={QS.content} showsVerticalScrollIndicator={false}>
-        {/* Progress line */}
+        {/* Progress bar */}
         <View style={QS.progressTrack}>
           <View style={[QS.progressFill, { width: `${((qIndex + 1) / total) * 100}%` as any }]} />
         </View>
@@ -321,41 +269,60 @@ function QuestionScreen({
 
         {/* Question card */}
         <View style={QS.card}>
-          <LinearGradient
-            colors={['rgba(248,249,255,0.98)', 'rgba(240,244,255,1.0)']}
-            style={QS.cardInner}
-          >
+          <LinearGradient colors={['rgba(248,249,255,0.98)', 'rgba(240,244,255,1.0)']} style={QS.cardInner}>
             <Text style={QS.questionText}>{question.text}</Text>
           </LinearGradient>
         </View>
 
-        {/* Scale options */}
+        {/* Likert scale */}
         <Text style={QS.scaleLabel}>اختر ما ينطبق عليك</Text>
-        <View style={QS.optionsCol}>
-          {SCALE_OPTIONS.map((opt) => {
-            const active = selected === opt.value
-            return (
-              <TouchableOpacity
-                key={opt.value}
-                style={[
-                  QS.option,
-                  active && QS.optionActive,
-                  active && { borderColor: dimColor, backgroundColor: dimColor + '14' },
-                ]}
-                onPress={() => onSelect(opt.value)}
-                activeOpacity={0.85}
+
+        <View style={QS.likertWrap}>
+          {/* Endpoint labels */}
+          <View style={QS.likertEndRow}>
+            <Text style={QS.likertEndLabel}>لا ينطبق</Text>
+            <Text style={QS.likertEndLabel}>دائماً</Text>
+          </View>
+
+          {/* Circles with connecting line */}
+          <View style={QS.likertRow}>
+            <View style={[QS.likertLine, { backgroundColor: dimColor + '30' }]} />
+            {[1, 2, 3, 4, 5].map((v) => {
+              const isSelected = selected === v
+              const isPast = selected !== undefined && v < selected
+              return (
+                <Animated.View key={v} style={{ transform: [{ scale: circleScales[v - 1] }], zIndex: 2 }}>
+                  <TouchableOpacity onPress={() => handlePress(v)} activeOpacity={0.8} style={QS.likertBtn}>
+                    <View style={[
+                      QS.likertCircle,
+                      isPast && { borderColor: dimColor + '60', backgroundColor: dimColor + '15' },
+                      isSelected && { backgroundColor: dimColor, borderColor: dimColor },
+                    ]}>
+                      {isSelected
+                        ? <Ionicons name="checkmark" size={20} color="#fff" />
+                        : <Text style={[QS.likertNum, isPast && { color: dimColor }]}>{v}</Text>
+                      }
+                    </View>
+                    {isSelected && (
+                      <View style={[QS.likertDot, { backgroundColor: dimColor }]} />
+                    )}
+                  </TouchableOpacity>
+                </Animated.View>
+              )
+            })}
+          </View>
+
+          {/* Value labels below each circle */}
+          <View style={QS.likertValueRow}>
+            {['لا\nينطبق', 'نادراً', 'أحياناً', 'غالباً', 'دائماً'].map((label, i) => (
+              <Text
+                key={i}
+                style={[QS.likertValueLabel, selected === i + 1 && { color: dimColor, fontFamily: FONT.bold }]}
               >
-                <View style={[QS.optionNum, active && { backgroundColor: dimColor, borderColor: dimColor }]}>
-                  <Text style={[QS.optionNumText, active && { color: '#fff' }]}>{opt.value}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[QS.optionLabel, active && { color: '#fff' }]}>{opt.label}</Text>
-                  <Text style={QS.optionSub}>{opt.sublabel}</Text>
-                </View>
-                {active && <Ionicons name="checkmark-circle" size={20} color={dimColor} />}
-              </TouchableOpacity>
-            )
-          })}
+                {label}
+              </Text>
+            ))}
+          </View>
         </View>
       </ScrollView>
     </Animated.View>
@@ -367,31 +334,41 @@ const QS = StyleSheet.create({
 
   progressTrack: { height: 3, backgroundColor: 'rgba(15,18,33,0.08)', borderRadius: 2, marginBottom: 14 },
   progressFill: { height: '100%', backgroundColor: COLORS.primary, borderRadius: 2, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 6 },
-  progressMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 },
+  progressMeta: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 },
   progressText: { fontSize: FS.sm, color: COLORS.textMuted, fontWeight: '700', fontFamily: FONT.bold },
   dimensionTag: { fontSize: FS.xs, fontWeight: '800', borderWidth: 1, borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 5, letterSpacing: 0.3, fontFamily: FONT.extrabold },
 
-  card: { borderRadius: RADIUS.xxl, overflow: 'hidden', marginBottom: 32, ...SHADOW.md },
+  card: { borderRadius: RADIUS.xxl, overflow: 'hidden', marginBottom: 40, ...SHADOW.md },
   cardInner: { padding: 28, borderWidth: 1, borderColor: 'rgba(15,18,33,0.09)', borderRadius: RADIUS.xxl },
   questionText: { fontSize: FS.lg, fontWeight: '700', color: COLORS.text, textAlign: 'right', lineHeight: 30, fontFamily: FONT.bold },
 
-  scaleLabel: { fontSize: FS.xs, color: COLORS.textMuted, textAlign: 'right', marginBottom: 16, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', fontFamily: FONT.bold },
+  scaleLabel: { fontSize: FS.xs, color: COLORS.textMuted, textAlign: 'right', marginBottom: 20, fontWeight: '700', letterSpacing: 0.8, fontFamily: FONT.bold },
 
-  optionsCol: { gap: 12 },
-  option: {
-    flexDirection: 'row', alignItems: 'center', gap: 16,
-    backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder,
-    borderRadius: RADIUS.xl, padding: 16,
+  // Likert
+  likertWrap: { paddingHorizontal: 4 },
+  likertEndRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', marginBottom: 10 },
+  likertEndLabel: { fontSize: FS.xs, color: COLORS.textMuted, fontFamily: FONT.semibold },
+
+  likertRow: {
+    flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center',
+    position: 'relative', marginBottom: 10, paddingHorizontal: 4,
   },
-  optionActive: {},
-  optionNum: {
-    width: 36, height: 36, borderRadius: RADIUS.md,
-    borderWidth: 1.5, borderColor: 'rgba(15,18,33,0.15)',
+  likertLine: {
+    position: 'absolute', left: '8%', right: '8%', height: 2.5, borderRadius: 2, zIndex: 0,
+  },
+  likertBtn: { alignItems: 'center', gap: 4 },
+  likertCircle: {
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: COLORS.surface,
+    borderWidth: 2, borderColor: 'rgba(15,18,33,0.12)',
     justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
   },
-  optionNumText: { fontSize: FS.md, fontWeight: '900', color: COLORS.textMuted, fontFamily: FONT.black },
-  optionLabel: { fontSize: FS.md, fontWeight: '700', color: COLORS.textSecondary, textAlign: 'right', fontFamily: FONT.bold },
-  optionSub:   { fontSize: FS.xs, color: COLORS.textMuted, textAlign: 'right', marginTop: 2, fontFamily: FONT.regular },
+  likertNum: { fontSize: FS.lg, fontWeight: '900', color: COLORS.textMuted, fontFamily: FONT.black },
+  likertDot: { width: 6, height: 6, borderRadius: 3 },
+
+  likertValueRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', paddingHorizontal: 2 },
+  likertValueLabel: { fontSize: 9.5, color: COLORS.textMuted, fontFamily: FONT.regular, textAlign: 'center', width: 56, lineHeight: 13 },
 })
 
 // ─── Result Screen ────────────────────────────────────────────
@@ -410,7 +387,6 @@ function ResultScreen({ profile, onRetake }: { profile: CareerProfile; onRetake:
   return (
     <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
       <ScrollView contentContainerStyle={RS.content} showsVerticalScrollIndicator={false}>
-        {/* Hero card */}
         <View style={RS.hero}>
           <LinearGradient colors={profile.gradient} style={RS.heroBg} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
           <View style={RS.heroIcon}>
@@ -421,39 +397,26 @@ function ResultScreen({ profile, onRetake }: { profile: CareerProfile; onRetake:
           <Text style={RS.profileSub}>{profile.subtitle}</Text>
         </View>
 
-        {/* Traits */}
         <ResultBlock title="سماتك الشخصية" icon="person-circle-outline" color={COLORS.primary}>
-          {profile.traits.map((t, i) => (
-            <TraitRow key={i} text={t} accent={COLORS.primary} />
-          ))}
+          {profile.traits.map((t, i) => <TraitRow key={i} text={t} accent={COLORS.primary} />)}
         </ResultBlock>
 
-        {/* Strengths */}
         <ResultBlock title="نقاط قوتك" icon="flash-outline" color={COLORS.teal}>
-          {profile.strengths.map((s, i) => (
-            <TraitRow key={i} text={s} accent={COLORS.teal} />
-          ))}
+          {profile.strengths.map((s, i) => <TraitRow key={i} text={s} accent={COLORS.teal} />)}
         </ResultBlock>
 
-        {/* Careers */}
         <ResultBlock title="المسارات المهنية الموصى بها" icon="briefcase-outline" color="#F59E0B">
           <View style={RS.careerGrid}>
             {profile.careers.map((c, i) => (
-              <View key={i} style={RS.careerChip}>
-                <Text style={RS.careerChipText}>{c}</Text>
-              </View>
+              <View key={i} style={RS.careerChip}><Text style={RS.careerChipText}>{c}</Text></View>
             ))}
           </View>
         </ResultBlock>
 
-        {/* Development areas */}
         <ResultBlock title="مجالات التطوير" icon="trending-up-outline" color="#EC4899">
-          {profile.developmentAreas.map((d, i) => (
-            <TraitRow key={i} text={d} accent="#EC4899" />
-          ))}
+          {profile.developmentAreas.map((d, i) => <TraitRow key={i} text={d} accent="#EC4899" />)}
         </ResultBlock>
 
-        {/* Retake */}
         <TouchableOpacity style={RS.retakeBtn} onPress={onRetake}>
           <View style={RS.retakeInner}>
             <Ionicons name="refresh" size={17} color={COLORS.textMuted} />
@@ -467,22 +430,20 @@ function ResultScreen({ profile, onRetake }: { profile: CareerProfile; onRetake:
 
 function TraitRow({ text, accent }: { text: string; accent: string }) {
   return (
-    <View style={TR2.row}>
-      <View style={[TR2.dot, { backgroundColor: accent }]} />
-      <Text style={TR2.text}>{text}</Text>
+    <View style={TR.row}>
+      <View style={[TR.dot, { backgroundColor: accent }]} />
+      <Text style={TR.text}>{text}</Text>
     </View>
   )
 }
 
-const TR2 = StyleSheet.create({
+const TR = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 10, justifyContent: 'flex-end' },
   dot: { width: 7, height: 7, borderRadius: 4, marginTop: 7 },
   text: { fontSize: FS.md, color: COLORS.textSecondary, flex: 1, textAlign: 'right', lineHeight: 22, fontFamily: FONT.regular },
 })
 
-function ResultBlock({ title, icon, color, children }: {
-  title: string; icon: string; color: string; children: React.ReactNode
-}) {
+function ResultBlock({ title, icon, color, children }: { title: string; icon: string; color: string; children: React.ReactNode }) {
   return (
     <View style={[RB.wrap, { borderColor: color + '28', backgroundColor: color + '08' }]}>
       <View style={RB.header}>
@@ -502,36 +463,17 @@ const RB = StyleSheet.create({
 
 const RS = StyleSheet.create({
   content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 60 },
-  hero: {
-    borderRadius: RADIUS.xxl, overflow: 'hidden', alignItems: 'center',
-    paddingVertical: 44, marginBottom: 24,
-  },
+  hero: { borderRadius: RADIUS.xxl, overflow: 'hidden', alignItems: 'center', paddingVertical: 44, marginBottom: 24 },
   heroBg: { ...StyleSheet.absoluteFillObject },
-  heroIcon: {
-    width: 88, height: 88, borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    justifyContent: 'center', alignItems: 'center', marginBottom: 20,
-  },
+  heroIcon: { width: 88, height: 88, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.18)', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
   profileType: { fontSize: FS.sm, color: 'rgba(255,255,255,0.7)', fontWeight: '800', letterSpacing: 2, marginBottom: 8, fontFamily: FONT.extrabold },
   profileTitle: { fontSize: FS.h2, fontWeight: '900', color: '#fff', marginBottom: 6, fontFamily: FONT.black },
   profileSub: { fontSize: FS.md, color: 'rgba(255,255,255,0.72)', fontWeight: '600', fontFamily: FONT.semibold },
-
   careerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'flex-end' },
-  careerChip: {
-    borderRadius: RADIUS.full, backgroundColor: 'rgba(245,158,11,0.12)',
-    borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)',
-    paddingHorizontal: 14, paddingVertical: 7,
-  },
+  careerChip: { borderRadius: RADIUS.full, backgroundColor: 'rgba(245,158,11,0.12)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)', paddingHorizontal: 14, paddingVertical: 7 },
   careerChipText: { fontSize: FS.sm, color: '#F59E0B', fontWeight: '700', fontFamily: FONT.bold },
-
-  retakeBtn: {
-    borderWidth: 1, borderColor: 'rgba(15,18,33,0.12)', borderRadius: RADIUS.xl,
-    overflow: 'hidden', marginTop: 8,
-  },
-  retakeInner: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 10, paddingVertical: 16,
-  },
+  retakeBtn: { borderWidth: 1, borderColor: 'rgba(15,18,33,0.12)', borderRadius: RADIUS.xl, overflow: 'hidden', marginTop: 8 },
+  retakeInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 16 },
   retakeText: { fontSize: FS.md, color: COLORS.textMuted, fontWeight: '700', fontFamily: FONT.bold },
 })
 
@@ -544,44 +486,71 @@ export default function SelfAssessmentScreen() {
   const router = useRouter()
   const { trackActivity } = useActivity()
 
-  const [phase, setPhase]     = useState<Phase>('intro')
-  const [qIndex, setQIndex]   = useState(0)
-  const [answers, setAnswers] = useState<Record<string, number>>({})
-  const [profile, setProfile] = useState<CareerProfile | null>(null)
+  const [questions, setQuestions] = useState<AssessmentQuestion[]>(FALLBACK_QUESTIONS)
+  const [phase, setPhase]         = useState<Phase>('intro')
+  const [qIndex, setQIndex]       = useState(0)
+  const [answers, setAnswers]     = useState<Record<string, number>>({})
+  const [profile, setProfile]     = useState<CareerProfile | null>(null)
+  const autoAdvanceTimer          = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Fetch questions from API, fall back to hardcoded on error
+  useEffect(() => {
+    api.get('/self-assessment/questions')
+      .then((r) => {
+        const fetched = r.data?.data
+        if (Array.isArray(fetched) && fetched.length > 0) {
+          setQuestions(fetched.map((q: any) => ({
+            id: q.id,
+            text: q.textAr,
+            category: q.category as RiasecType,
+            dimension: q.dimensionLabel,
+          })))
+        }
+      })
+      .catch(() => { /* use fallback */ })
+  }, [])
 
   useEffect(() => {
     trackActivity('START_ASSESSMENT')
+    return () => {
+      if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current)
+    }
   }, [])
 
-  const btnScale = useRef(new Animated.Value(1)).current
+  const finishQuiz = (finalAnswers: Record<string, number>) => {
+    const topType = computeTopProfile(finalAnswers, questions)
+    setProfile(PROFILES[topType])
+    setPhase('result')
+    trackActivity('COMPLETE_ASSESSMENT', { riasecType: topType })
 
-  const handleSelect = (value: number) => {
-    setAnswers((prev) => ({ ...prev, [QUESTIONS[qIndex].id]: value }))
+    // Submit to backend (fire and forget)
+    const scores: Record<string, number> = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }
+    questions.forEach((q) => { scores[q.category] = (scores[q.category] || 0) + (finalAnswers[q.id] || 0) })
+    api.post('/self-assessment/results', { topType, scores }).catch(() => {})
   }
 
-  const canProceed = answers[QUESTIONS[qIndex]?.id] !== undefined
+  const handleSelect = (value: number) => {
+    const newAnswers = { ...answers, [questions[qIndex].id]: value }
+    setAnswers(newAnswers)
 
-  const goNext = () => {
-    if (!canProceed) return
-    if (qIndex < QUESTIONS.length - 1) {
-      setQIndex((i) => i + 1)
-    } else {
-      const topType = computeTopProfile(answers)
-      setProfile(PROFILES[topType])
-      setPhase('result')
-      trackActivity('COMPLETE_ASSESSMENT', { riasecType: topType })
-    }
+    // Auto-advance after 400ms
+    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current)
+    autoAdvanceTimer.current = setTimeout(() => {
+      if (qIndex < questions.length - 1) {
+        setQIndex((i) => i + 1)
+      } else {
+        finishQuiz(newAnswers)
+      }
+    }, 400)
   }
 
   const goPrev = () => {
+    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current)
     if (qIndex > 0) setQIndex((i) => i - 1)
     else setPhase('intro')
   }
 
   const retake = () => { setPhase('intro'); setQIndex(0); setAnswers({}); setProfile(null) }
-
-  const pressBtn  = () => Animated.spring(btnScale, { toValue: 0.95, useNativeDriver: true, speed: 80 }).start()
-  const releaseBtn = () => Animated.spring(btnScale, { toValue: 1, useNativeDriver: true, speed: 50 }).start()
 
   return (
     <View style={[SC.root, { paddingTop: insets.top }]}>
@@ -593,53 +562,35 @@ export default function SelfAssessmentScreen() {
         <Text style={SC.headerTitle}>
           {phase === 'intro' ? 'اختبار الشخصية المهنية' : phase === 'quiz' ? 'التقييم' : 'نتيجتك'}
         </Text>
-        {phase === 'quiz' && (
-          <TouchableOpacity style={SC.skipBtn} onPress={goNext} activeOpacity={0.7}>
-            <Text style={SC.skipBtnText}>تخطّ</Text>
-          </TouchableOpacity>
-        )}
-        {phase !== 'quiz' && <View style={{ width: 42 }} />}
+        <View style={{ width: 42 }} />
       </View>
 
       {/* Content */}
-      {phase === 'intro' && <IntroScreen onStart={() => setPhase('quiz')} />}
+      {phase === 'intro' && (
+        <IntroScreen questionCount={questions.length} onStart={() => setPhase('quiz')} />
+      )}
 
       {phase === 'quiz' && (
         <>
           <QuestionScreen
-            question={QUESTIONS[qIndex]}
+            question={questions[qIndex]}
             qIndex={qIndex}
-            total={QUESTIONS.length}
-            selected={answers[QUESTIONS[qIndex]?.id]}
+            total={questions.length}
+            selected={answers[questions[qIndex]?.id]}
             onSelect={handleSelect}
           />
-          {/* Footer nav */}
+          {/* Footer: prev only */}
           <View style={[SC.footer, { paddingBottom: insets.bottom + 14 }]}>
             <TouchableOpacity style={SC.prevBtn} onPress={goPrev}>
               <Ionicons name="arrow-forward" size={18} color={COLORS.textMuted} />
+              <Text style={SC.prevBtnText}>السابق</Text>
             </TouchableOpacity>
 
-            <Animated.View style={[SC.nextBtnWrap, { transform: [{ scale: btnScale }] }]}>
-              <TouchableOpacity
-                style={[SC.nextBtn, !canProceed && SC.nextBtnDisabled]}
-                onPress={goNext}
-                onPressIn={pressBtn}
-                onPressOut={releaseBtn}
-                disabled={!canProceed}
-                activeOpacity={1}
-              >
-                <LinearGradient
-                  colors={canProceed ? [COLORS.primary, COLORS.secondary] : ['rgba(15,18,33,0.08)', 'rgba(15,18,33,0.04)']}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={SC.nextBtnGrad}
-                >
-                  <Text style={[SC.nextBtnText, !canProceed && { color: COLORS.textMuted }]}>
-                    {qIndex === QUESTIONS.length - 1 ? 'عرض النتيجة' : 'التالي'}
-                  </Text>
-                  <Ionicons name={qIndex === QUESTIONS.length - 1 ? 'checkmark-circle' : 'chevron-forward'} size={18} color={canProceed ? '#fff' : COLORS.textMuted} />
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
+            <Text style={SC.footerHint}>
+              {answers[questions[qIndex]?.id] !== undefined
+                ? 'جيد! سينتقل تلقائياً...'
+                : 'اختر إجابتك للمتابعة'}
+            </Text>
           </View>
         </>
       )}
@@ -651,7 +602,6 @@ export default function SelfAssessmentScreen() {
 
 const SC = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.canvas },
-
   header: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 24, paddingVertical: 18, gap: 14,
@@ -659,37 +609,18 @@ const SC = StyleSheet.create({
   },
   backBtn: {
     width: 42, height: 42, borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1, borderColor: COLORS.surfaceBorder,
+    backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder,
     justifyContent: 'center', alignItems: 'center',
   },
   headerTitle: { flex: 1, fontSize: FS.xl, fontWeight: '800', color: COLORS.text, textAlign: 'right', fontFamily: FONT.extrabold },
-  skipBtn: {
-    paddingHorizontal: 14, paddingVertical: 7,
-    borderRadius: RADIUS.full,
-    borderWidth: 1, borderColor: 'rgba(47,108,255,0.30)',
-    backgroundColor: 'rgba(47,108,255,0.08)',
-  },
-  skipBtnText: { fontSize: FS.sm, color: COLORS.primary, fontWeight: '600', fontFamily: FONT.semibold },
 
   footer: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 18,
+    paddingHorizontal: 24, paddingTop: 16,
     backgroundColor: COLORS.canvasAlt,
     borderTopWidth: 1, borderTopColor: 'rgba(15,18,33,0.07)',
   },
-  prevBtn: {
-    width: 50, height: 50, borderRadius: RADIUS.xl,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1, borderColor: COLORS.surfaceBorder,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  nextBtnWrap: { flex: 1, marginLeft: 16 },
-  nextBtn: { borderRadius: RADIUS.full, overflow: 'hidden' },
-  nextBtnDisabled: {},
-  nextBtnGrad: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 10, paddingVertical: 17, borderRadius: RADIUS.full,
-  },
-  nextBtnText: { fontSize: FS.lg, color: '#fff', fontWeight: '800', fontFamily: FONT.extrabold },
+  prevBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  prevBtnText: { fontSize: FS.sm, color: COLORS.textMuted, fontFamily: FONT.semibold },
+  footerHint: { fontSize: FS.xs, color: COLORS.textMuted, fontFamily: FONT.regular, textAlign: 'left', flex: 1, textAlignVertical: 'center', marginLeft: 8 },
 })

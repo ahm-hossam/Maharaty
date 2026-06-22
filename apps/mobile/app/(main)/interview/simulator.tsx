@@ -541,10 +541,10 @@ function HintDrawer({ visible, onClose, hint }: { visible: boolean; onClose: () 
           <View style={HD.handle} />
 
           {/* Header */}
-          <View style={HD.headerRow}>
+          {/* <View style={HD.headerRow}>
             <Ionicons name={'sparkles' as any} size={20} color="#F59E0B" />
             <Text style={HD.headerText}>تلميح AI</Text>
-          </View>
+          </View> */}
 
           {/* Hint content */}
           <View style={HD.hintBox}>
@@ -719,10 +719,10 @@ export default function InterviewSimulatorScreen() {
         </View>
 
         {/* Far RIGHT: AI Hint button */}
-        <TouchableOpacity style={S.hintBtn} onPress={() => setHintOpen(true)}>
+        {/* <TouchableOpacity style={S.hintBtn} onPress={() => setHintOpen(true)}>
           <Ionicons name={'bulb-outline' as any} size={14} color={COLORS.primary} />
           <Text style={S.hintBtnText}>تلميح AI</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       {/* ── Progress strip ── */}
