@@ -244,8 +244,8 @@ export default function UsersPage() {
         subtitle={isLoading ? 'جارٍ التحميل...' : `${total} مستخدم مسجل`}
       />
 
-      {/* Controls — flex-row-reverse so add button is on LEFT in RTL */}
-      <div className="flex items-center gap-4 mb-6 flex-row-reverse">
+      {/* Controls —  so add button is on LEFT in RTL */}
+      <div className="flex items-center gap-4 mb-6 ">
         {/* Add User */}
         <button
           onClick={() => setShowAdd(true)}
@@ -322,7 +322,7 @@ export default function UsersPage() {
                     <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
                       {/* المستخدم — rightmost */}
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-3 flex-row-reverse">
+                        <div className="flex items-center gap-3 ">
                           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0" style={{ backgroundColor: color }}>
                             {initials}
                           </div>
@@ -334,11 +334,11 @@ export default function UsersPage() {
                         {new Date(user.createdAt).toLocaleDateString('ar-EG')}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 justify-end">
+                        <div className="flex items-center gap-2 justify-start">
+                          <span className="text-sm font-semibold text-slate-600">{pathSteps}</span>
                           <div className="w-20 bg-slate-100 rounded-full h-1.5">
                             <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${Math.min(pathSteps * 10, 100)}%` }} />
                           </div>
-                          <span className="text-sm font-semibold text-slate-600">{pathSteps}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">

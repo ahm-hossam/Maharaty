@@ -85,7 +85,7 @@ export function Sidebar() {
     <aside className="fixed right-0 top-0 bottom-0 w-64 bg-slate-900 flex flex-col z-50">
       {/* Logo */}
       <div className="p-6 border-b border-slate-700/50">
-        <div className="flex items-center gap-3 flex-row-reverse">
+        <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center flex-shrink-0">
             <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -106,7 +106,7 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all flex-row-reverse group ${
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${
                 active
                   ? 'bg-gradient-to-l from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25'
                   : 'text-slate-400 hover:bg-slate-800 hover:text-white'
@@ -131,7 +131,7 @@ export function Sidebar() {
 
       {/* User Profile */}
       <div className="p-4 border-t border-slate-700/50">
-        <div className="flex items-center gap-3 flex-row-reverse mb-3">
+        <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
             {initials}
           </div>
