@@ -60,9 +60,10 @@ model User {
   activities        Activity[]
   pushTokens        PushToken[]
   contentProgress   ContentProgress[]
-  posts             Post[]
-  comments          Comment[]
-  reactions         Reaction[]
+  posts                  Post[]
+  comments               Comment[]
+  reactions              Reaction[]
+  selfAssessmentResults  SelfAssessmentResult[]
 }
 
 model RefreshToken {
@@ -242,6 +243,26 @@ model PushToken {
   userId    String
   token     String   @unique
   platform  String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SelfAssessmentQuestion {
+  id             String   @id @default(cuid())
+  textAr         String
+  category       String
+  dimensionLabel String
+  orderIndex     Int      @default(0)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model SelfAssessmentResult {
+  id        String   @id @default(cuid())
+  userId    String
+  topType   String
+  scores    Json
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

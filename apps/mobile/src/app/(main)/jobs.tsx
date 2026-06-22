@@ -76,7 +76,7 @@ export default function JobsScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Premium portals entry */}
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.portalsEntryCard}
           activeOpacity={0.88}
           onPress={() => router.push('/(main)/jobs/portals' as any)}
@@ -90,7 +90,7 @@ export default function JobsScreen() {
               <Ionicons name="arrow-back" size={20} color="#fff" />
             </View>
           </LinearGradient>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <Text style={styles.sectionTitle}>مصادر الوظائف</Text>
 
@@ -130,7 +130,7 @@ export default function JobsScreen() {
         ))}
 
         {/* Tips Card */}
-        <View style={styles.tipsCard}>
+        {/* <View style={styles.tipsCard}>
           <View style={styles.tipsHeader}>
             <Ionicons name="bulb" size={20} color={COLORS.primary} />
             <Text style={styles.tipsTitle}>نصيحة للباحثين عن عمل</Text>
@@ -138,7 +138,7 @@ export default function JobsScreen() {
           <Text style={styles.tipsText}>
             قبل التقديم، تأكد من تحديث سيرتك الذاتية واستخدام كلمات مفتاحية مرتبطة بالوظيفة المطلوبة لزيادة فرص القبول.
           </Text>
-        </View>
+        </View> */}
       </ScrollView>
     </View>
   )

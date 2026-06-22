@@ -920,8 +920,8 @@ export default function CvBuilderScreen() {
           onPress={goPrev}
           disabled={currentStep === 0}
         >
-          <Ionicons name="arrow-forward" size={18} color={COLORS.primary} />
           <Text style={S.navBtnText}>السابق</Text>
+          <Ionicons name="arrow-forward" size={18} color={COLORS.primary} />
         </TouchableOpacity>
 
         <Text style={S.stepCounter}>{currentStep + 1} / {STEPS.length}</Text>
@@ -1162,7 +1162,7 @@ const S = StyleSheet.create({
 
   // Footer
   footer: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 24, paddingTop: 18,
     backgroundColor: COLORS.canvasAlt,
     borderTopWidth: 1, borderTopColor: 'rgba(15,18,33,0.07)',

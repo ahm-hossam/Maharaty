@@ -404,6 +404,67 @@ export function useAddComment() {
   })
 }
 
+// ─── Self Assessment ──────────────────────────────────────────────────────────
+
+export interface SAQuestion {
+  id: string
+  textAr: string
+  category: string
+  dimensionLabel: string
+  orderIndex: number
+  isActive: boolean
+  createdAt: string
+}
+
+export function useSAQuestions() {
+  return useQuery<SAQuestion[]>({
+    queryKey: ['self-assessment', 'questions'],
+    queryFn: () =>
+      api.get('/self-assessment/questions/admin').then((r) => r.data.data),
+  })
+}
+
+export function useSAStats() {
+  return useQuery<{ total: number; active: number; results: number }>({
+    queryKey: ['self-assessment', 'stats'],
+    queryFn: () => api.get('/self-assessment/stats').then((r) => r.data.data),
+  })
+}
+
+export function useCreateSAQuestion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { textAr: string; category: string; dimensionLabel: string; orderIndex?: number; isActive?: boolean }) =>
+      api.post('/self-assessment/questions', data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['self-assessment'] }),
+  })
+}
+
+export function useUpdateSAQuestion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string; textAr?: string; category?: string; dimensionLabel?: string; orderIndex?: number; isActive?: boolean }) =>
+      api.patch(`/self-assessment/questions/${id}`, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['self-assessment'] }),
+  })
+}
+
+export function useDeleteSAQuestion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/self-assessment/questions/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['self-assessment'] }),
+  })
+}
+
+export function useSeedSAQuestions() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.post('/self-assessment/seed'),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['self-assessment'] }),
+  })
+}
+
 export function useToggleReaction() {
   const qc = useQueryClient()
   return useMutation({
