@@ -83,18 +83,49 @@ export class UsersService {
         updatedAt: true,
         activities: {
           orderBy: { createdAt: 'desc' },
-          take: 20,
-          select: { id: true, type: true, meta: true, createdAt: true },
+          take: 100,
+          select: {
+            id: true,
+            type: true,
+            meta: true,
+            contentId: true,
+            createdAt: true,
+            content: {
+              select: { id: true, titleAr: true, type: true, thumbnail: true },
+            },
+          },
         },
         contentProgress: {
+          orderBy: { lastSeenAt: 'desc' },
           select: {
             progress: true,
             completedAt: true,
             lastSeenAt: true,
-            content: { select: { id: true, title: true, titleAr: true, type: true } },
+            content: {
+              select: { id: true, titleAr: true, type: true, thumbnail: true, category: true },
+            },
           },
         },
-        _count: { select: { activities: true, contentProgress: true, assessmentResults: true } },
+        assessmentResults: {
+          orderBy: { completedAt: 'desc' },
+          select: {
+            id: true,
+            score: true,
+            passed: true,
+            completedAt: true,
+            assessment: { select: { id: true, title: true, titleAr: true } },
+          },
+        },
+        userSkills: {
+          select: {
+            level: true,
+            progress: true,
+            skill: { select: { id: true, nameAr: true, name: true, icon: true } },
+          },
+        },
+        _count: {
+          select: { activities: true, contentProgress: true, assessmentResults: true },
+        },
       },
     })
 

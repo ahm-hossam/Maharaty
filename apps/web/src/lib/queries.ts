@@ -21,6 +21,53 @@ export interface Activity {
   user?: User
 }
 
+export interface UserActivity {
+  id: string
+  type: string
+  meta?: Record<string, unknown>
+  contentId?: string
+  createdAt: string
+  content?: { id: string; titleAr: string; type: string; thumbnail?: string }
+}
+
+export interface UserContentProgress {
+  progress: number
+  completedAt?: string
+  lastSeenAt?: string
+  content: { id: string; titleAr: string; type: string; thumbnail?: string; category?: string }
+}
+
+export interface UserAssessmentResult {
+  id: string
+  score: number
+  passed: boolean
+  completedAt: string
+  assessment: { id: string; title: string; titleAr: string }
+}
+
+export interface UserSkillItem {
+  level: string
+  progress: number
+  skill: { id: string; nameAr: string; name: string; icon?: string }
+}
+
+export interface UserDetail {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  avatar?: string
+  role: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  activities: UserActivity[]
+  contentProgress: UserContentProgress[]
+  assessmentResults: UserAssessmentResult[]
+  userSkills: UserSkillItem[]
+  _count: { activities: number; contentProgress: number; assessmentResults: number }
+}
+
 export interface Content {
   id: string
   type: 'COURSE' | 'VIDEO' | 'ARTICLE'
@@ -91,7 +138,7 @@ export function useUsers(params: {
 }
 
 export function useUser(id: string) {
-  return useQuery<User>({
+  return useQuery<UserDetail>({
     queryKey: ['user', id],
     queryFn: () => api.get(`/users/${id}`).then((r) => r.data.data),
     enabled: !!id,
