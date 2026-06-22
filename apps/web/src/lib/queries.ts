@@ -310,3 +310,106 @@ export function useSendNotification() {
     }) => api.post('/notifications/send', data),
   })
 }
+
+// ─── Community ────────────────────────────────────────────────────────────────
+
+export interface PostAuthor {
+  id: string
+  name: string
+  avatar?: string
+  role: string
+}
+
+export interface CommunityPost {
+  id: string
+  content: string
+  image?: string
+  isAdminPost: boolean
+  isPinned: boolean
+  createdAt: string
+  author: PostAuthor
+  _count: { comments: number; reactions: number }
+  hasReacted: boolean
+}
+
+export interface CommunityComment {
+  id: string
+  content: string
+  createdAt: string
+  author: PostAuthor
+}
+
+export interface PostsResponse {
+  posts: CommunityPost[]
+  total: number
+  page: number
+  totalPages: number
+}
+
+export function useCommunityPosts(page = 1) {
+  return useQuery<PostsResponse>({
+    queryKey: ['community', 'posts', page],
+    queryFn: () =>
+      api.get('/community/posts', { params: { page, limit: 20 } }).then((r) => r.data.data),
+    placeholderData: (prev) => prev,
+  })
+}
+
+export function usePostComments(postId: string | null) {
+  return useQuery({
+    queryKey: ['community', 'comments', postId],
+    queryFn: () =>
+      api.get(`/community/posts/${postId}/comments`).then((r) => r.data.data),
+    enabled: !!postId,
+  })
+}
+
+export function useCommunityStats() {
+  return useQuery<{ total: number; adminPosts: number }>({
+    queryKey: ['community', 'stats'],
+    queryFn: () => api.get('/community/stats').then((r) => r.data.data),
+  })
+}
+
+export function useCreatePost() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { content: string; image?: string; isAdminPost?: boolean }) =>
+      api.post('/community/posts', data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['community'] })
+    },
+  })
+}
+
+export function useDeletePost() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/community/posts/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['community'] })
+    },
+  })
+}
+
+export function useAddComment() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ postId, content }: { postId: string; content: string }) =>
+      api.post(`/community/posts/${postId}/comments`, { content }),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ['community', 'comments', variables.postId] })
+      qc.invalidateQueries({ queryKey: ['community', 'posts'] })
+    },
+  })
+}
+
+export function useToggleReaction() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (postId: string) => api.post(`/community/posts/${postId}/reactions`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['community', 'posts'] })
+    },
+  })
+}

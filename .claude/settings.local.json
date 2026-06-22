@@ -6,7 +6,17 @@
       "Bash(awk 'NR==170' src/app/\\\\\\(main\\\\\\)/jobs.tsx)",
       "Bash(awk 'NR>=165 && NR<=175' src/app/\\\\\\(main\\\\\\)/jobs.tsx)",
       "Bash(awk 'NR>=168 && NR<=172')",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(npx prisma *)",
+      "Bash(npx next *)",
+      "Bash(npx next start -p 3000 &> /tmp/next-web.log & *)",
+      "Bash(curl -s http://localhost:3001/v1/community/stats -H \"Authorization: Bearer test\")",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl -s http://localhost:3001/v1/community/stats)",
+      "Bash(npm run *)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
     ]
   }
 }

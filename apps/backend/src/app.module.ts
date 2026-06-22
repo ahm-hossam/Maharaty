@@ -13,6 +13,7 @@ import { ContentModule } from './modules/content/content.module'
 import { ActivitiesModule } from './modules/activities/activities.module'
 import { UploadModule } from './modules/upload/upload.module'
 import { BannerModule } from './modules/banner/banner.module'
+import { CommunityModule } from './modules/community/community.module'
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { BannerModule } from './modules/banner/banner.module'
     ActivitiesModule,
     UploadModule,
     BannerModule,
+    CommunityModule,
   ],
 })
 export class AppModule {}
