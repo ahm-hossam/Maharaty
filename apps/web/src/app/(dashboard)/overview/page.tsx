@@ -22,8 +22,10 @@ function SkeletonCard() {
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 animate-pulse">
       <div className="flex items-start justify-between mb-4">
-        <div className="w-12 h-12 bg-slate-200 rounded-xl" />
+        {/* badge LEFT in RTL (second in DOM) */}
         <div className="w-12 h-5 bg-slate-200 rounded-full" />
+        {/* icon RIGHT in RTL (first in DOM) */}
+        <div className="w-12 h-12 bg-slate-200 rounded-xl" />
       </div>
       <div className="w-24 h-8 bg-slate-200 rounded mb-2" />
       <div className="w-32 h-4 bg-slate-200 rounded" />
@@ -34,16 +36,22 @@ function SkeletonCard() {
 function SkeletonRow() {
   return (
     <tr className="animate-pulse">
-      <td className="px-6 py-4"><div className="w-16 h-5 bg-slate-200 rounded-full" /></td>
-      <td className="px-6 py-4"><div className="w-20 h-3 bg-slate-200 rounded-full" /></td>
-      <td className="px-6 py-4"><div className="w-24 h-4 bg-slate-200 rounded" /></td>
-      <td className="px-6 py-4"><div className="w-32 h-4 bg-slate-200 rounded" /></td>
+      {/* Reversed column order for RTL: user | email | date | activities | status */}
       <td className="px-6 py-4">
         <div className="flex items-center gap-3 flex-row-reverse">
           <div className="w-9 h-9 bg-slate-200 rounded-xl" />
           <div className="w-24 h-4 bg-slate-200 rounded" />
         </div>
       </td>
+      <td className="px-6 py-4"><div className="w-32 h-4 bg-slate-200 rounded" /></td>
+      <td className="px-6 py-4"><div className="w-20 h-3 bg-slate-200 rounded-full" /></td>
+      <td className="px-6 py-4">
+        <div className="flex items-center justify-end gap-1.5">
+          <div className="w-24 bg-slate-100 rounded-full h-1.5" />
+          <div className="w-6 h-3 bg-slate-200 rounded" />
+        </div>
+      </td>
+      <td className="px-6 py-4"><div className="w-16 h-5 bg-slate-200 rounded-full" /></td>
     </tr>
   )
 }
@@ -123,7 +131,9 @@ export default function OverviewPage() {
         title="نظرة عامة"
         subtitle="مرحباً بك في لوحة التحكم"
       />
-      <div className="flex justify-start mb-6 -mt-4">
+
+      {/* Refresh — justify-end = LEFT in RTL */}
+      <div className="flex justify-end mb-6 -mt-4">
         <button
           onClick={() => qc.invalidateQueries({ queryKey: ['analytics'] })}
           className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:border-indigo-400 hover:text-indigo-600 transition-all shadow-sm"
@@ -131,7 +141,7 @@ export default function OverviewPage() {
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          التحديث
+          تحديث
         </button>
       </div>
 
@@ -153,16 +163,17 @@ export default function OverviewPage() {
                 key={i}
                 className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
               >
+                {/* Icon RIGHT (first in DOM in RTL), badge LEFT (second) */}
                 <div className="flex items-start justify-between mb-4">
-                  <div className={`${stat.lightBg} ${stat.textColor} p-3 rounded-xl`}>
-                    {stat.icon}
-                  </div>
                   <span className="text-xs font-semibold px-2 py-1 rounded-full bg-emerald-50 text-emerald-600">
                     {stat.sub}
                   </span>
+                  <div className={`${stat.lightBg} ${stat.textColor} p-3 rounded-xl`}>
+                    {stat.icon}
+                  </div>
                 </div>
-                <p className="text-3xl font-bold text-slate-800 mb-1">{stat.value}</p>
-                <p className="text-sm text-slate-500">{stat.label}</p>
+                <p className="text-3xl font-bold text-slate-800 mb-1 text-right">{stat.value}</p>
+                <p className="text-sm text-slate-500 text-right">{stat.label}</p>
               </div>
             ))}
       </div>
@@ -171,11 +182,12 @@ export default function OverviewPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
         {/* Area Chart — user growth */}
         <div className="xl:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+          {/* Title RIGHT (first), badge LEFT (second) */}
           <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-slate-800">نمو المستخدمين</h3>
             <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
               آخر 30 يوماً
             </span>
-            <h3 className="text-lg font-bold text-slate-800">نمو المستخدمين</h3>
           </div>
           {isLoading ? (
             <div className="h-[220px] bg-slate-100 rounded-xl animate-pulse" />
@@ -277,34 +289,26 @@ export default function OverviewPage() {
 
       {/* Recent Users Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        {/* Title RIGHT (first in DOM), link LEFT (second) */}
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
+          <h3 className="text-lg font-bold text-slate-800">أحدث المستخدمين</h3>
           <a
             href="/users"
             className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
           >
-            عرض الكل ←
+            → عرض الكل
           </a>
-          <h3 className="text-lg font-bold text-slate-800">أحدث المستخدمين</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50">
-                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">
-                  الحالة
-                </th>
-                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">
-                  الأنشطة
-                </th>
-                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">
-                  تاريخ الانضمام
-                </th>
-                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">
-                  البريد الإلكتروني
-                </th>
-                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">
-                  المستخدم
-                </th>
+                {/* RTL column order: rightmost first in DOM */}
+                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">المستخدم</th>
+                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">البريد الإلكتروني</th>
+                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">تاريخ الانضمام</th>
+                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">الأنشطة</th>
+                <th className="text-right text-xs font-semibold text-slate-500 px-6 py-3">الحالة</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -317,17 +321,39 @@ export default function OverviewPage() {
                       .map((w) => w[0])
                       .join('')
                       .toUpperCase()
-                    const color =
-                      CHART_COLORS[i % CHART_COLORS.length]
+                    const color = CHART_COLORS[i % CHART_COLORS.length]
                     const activityCount =
-                      user.activities?.filter(
-                        (a) => a.type === 'PATH_STEP_COMPLETE'
-                      ).length ?? 0
+                      user.activities?.filter((a) => a.type === 'PATH_STEP_COMPLETE').length ?? 0
                     return (
-                      <tr
-                        key={user.id}
-                        className="hover:bg-slate-50/50 transition-colors"
-                      >
+                      <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
+                        {/* المستخدم — rightmost */}
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3 flex-row-reverse">
+                            <div
+                              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
+                              style={{ backgroundColor: color }}
+                            >
+                              {initials}
+                            </div>
+                            <span className="font-semibold text-slate-800 text-sm">{user.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-500 text-right">{user.email}</td>
+                        <td className="px-6 py-4 text-sm text-slate-500 text-right">
+                          {new Date(user.createdAt).toLocaleDateString('ar-EG')}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <div className="w-24 bg-slate-100 rounded-full h-1.5">
+                              <div
+                                className="bg-indigo-500 h-1.5 rounded-full"
+                                style={{ width: `${Math.min(activityCount * 10, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-sm text-slate-500 font-medium">{activityCount}</span>
+                          </div>
+                        </td>
+                        {/* الحالة — leftmost */}
                         <td className="px-6 py-4">
                           <span
                             className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
@@ -341,40 +367,6 @@ export default function OverviewPage() {
                             )}
                             {user.isActive ? 'نشط' : 'غير نشط'}
                           </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <div className="w-24 bg-slate-100 rounded-full h-1.5">
-                              <div
-                                className="bg-indigo-500 h-1.5 rounded-full"
-                                style={{
-                                  width: `${Math.min(activityCount * 10, 100)}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="text-sm text-slate-500 font-medium">
-                              {activityCount}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-500 text-right">
-                          {new Date(user.createdAt).toLocaleDateString('ar-EG')}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-500 text-right">
-                          {user.email}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3 flex-row-reverse">
-                            <div
-                              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
-                              style={{ backgroundColor: color }}
-                            >
-                              {initials}
-                            </div>
-                            <span className="font-semibold text-slate-800 text-sm">
-                              {user.name}
-                            </span>
-                          </div>
                         </td>
                       </tr>
                     )

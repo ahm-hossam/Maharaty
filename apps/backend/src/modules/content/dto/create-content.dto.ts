@@ -55,4 +55,8 @@ export class CreateContentDto {
   @IsBoolean()
   @IsOptional()
   isPublished?: boolean
+
+  @ApiPropertyOptional({ description: 'Type-specific structured data (videos, lectures, article body)' })
+  @IsOptional()
+  meta?: Record<string, unknown>
 }

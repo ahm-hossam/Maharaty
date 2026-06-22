@@ -4,6 +4,7 @@ import { ValidationPipe, VersioningType } from '@nestjs/common'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { ConfigService } from '@nestjs/config'
 import { AppModule } from './app.module'
+import * as path from 'path'
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -12,6 +13,16 @@ async function bootstrap() {
   )
 
   const configService = app.get(ConfigService)
+
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  await app.register(require('@fastify/multipart'), { limits: { fileSize: 10 * 1024 * 1024 } })
+
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  await app.register(require('@fastify/static'), {
+    root: path.join(process.cwd(), 'public'),
+    prefix: '/',
+    decorateReply: false,
+  })
 
   // Register @fastify/helmet if available
   try {

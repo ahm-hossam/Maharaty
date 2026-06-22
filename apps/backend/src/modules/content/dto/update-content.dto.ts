@@ -55,4 +55,8 @@ export class UpdateContentDto {
   @IsBoolean()
   @IsOptional()
   isPublished?: boolean
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  meta?: Record<string, unknown>
 }

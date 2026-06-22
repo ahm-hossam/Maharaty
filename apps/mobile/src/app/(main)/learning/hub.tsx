@@ -2,7 +2,9 @@ import {
   View,
   Text,
   TextInput,
+  Image,
   ScrollView,
+  RefreshControl,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
@@ -21,15 +23,22 @@ const { width } = Dimensions.get('window')
 
 // ─── Data ─────────────────────────────────────────────────────
 
-const CATEGORIES = [
-  { label: 'الكل',         icon: 'apps',          color: COLORS.primary },
-  { label: 'تسويق رقمي',  icon: 'megaphone',      color: '#F97316' },
-  { label: 'برمجة وتقنية', icon: 'code-slash',    color: '#3B82F6' },
-  { label: 'إدارة أعمال', icon: 'business',        color: '#8B5CF6' },
-  { label: 'تصميم إبداعي', icon: 'color-palette', color: '#EC4899' },
-  { label: 'موارد بشرية',  icon: 'people',         color: '#06B6D4' },
-  { label: 'مبيعات',       icon: 'trending-up',   color: '#10B981' },
-]
+// Icon + color mapping for known categories (fallback for unknown ones)
+const CATEGORY_META: Record<string, { icon: string; color: string }> = {
+  'تسويق رقمي':  { icon: 'megaphone',      color: '#F97316' },
+  'برمجة وتقنية': { icon: 'code-slash',    color: '#3B82F6' },
+  'إدارة أعمال': { icon: 'business',        color: '#8B5CF6' },
+  'تصميم إبداعي': { icon: 'color-palette', color: '#EC4899' },
+  'موارد بشرية':  { icon: 'people',         color: '#06B6D4' },
+  'مبيعات':       { icon: 'trending-up',   color: '#10B981' },
+  'مهارات مهنية': { icon: 'briefcase',     color: '#0EA5E9' },
+}
+const FALLBACK_COLORS = ['#F97316', '#3B82F6', '#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#EAB308']
+
+function getCategoryMeta(label: string, index: number) {
+  if (CATEGORY_META[label]) return CATEGORY_META[label]
+  return { icon: 'folder', color: FALLBACK_COLORS[index % FALLBACK_COLORS.length] }
+}
 
 // Static fallback data shown when API returns empty or during development
 const STATIC_COURSES = [
@@ -95,17 +104,20 @@ function CourseCard({ course, onPress }: { course: CourseItem; onPress: () => vo
 
   return (
     <TouchableOpacity style={S.courseCard} onPress={onPress} activeOpacity={0.78}>
-      {/* Row: icon + content */}
       <View style={S.courseRow}>
-        {/* Icon circle */}
-        <LinearGradient
-          colors={[color, color + 'AA']}
-          style={S.courseIconCircle}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Ionicons name={icon as any} size={20} color="#fff" />
-        </LinearGradient>
+        {/* Thumbnail or gradient icon */}
+        {course.thumbnail ? (
+          <Image source={{ uri: course.thumbnail }} style={S.courseThumb} resizeMode="cover" />
+        ) : (
+          <LinearGradient
+            colors={[color, color + 'AA']}
+            style={S.courseIconCircle}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Ionicons name={icon as any} size={20} color="#fff" />
+          </LinearGradient>
+        )}
 
         {/* Text block */}
         <View style={S.courseTextBlock}>
@@ -113,14 +125,12 @@ function CourseCard({ course, onPress }: { course: CourseItem; onPress: () => vo
             {course.titleAr}
           </Text>
           <View style={S.courseMeta}>
-            {/* Duration/views */}
             {(course.views || course.duration) && (
               <View style={S.courseViewsRow}>
                 <Ionicons name="eye-outline" size={12} color={COLORS.textMuted} />
                 <Text style={S.courseViews}>{course.views || course.duration}</Text>
               </View>
             )}
-            {/* Category badge */}
             <View style={[S.courseBadge, { backgroundColor: color + '22', borderColor: color + '55' }]}>
               <Text style={[S.courseBadgeText, { color }]}>{course.category}</Text>
             </View>
@@ -156,10 +166,36 @@ export default function LearningHubScreen() {
   const [activeCategory, setActiveCategory] = useState('الكل')
   const [searchQuery, setSearchQuery] = useState('')
 
-  const { data: apiResponse, isLoading } = useQuery({
-    queryKey: ['content', 'COURSE'],
+  const [refreshing, setRefreshing] = useState(false)
+
+  const { data: apiResponse, isLoading, refetch: refetchContent } = useQuery({
+    queryKey: ['content', 'published'],
     queryFn: () => api.get('/content').then((r) => r.data.data),
   })
+
+  const { data: apiCategories = [], refetch: refetchCategories } = useQuery<string[]>({
+    queryKey: ['content', 'categories'],
+    queryFn: () => api.get('/content/categories').then((r) => r.data.data),
+    staleTime: 60_000,
+  })
+
+  const { data: bannerConfig, refetch: refetchBanner } = useQuery({
+    queryKey: ['banner'],
+    queryFn: () => api.get('/banner').then((r) => r.data.data),
+    staleTime: 30_000,
+  })
+
+  const onRefresh = async () => {
+    setRefreshing(true)
+    await Promise.all([refetchContent(), refetchCategories(), refetchBanner()])
+    setRefreshing(false)
+  }
+
+  // Build category list: "الكل" always first, then API categories
+  const categories = [
+    { label: 'الكل', icon: 'apps', color: COLORS.primary },
+    ...apiCategories.map((label, i) => ({ label, ...getCategoryMeta(label, i) })),
+  ]
 
   // API returns { content: [...], pagination: {...} }
   const rawCourses: CourseItem[] = Array.isArray(apiResponse)
@@ -174,6 +210,7 @@ export default function LearningHubScreen() {
 
   const handleCoursePress = (course: CourseItem) => {
     trackActivity('VIEW_COURSE', { contentId: course.id, title: course.titleAr })
+    router.push(`/(main)/learning/${course.id}`)
   }
 
   return (
@@ -182,6 +219,14 @@ export default function LearningHubScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={S.scrollContent}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
       >
 
         {/* ── Header ── */}
@@ -217,7 +262,7 @@ export default function LearningHubScreen() {
 
         {/* ── Category Pills ── */}
         <View style={S.categoryGrid}>
-          {CATEGORIES.map((cat) => {
+          {categories.map((cat) => {
             const isActive = activeCategory === cat.label
             return (
               <TouchableOpacity
@@ -249,42 +294,59 @@ export default function LearningHubScreen() {
           })}
         </View>
 
-        {/* ── Featured Hero Card ── */}
-        <View style={S.featuredWrapper}>
-          <LinearGradient
-            colors={[COLORS.primary, COLORS.secondary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={S.featuredCard}
+        {/* ── Configurable Banner (from dashboard) ── */}
+        {bannerConfig?.isActive && (
+          <TouchableOpacity
+            style={S.featuredWrapper}
+            activeOpacity={0.88}
+            onPress={() => {
+              if (bannerConfig.contentId) {
+                router.push(`/(main)/learning/${bannerConfig.contentId}`)
+              }
+            }}
+            activeOpacity={bannerConfig.contentId ? 0.88 : 1}
           >
-            {/* Sparkles icon — top right */}
-            <View style={S.featuredIconTop}>
-              <Ionicons name="sparkles" size={28} color="rgba(255,255,255,0.85)" />
-            </View>
+            <LinearGradient
+              colors={[bannerConfig.bgColor1 || COLORS.primary, bannerConfig.bgColor2 || COLORS.secondary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={S.featuredCard}
+            >
+              <View style={S.featuredOverlay} />
 
-            {/* Text content */}
-            <View style={S.featuredContent}>
-              <Text style={S.featuredTitle}>مهارات الذكاء الاصطناعي 2026</Text>
-              <Text style={S.featuredSubtitle}>
-                دورة شاملة لإتقان أدوات AI في بيئة العمل
-              </Text>
-            </View>
-
-            {/* Bottom row */}
-            <View style={S.featuredBottom}>
-              {/* Views chip */}
-              <View style={S.featuredViewsChip}>
-                <Ionicons name="eye-outline" size={13} color="rgba(255,255,255,0.8)" />
-                <Text style={S.featuredViewsText}>14K مشاهدة</Text>
+              <View style={S.featuredIconTop}>
+                <Ionicons name="sparkles" size={24} color="rgba(255,255,255,0.85)" />
               </View>
 
-              {/* CTA button */}
-              <TouchableOpacity style={S.featuredCTA} activeOpacity={0.8}>
-                <Text style={S.featuredCTAText}>ابدأ التعلم ←</Text>
-              </TouchableOpacity>
-            </View>
-          </LinearGradient>
-        </View>
+              <View style={S.featuredContent}>
+                {bannerConfig.title ? (
+                  <Text style={S.featuredTitle} numberOfLines={2}>{bannerConfig.title}</Text>
+                ) : null}
+                {bannerConfig.subtitle ? (
+                  <Text style={S.featuredSubtitle} numberOfLines={2}>{bannerConfig.subtitle}</Text>
+                ) : null}
+              </View>
+
+              <View style={S.featuredBottom}>
+                {bannerConfig.contentTitle ? (
+                  <View style={S.featuredViewsChip}>
+                    <Ionicons name="folder-outline" size={13} color="rgba(255,255,255,0.8)" />
+                    <Text style={S.featuredViewsText}>{bannerConfig.contentTitle}</Text>
+                  </View>
+                ) : <View />}
+                {bannerConfig.ctaText ? (
+                  <TouchableOpacity
+                    style={S.featuredCTA}
+                    activeOpacity={0.8}
+                    onPress={() => bannerConfig.contentId && router.push(`/(main)/learning/${bannerConfig.contentId}`)}
+                  >
+                    <Text style={S.featuredCTAText}>{bannerConfig.ctaText}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
 
         {/* ── Section Title ── */}
         <View style={S.sectionHeader}>
@@ -447,7 +509,7 @@ const S = StyleSheet.create({
   },
 
   featuredCard: {
-    height: 180,
+    height: 220,
     borderRadius: RADIUS.xxl,
     padding: 24,
     justifyContent: 'space-between',
@@ -584,13 +646,33 @@ const S = StyleSheet.create({
     gap: 14,
   },
 
+  courseThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: RADIUS.md,
+    flexShrink: 0,
+    backgroundColor: COLORS.surfaceBorder,
+  },
+
   courseIconCircle: {
-    width: 44,
-    height: 44,
+    width: 56,
+    height: 56,
     borderRadius: RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
+  },
+
+  featuredBgImage: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: RADIUS.xxl,
+    opacity: 0.35,
+  },
+
+  featuredOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderRadius: RADIUS.xxl,
   },
 
   courseTextBlock: {

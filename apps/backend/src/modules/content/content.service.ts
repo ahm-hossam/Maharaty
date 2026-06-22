@@ -58,6 +58,16 @@ export class ContentService {
     return { content, pagination: { total, page, limit, totalPages: Math.ceil(total / limit) } }
   }
 
+  async findCategories(): Promise<string[]> {
+    const rows = await this.prisma.content.findMany({
+      where: { category: { not: null } },
+      select: { category: true },
+      distinct: ['category'],
+      orderBy: { category: 'asc' },
+    })
+    return rows.map(r => r.category as string).filter(Boolean)
+  }
+
   async findAll(query: { type?: ContentType; category?: string; page?: number; limit?: number }) {
     const page = query.page ?? 1
     const limit = query.limit ?? 20
@@ -84,6 +94,7 @@ export class ContentService {
           url: true,
           duration: true,
           category: true,
+          meta: true,
           isPublished: true,
           createdBy: true,
           createdAt: true,
@@ -96,9 +107,24 @@ export class ContentService {
     return { content, pagination: { total, page, limit, totalPages: Math.ceil(total / limit) } }
   }
 
+  async findOne(id: string) {
+    const content = await this.prisma.content.findUnique({
+      where: { id },
+      select: {
+        id: true, type: true, title: true, titleAr: true, description: true,
+        thumbnail: true, url: true, duration: true, category: true,
+        meta: true, isPublished: true, createdBy: true, createdAt: true, updatedAt: true,
+        _count: { select: { progresses: true } },
+      },
+    })
+    if (!content) throw new NotFoundException('Content not found')
+    return content
+  }
+
   async create(dto: CreateContentDto, userId: string) {
+    const { meta, ...rest } = dto
     const content = await this.prisma.content.create({
-      data: { ...dto, createdBy: userId },
+      data: { ...rest, createdBy: userId, ...(meta !== undefined ? { meta: meta as any } : {}) },
     })
     return content
   }
@@ -107,9 +133,10 @@ export class ContentService {
     const existing = await this.prisma.content.findUnique({ where: { id } })
     if (!existing) throw new NotFoundException('Content not found')
 
+    const { meta, ...rest } = dto
     const content = await this.prisma.content.update({
       where: { id },
-      data: dto,
+      data: { ...rest, ...(meta !== undefined ? { meta: meta as any } : {}) },
     })
     return content
   }
