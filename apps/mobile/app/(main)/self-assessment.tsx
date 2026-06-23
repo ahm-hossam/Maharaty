@@ -541,7 +541,7 @@ export default function SelfAssessmentScreen() {
       {/* Header */}
       <View style={SC.header}>
         <TouchableOpacity style={SC.backBtn} onPress={() => (phase === 'quiz' ? goPrev() : router.back())}>
-          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
         <Text style={SC.headerTitle}>
           {phase === 'intro' ? 'اختبار الشخصية المهنية' : phase === 'quiz' ? 'التقييم' : 'نتيجتك'}

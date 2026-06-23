@@ -162,10 +162,10 @@ export default function CareerQuizScreen() {
     return (
       <View style={[styles.root, { paddingTop: insets.top }]}>
         <LinearGradient colors={['#1E1B4B', '#312E81']} style={styles.introHeader}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-forward" size={24} color="#fff" />
-          </TouchableOpacity>
           <Text style={styles.introHeaderTitle}>اكتشف مسارك المهني</Text>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
         </LinearGradient>
 
         <ScrollView contentContainerStyle={styles.introContent} showsVerticalScrollIndicator={false}>
@@ -215,11 +215,11 @@ export default function CareerQuizScreen() {
     return (
       <View style={[styles.root, { paddingTop: insets.top }]}>
         <LinearGradient colors={['#1E1B4B', '#312E81']} style={styles.quizHeader}>
-          <TouchableOpacity onPress={() => { if (current > 0) setCurrent((c) => c - 1); else setPhase('intro') }} style={styles.backBtn}>
-            <Ionicons name="arrow-forward" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.quizCounter}>{current + 1} / {QUESTIONS.length}</Text>
           <View style={{ width: 40 }} />
+          <Text style={styles.quizCounter}>{current + 1} / {QUESTIONS.length}</Text>
+          <TouchableOpacity onPress={() => { if (current > 0) setCurrent((c) => c - 1); else setPhase('intro') }} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
         </LinearGradient>
 
         {/* Progress bar */}
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.canvas },
 
   // Intro
-  introHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, gap: 12 },
+  introHeader: { flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, gap: 12 },
   introHeaderTitle: { flex: 1, fontSize: FS.lg, fontFamily: FONT.bold, color: '#fff', textAlign: 'right' },
   backBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
 
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   startQuizText: { fontSize: FS.xl, fontFamily: FONT.extrabold, color: '#fff' },
 
   // Quiz
-  quizHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16 },
+  quizHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16 },
   quizCounter: { fontSize: FS.md, fontFamily: FONT.bold, color: '#fff' },
 
   progressWrap: { paddingHorizontal: 20, paddingBottom: 8, backgroundColor: COLORS.canvasAlt },

@@ -233,11 +233,9 @@ export default function LearningHubScreen() {
         <View style={S.header}>
           {/* Top row: back button + title */}
           <View style={S.headerTopRow}>
-            {/* Title (right) */}
             <Text style={S.headerTitle}>اكتشف وتعلّم</Text>
-            {/* Back button (left) */}
             <TouchableOpacity style={S.backBtn} onPress={() => router.back()}>
-              <Ionicons name="arrow-forward" size={20} color={COLORS.textSecondary} />
+              <Ionicons name="arrow-back" size={20} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -419,7 +417,7 @@ const S = StyleSheet.create({
   },
 
   headerTopRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
   },

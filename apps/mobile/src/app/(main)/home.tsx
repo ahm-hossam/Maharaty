@@ -8,13 +8,15 @@ import {
   Modal,
   Animated,
   Pressable,
+  RefreshControl,
+  AppState,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRef, useState, useEffect } from 'react'
 import { useRouter } from 'expo-router'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { COLORS, FONT, RADIUS, SHADOW, FS } from '../../constants/theme'
 import { usePathStore } from '../../store/pathStore'
 import { useAuthStore } from '../../store/authStore'
@@ -172,13 +174,35 @@ const PATHS = [
 ]
 
 // Fallback notifications shown when API hasn't loaded yet
-const FALLBACK_NOTIFS = [
-  { id: '1', icon: 'briefcase',     color: '#F59E0B', title: 'وظيفة جديدة تناسبك',       body: 'مطور تطبيقات — شركة iCareer · السعودية',              time: 'منذ ٥ دقائق', unread: true },
-  { id: '2', icon: 'star',          color: '#2F6CFF', title: 'أكملت تقييم الشخصية!',     body: 'نتيجتك: شخصية تحليلية — راجع تقريرك',                 time: 'منذ ساعة',    unread: true },
-  { id: '3', icon: 'people',        color: '#9D4EDD', title: 'تعليق جديد على مشاركتك',   body: 'علّق أحمد خالد على مشاركتك في المجتمع',               time: 'منذ ٣ ساعات', unread: true },
-  { id: '4', icon: 'document-text', color: '#00A896', title: 'سيرتك الذاتية جاهزة',       body: 'تم إنشاء نسخة AI من سيرتك — اضغط للمعاينة',          time: 'أمس',         unread: false },
-  { id: '5', icon: 'mic',           color: '#FF3B6B', title: 'تقرير المقابلة التدريبية', body: 'درجتك ٨٧٪ — تحسّن بنسبة ١٢٪ عن الجلسة السابقة',     time: 'أمس',         unread: false },
-]
+function notifIcon(title: string): string {
+  if (title.includes('وظيف')) return 'briefcase'
+  if (title.includes('تقييم') || title.includes('اختبار')) return 'star'
+  if (title.includes('مجتمع') || title.includes('تعليق')) return 'people'
+  if (title.includes('سير')) return 'document-text'
+  if (title.includes('مقابل')) return 'mic'
+  return 'notifications'
+}
+
+function notifColor(title: string): string {
+  if (title.includes('وظيف')) return '#F59E0B'
+  if (title.includes('تقييم') || title.includes('اختبار')) return '#2F6CFF'
+  if (title.includes('مجتمع') || title.includes('تعليق')) return '#9D4EDD'
+  if (title.includes('سير')) return '#00A896'
+  if (title.includes('مقابل')) return '#FF3B6B'
+  return '#2F6CFF'
+}
+
+function notifTime(createdAt: string): string {
+  const diff = Date.now() - new Date(createdAt).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return 'الآن'
+  if (m < 60) return `منذ ${m} دقيقة`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `منذ ${h} ساعة`
+  const d = Math.floor(h / 24)
+  if (d < 7) return `منذ ${d} يوم`
+  return new Date(createdAt).toLocaleDateString('ar-SA')
+}
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets()
@@ -194,14 +218,37 @@ export default function HomeScreen() {
     trackActivity('LOGIN')
   }, [])
 
-  // Fetch notifications from API
-  const { data: notifData } = useQuery({
+  // Fetch notifications from API — poll every 30s, refetch on foreground
+  const { data: notifData, refetch: refetchNotifs } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => api.get('/notifications').then((r) => r.data.data),
+    refetchInterval: 30_000,
   })
 
-  const notifs = (notifData && notifData.length > 0) ? notifData : FALLBACK_NOTIFS
-  const unreadCount = notifs.filter((n: any) => n.unread).length
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refetchNotifs()
+    })
+    return () => sub.remove()
+  }, [refetchNotifs])
+
+  const qc = useQueryClient()
+  const rawNotifs: any[] = Array.isArray(notifData) ? notifData : []
+  const notifs = rawNotifs.map((n) => ({
+    ...n,
+    icon:  notifIcon(n.title ?? ''),
+    color: notifColor(n.title ?? ''),
+    time:  notifTime(n.createdAt ?? new Date().toISOString()),
+  }))
+  const unreadCount = notifs.filter((n) => !n.isRead).length
+
+  // Pull-to-refresh
+  const [refreshing, setRefreshing] = useState(false)
+  const onRefresh = async () => {
+    setRefreshing(true)
+    await refetchNotifs()
+    setRefreshing(false)
+  }
 
   // Drawer
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -264,11 +311,18 @@ export default function HomeScreen() {
   }
 
   const handleNotifPress = async (notif: any) => {
+    if (notif.isRead) return
     try {
       await api.patch(`/notifications/${notif.id}/read`)
-    } catch {
-      // fire-and-forget
-    }
+      qc.invalidateQueries({ queryKey: ['notifications'] })
+    } catch { /* fire-and-forget */ }
+  }
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.patch('/notifications/read-all')
+      qc.invalidateQueries({ queryKey: ['notifications'] })
+    } catch { /* fire-and-forget */ }
   }
 
   // First name from user store (fall back gracefully)
@@ -303,7 +357,11 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.scrollContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={S.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+      >
 
         {/* ── Greeting hero ── */}
         <View style={S.hero}>
@@ -359,22 +417,6 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        {/* ── Tip banner ── */}
-        <View style={S.tipBanner}>
-          <LinearGradient
-            colors={[COLORS.primary + '18', COLORS.teal + '08']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={S.tipGrad}
-          >
-            <View style={S.tipIconWrap}>
-              <Ionicons name="sparkles" size={18} color={COLORS.primary} />
-            </View>
-            <View style={S.tipText}>
-              <Text style={S.tipTitle}>نصيحة اليوم</Text>
-              <Text style={S.tipBody}>خصّص سيرتك الذاتية لكل وظيفة تتقدم لها لتضاعف فرصك ثلاثة أضعاف.</Text>
-            </View>
-          </LinearGradient>
-        </View>
       </ScrollView>
 
       {/* ── Drawer ── */}
@@ -522,9 +564,9 @@ export default function HomeScreen() {
             </TouchableOpacity>
             <Text style={S.notifTitle}>الإشعارات</Text>
             {unreadCount > 0 && (
-              <View style={S.notifBadgePill}>
-                <Text style={S.notifBadgePillText}>{unreadCount}</Text>
-              </View>
+              <TouchableOpacity onPress={handleMarkAllRead} style={S.notifBadgePill}>
+                <Text style={S.notifBadgePillText}>قراءة الكل</Text>
+              </TouchableOpacity>
             )}
           </View>
 
@@ -532,10 +574,16 @@ export default function HomeScreen() {
 
           {/* List */}
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 8 }}>
+            {notifs.length === 0 && (
+              <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                <Ionicons name="notifications-off-outline" size={40} color={COLORS.textMuted} />
+                <Text style={{ color: COLORS.textMuted, marginTop: 12, fontFamily: FONT.regular }}>لا توجد إشعارات</Text>
+              </View>
+            )}
             {notifs.map((n: any) => (
               <TouchableOpacity
                 key={n.id}
-                style={[S.notifRow, n.unread && S.notifRowUnread]}
+                style={[S.notifRow, !n.isRead && S.notifRowUnread]}
                 activeOpacity={0.75}
                 onPress={() => handleNotifPress(n)}
               >
@@ -545,12 +593,12 @@ export default function HomeScreen() {
                 </View>
                 {/* Text */}
                 <View style={S.notifBody}>
-                  <Text style={S.notifRowTitle} numberOfLines={1}>{n.title}</Text>
-                  <Text style={S.notifRowBody} numberOfLines={2}>{n.body}</Text>
+                  <Text style={S.notifRowTitle}>{n.title}</Text>
+                  <Text style={S.notifRowBody}>{n.body}</Text>
                   <Text style={S.notifTime}>{n.time}</Text>
                 </View>
                 {/* Unread dot */}
-                {n.unread && <View style={S.unreadDot} />}
+                {!n.isRead && <View style={S.unreadDot} />}
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -800,11 +848,11 @@ const S = StyleSheet.create({
     color: COLORS.text, textAlign: 'right',
   },
   notifBadgePill: {
-    backgroundColor: COLORS.error, borderRadius: RADIUS.full,
-    paddingHorizontal: 8, paddingVertical: 3, minWidth: 22, alignItems: 'center',
+    backgroundColor: 'rgba(47,108,255,0.12)', borderRadius: RADIUS.full,
+    paddingHorizontal: 10, paddingVertical: 4, alignItems: 'center',
   },
   notifBadgePillText: {
-    fontSize: FS.xs, fontFamily: FONT.extrabold, fontWeight: '800', color: '#fff',
+    fontSize: FS.xs, fontFamily: FONT.bold, fontWeight: '700', color: COLORS.primary,
   },
   notifDivider: { height: 1, backgroundColor: 'rgba(15,18,33,0.07)' },
   notifRow: {

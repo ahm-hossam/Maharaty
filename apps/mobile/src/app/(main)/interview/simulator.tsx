@@ -694,7 +694,7 @@ export default function InterviewSimulatorScreen() {
         <CockpitBackdrop timerRatio={0} />
         <View style={S.header}>
           <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
-            <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
+            <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
           </TouchableOpacity>
           <Text style={S.headerTitle}>ملخص الجلسة</Text>
           <View style={{ width: 42 }} />
@@ -712,7 +712,7 @@ export default function InterviewSimulatorScreen() {
       <View style={S.header}>
         {/* Far LEFT: back button */}
         <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
-          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
 
         {/* CENTER: specialty badge + title stacked */}
