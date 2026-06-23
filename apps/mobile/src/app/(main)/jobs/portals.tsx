@@ -385,17 +385,17 @@ export default function JobPortalsScreen() {
 
       {/* ── Header ── */}
       <View style={S.header}>
-        <TouchableOpacity style={S.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={S.headerTitle}>بوابات التوظيف</Text>
-          <Text style={S.headerSub}>اختر المنصة الأنسب لك</Text>
-        </View>
         <View style={S.totalBadge}>
           <Text style={S.totalNum}>+1.5M</Text>
           <Text style={S.totalLabel}>وظيفة</Text>
         </View>
+        <View style={{ flex: 1 }}>
+          <Text style={S.headerTitle}>بوابات التوظيف</Text>
+          <Text style={S.headerSub}>اختر المنصة الأنسب لك</Text>
+        </View>
+        <TouchableOpacity style={S.backBtn} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.content}>
@@ -454,7 +454,7 @@ const S = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.canvas },
 
   header: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row-reverse', alignItems: 'center',
     paddingHorizontal: 24, paddingVertical: 20, gap: 14,
     borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.07)',
   },

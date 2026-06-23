@@ -13,7 +13,12 @@
       "Bash(curl -s http://localhost:3001/v1/community/stats -H \"Authorization: Bearer test\")",
       "Bash(curl -s http://localhost:3000)",
       "Bash(curl -s http://localhost:3001/v1/community/stats)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(xargs kill -9)",
+      "Bash(nohup npx ts-node -r tsconfig-paths/register src/main.ts)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/v1/admin/analytics -H \"Authorization: Bearer test\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d['version']\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(list\\(d['dependencies'].keys\\(\\)\\)\\)\")"
     ],
     "additionalDirectories": [
       "/tmp"

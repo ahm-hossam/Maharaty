@@ -4,6 +4,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  RefreshControl,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
@@ -50,6 +51,8 @@ export default function CommunityScreen() {
   const router = useRouter()
   const [isLoggedIn] = useState(false)
   const [likedPosts, setLikedPosts] = useState<string[]>([])
+  const [refreshing, setRefreshing] = useState(false)
+  const onRefresh = async () => { setRefreshing(true); await new Promise(r => setTimeout(r, 600)); setRefreshing(false) }
 
   const toggleLike = (id: string) => {
     setLikedPosts(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
@@ -132,7 +135,10 @@ export default function CommunityScreen() {
         </View>
       </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.feedContent}>
+      <ScrollView
+        contentContainerStyle={styles.feedContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         {POSTS.map(post => (
           <View key={post.id} style={styles.postCard}>
             <View style={styles.postHeader}>

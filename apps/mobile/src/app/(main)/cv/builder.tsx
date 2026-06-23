@@ -274,7 +274,7 @@ function PersonalStep() {
           multiline
           numberOfLines={5}
         />
-        <TouchableOpacity style={S.aiBtnWrap} onPress={() => setAiVisible(true)}>
+        {/* <TouchableOpacity style={S.aiBtnWrap} onPress={() => setAiVisible(true)}>
           <LinearGradient
             colors={[COLORS.primary, COLORS.secondary]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -283,7 +283,7 @@ function PersonalStep() {
             <Ionicons name="sparkles" size={14} color="#fff" />
             <Text style={S.aiBtnText}>اقتراح AI</Text>
           </LinearGradient>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </StepSection>
 
       <AiSuggestSheet
@@ -767,12 +767,12 @@ function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSele
     <View style={[S.root, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={S.header}>
-        <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
-          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
-        </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={S.headerTitle}>منشئ السيرة الذاتية</Text>
         </View>
+        <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -895,15 +895,15 @@ export default function CvBuilderScreen() {
     <View style={[S.root, { paddingTop: insets.top }]}>
       {/* ── Header ── */}
       <View style={S.header}>
-        <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
-          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
+        <TouchableOpacity onPress={() => setPreviewVisible(true)} style={S.previewBtn}>
+          <Ionicons name="eye-outline" size={18} color={COLORS.primary} />
+          <Text style={S.previewBtnText}>معاينة</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={S.headerTitle}>منشئ السيرة الذاتية</Text>
         </View>
-        <TouchableOpacity onPress={() => setPreviewVisible(true)} style={S.previewBtn}>
-          <Ionicons name="eye-outline" size={18} color={COLORS.primary} />
-          <Text style={S.previewBtnText}>معاينة</Text>
+        <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -979,7 +979,7 @@ const S = StyleSheet.create({
 
   // Header
   header: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row-reverse', alignItems: 'center',
     paddingHorizontal: 24, paddingVertical: 18, gap: 14,
     borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.07)',
   },

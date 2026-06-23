@@ -47,16 +47,30 @@ export class NotificationsService {
     }
 
     if (shouldSendPush) {
-      // Stub: fetch push tokens and log (no real FCM)
       const pushTokens = await this.prisma.pushToken.findMany({
         where: { userId: { in: targetUserIds } },
-        select: { token: true, platform: true, userId: true },
+        select: { token: true },
       })
 
-      console.log(
-        `[Push Notification STUB] Sending "${dto.title}" to ${pushTokens.length} devices`,
-        pushTokens.map((t) => t.token),
-      )
+      if (pushTokens.length > 0) {
+        const messages = pushTokens.map((t) => ({
+          to: t.token,
+          title: dto.title,
+          body: dto.body,
+          sound: 'default',
+          data: { type: dto.type },
+        }))
+
+        try {
+          await fetch('https://exp.host/--/api/v2/push/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify(messages),
+          })
+        } catch (e) {
+          console.error('[Push] Expo push API error:', e)
+        }
+      }
     }
 
     return {

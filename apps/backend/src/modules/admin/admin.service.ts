@@ -11,6 +11,8 @@ export class AdminService {
     const weekStart = new Date(todayStart)
     weekStart.setDate(weekStart.getDate() - 7)
 
+    const userOnly = { role: 'USER' as const }
+
     const [
       totalUsers,
       activeUsers,
@@ -24,15 +26,16 @@ export class AdminService {
       recentActivities,
       contentByTypeRaw,
     ] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.user.count({ where: { isActive: true } }),
-      this.prisma.user.count({ where: { createdAt: { gte: todayStart } } }),
-      this.prisma.user.count({ where: { createdAt: { gte: weekStart } } }),
+      this.prisma.user.count({ where: userOnly }),
+      this.prisma.user.count({ where: { ...userOnly, isActive: true } }),
+      this.prisma.user.count({ where: { ...userOnly, createdAt: { gte: todayStart } } }),
+      this.prisma.user.count({ where: { ...userOnly, createdAt: { gte: weekStart } } }),
       this.prisma.content.count(),
       this.prisma.content.count({ where: { isPublished: true } }),
       this.prisma.activity.count(),
       this.prisma.activity.count({ where: { createdAt: { gte: weekStart } } }),
       this.prisma.user.findMany({
+        where: userOnly,
         orderBy: { createdAt: 'desc' },
         take: 5,
         select: {
@@ -106,7 +109,7 @@ export class AdminService {
       nextDate.setDate(nextDate.getDate() + 1)
 
       const count = await this.prisma.user.count({
-        where: { createdAt: { gte: date, lt: nextDate } },
+        where: { role: 'USER', createdAt: { gte: date, lt: nextDate } },
       })
 
       result.push({

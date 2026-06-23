@@ -8,6 +8,7 @@ import {
   Modal,
   Animated,
   Pressable,
+  RefreshControl,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
@@ -161,6 +162,8 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const onRefresh = async () => { setRefreshing(true); await new Promise(r => setTimeout(r, 600)); setRefreshing(false) }
   const slideAnim   = useRef(new Animated.Value(width * 0.82)).current
   const overlayAnim = useRef(new Animated.Value(0)).current
 
@@ -206,7 +209,11 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.scrollContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={S.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
 
         {/* ── Greeting hero ── */}
         <View style={S.hero}>
@@ -261,22 +268,6 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        {/* ── Tip banner ── */}
-        <View style={S.tipBanner}>
-          <LinearGradient
-            colors={[COLORS.primary + '18', COLORS.teal + '08']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={S.tipGrad}
-          >
-            <View style={S.tipIconWrap}>
-              <Ionicons name="sparkles" size={18} color={COLORS.primary} />
-            </View>
-            <View style={S.tipText}>
-              <Text style={S.tipTitle}>نصيحة اليوم</Text>
-              <Text style={S.tipBody}>خصّص سيرتك الذاتية لكل وظيفة تتقدم لها لتضاعف فرصك ثلاثة أضعاف.</Text>
-            </View>
-          </LinearGradient>
-        </View>
       </ScrollView>
 
       {/* ── Drawer ── */}

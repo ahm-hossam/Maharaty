@@ -3,6 +3,7 @@ import {
   Text,
   TextInput,
   ScrollView,
+  RefreshControl,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
@@ -112,6 +113,8 @@ export default function LearningHubScreen() {
   const router = useRouter()
   const [activeCategory, setActiveCategory] = useState('الكل')
   const [searchQuery, setSearchQuery] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
+  const onRefresh = async () => { setRefreshing(true); await new Promise(r => setTimeout(r, 600)); setRefreshing(false) }
 
   return (
     <View style={[S.root, { paddingTop: insets.top }]}>
@@ -119,6 +122,7 @@ export default function LearningHubScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={S.scrollContent}
         keyboardShouldPersistTaps="handled"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
 
         {/* ── Header ── */}
@@ -129,7 +133,7 @@ export default function LearningHubScreen() {
             <Text style={S.headerTitle}>اكتشف وتعلّم</Text>
             {/* Back button (left) */}
             <TouchableOpacity style={S.backBtn} onPress={() => router.back()}>
-              <Ionicons name="arrow-forward" size={20} color={COLORS.textSecondary} />
+              <Ionicons name="arrow-back" size={20} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -280,7 +284,7 @@ const S = StyleSheet.create({
   },
 
   headerTopRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
