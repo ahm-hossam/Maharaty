@@ -2,6 +2,21 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { DashboardHeader } from '@/components/layout/DashboardHeader'
 import {
   useSAQuestions,
@@ -10,6 +25,7 @@ import {
   useUpdateSAQuestion,
   useDeleteSAQuestion,
   useSeedSAQuestions,
+  useReorderSAQuestions,
   type SAQuestion,
 } from '@/lib/queries'
 
@@ -48,7 +64,6 @@ function EditModal({ question, onClose }: { question: SAQuestion; onClose: () =>
   const [textAr, setTextAr]               = useState(question.textAr)
   const [category, setCategory]           = useState(question.category)
   const [dimensionLabel, setDimensionLabel] = useState(question.dimensionLabel)
-  const [orderIndex, setOrderIndex]       = useState(question.orderIndex)
   const [isActive, setIsActive]           = useState(question.isActive)
 
   const handleCategoryChange = (val: string) => {
@@ -59,7 +74,7 @@ function EditModal({ question, onClose }: { question: SAQuestion; onClose: () =>
   const save = async () => {
     if (textAr.trim().length < 5) { toast.error('نص السؤال قصير جداً (5 أحرف على الأقل)'); return }
     try {
-      await update.mutateAsync({ id: question.id, textAr, category, dimensionLabel, orderIndex, isActive })
+      await update.mutateAsync({ id: question.id, textAr, category, dimensionLabel, isActive })
       toast.success('تم حفظ السؤال')
       onClose()
     } catch (err) {
@@ -102,21 +117,15 @@ function EditModal({ question, onClose }: { question: SAQuestion; onClose: () =>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 items-end">
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 text-right mb-1">رقم الترتيب</label>
-            <input type="number" min={1} value={orderIndex} onChange={(e) => setOrderIndex(Number(e.target.value))} className={INPUT} />
-          </div>
-          <div className="flex items-center justify-end gap-2 h-11">
-            <span className="text-sm font-semibold text-slate-700">{isActive ? 'مفعّل' : 'معطّل'}</span>
-            <button
-              type="button"
-              onClick={() => setIsActive((v) => !v)}
-              className={`w-12 h-6 rounded-full transition-colors relative ${isActive ? 'bg-indigo-600' : 'bg-slate-200'}`}
-            >
-              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${isActive ? 'left-7' : 'left-1'}`} />
-            </button>
-          </div>
+        <div className="flex items-center justify-end gap-2 h-11">
+          <span className="text-sm font-semibold text-slate-700">{isActive ? 'مفعّل' : 'معطّل'}</span>
+          <button
+            type="button"
+            onClick={() => setIsActive((v) => !v)}
+            className={`w-12 h-6 rounded-full transition-colors relative ${isActive ? 'bg-indigo-600' : 'bg-slate-200'}`}
+          >
+            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${isActive ? 'left-7' : 'left-1'}`} />
+          </button>
         </div>
 
         <button
@@ -133,12 +142,11 @@ function EditModal({ question, onClose }: { question: SAQuestion; onClose: () =>
 
 // ─── Add Question Form ────────────────────────────────────────────────────────
 
-function AddForm({ nextOrder }: { nextOrder: number }) {
+function AddForm() {
   const create = useCreateSAQuestion()
   const [textAr, setTextAr]               = useState('')
   const [category, setCategory]           = useState('R')
   const [dimensionLabel, setDimensionLabel] = useState('البراعة التنفيذية')
-  const [orderIndex, setOrderIndex]       = useState(nextOrder)
   const [isActive, setIsActive]           = useState(true)
 
   const handleCategoryChange = (val: string) => {
@@ -151,9 +159,8 @@ function AddForm({ nextOrder }: { nextOrder: number }) {
   const submit = async () => {
     if (!valid) { toast.error('نص السؤال قصير جداً (5 أحرف على الأقل)'); return }
     try {
-      await create.mutateAsync({ textAr: textAr.trim(), category, dimensionLabel, orderIndex, isActive })
+      await create.mutateAsync({ textAr: textAr.trim(), category, dimensionLabel, isActive })
       setTextAr('')
-      setOrderIndex((o) => o + 1)
       toast.success('تم إضافة السؤال')
     } catch (err) {
       toast.error(apiError(err, 'فشل الإضافة'))
@@ -196,27 +203,15 @@ function AddForm({ nextOrder }: { nextOrder: number }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 items-end">
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 text-right mb-1">رقم الترتيب</label>
-          <input
-            type="number"
-            min={1}
-            value={orderIndex}
-            onChange={(e) => setOrderIndex(Number(e.target.value))}
-            className={INPUT}
-          />
-        </div>
-        <div className="flex items-center justify-end gap-2 h-11">
-          <span className="text-sm font-semibold text-slate-700">{isActive ? 'مفعّل' : 'معطّل'}</span>
-          <button
-            type="button"
-            onClick={() => setIsActive((v) => !v)}
-            className={`w-12 h-6 rounded-full transition-colors relative ${isActive ? 'bg-indigo-600' : 'bg-slate-200'}`}
-          >
-            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${isActive ? 'left-7' : 'left-1'}`} />
-          </button>
-        </div>
+      <div className="flex items-center justify-end gap-2">
+        <span className="text-sm font-semibold text-slate-700">{isActive ? 'مفعّل' : 'معطّل'}</span>
+        <button
+          type="button"
+          onClick={() => setIsActive((v) => !v)}
+          className={`w-12 h-6 rounded-full transition-colors relative ${isActive ? 'bg-indigo-600' : 'bg-slate-200'}`}
+        >
+          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${isActive ? 'left-7' : 'left-1'}`} />
+        </button>
       </div>
 
       <button
@@ -230,15 +225,152 @@ function AddForm({ nextOrder }: { nextOrder: number }) {
   )
 }
 
+// ─── Sortable Question Card ───────────────────────────────────────────────────
+
+function SortableCard({
+  q,
+  index,
+  onEdit,
+  onToggle,
+  onDelete,
+}: {
+  q: SAQuestion
+  index: number
+  onEdit: () => void
+  onToggle: () => void
+  onDelete: () => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: q.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`bg-white rounded-2xl border shadow-sm p-4 transition-all ${
+        q.isActive ? 'border-slate-200' : 'border-slate-100 opacity-60'
+      } ${isDragging ? 'shadow-lg ring-2 ring-indigo-300' : ''}`}
+    >
+      <div className="flex items-start gap-3">
+        {/* Content — right side in RTL */}
+        <div className="flex-1 min-w-0">
+          {/* Meta row */}
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="text-xs text-slate-400 font-mono tabular-nums">#{index + 1}</span>
+            {!q.isActive && (
+              <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">معطّل</span>
+            )}
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${catStyle(q.category)}`}>
+              {dimLabel(q)} · {q.category}
+            </span>
+          </div>
+          {/* Question text */}
+          <p className="text-sm text-slate-700 leading-relaxed text-right">{q.textAr}</p>
+        </div>
+
+        {/* Actions — left side in RTL */}
+        <div className="flex flex-col gap-1.5 flex-shrink-0">
+          {/* Drag handle */}
+          <div
+            {...attributes}
+            {...listeners}
+            title="اسحب لإعادة الترتيب"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:border-slate-300 cursor-grab active:cursor-grabbing transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+            </svg>
+          </div>
+          {/* Edit */}
+          <button
+            onClick={onEdit}
+            title="تعديل"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </button>
+          {/* Toggle active/inactive */}
+          <button
+            onClick={onToggle}
+            title={q.isActive ? 'تعطيل' : 'تفعيل'}
+            className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-colors ${
+              q.isActive
+                ? 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+                : 'border-slate-200 text-slate-400 hover:text-emerald-600 hover:border-emerald-200'
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d={q.isActive
+                  ? 'M5 13l4 4L19 7'
+                  : 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636'
+                }
+              />
+            </svg>
+          </button>
+          {/* Delete */}
+          <button
+            onClick={onDelete}
+            title="حذف"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function SelfAssessmentPage() {
-  const { data: questions = [], isLoading } = useSAQuestions()
+  const { data: serverQuestions = [], isLoading } = useSAQuestions()
   const { data: stats } = useSAStats()
-  const deleteQ  = useDeleteSAQuestion()
-  const updateQ  = useUpdateSAQuestion()
-  const seed     = useSeedSAQuestions()
+  const deleteQ   = useDeleteSAQuestion()
+  const updateQ   = useUpdateSAQuestion()
+  const seed      = useSeedSAQuestions()
+  const reorder   = useReorderSAQuestions()
   const [editQ, setEditQ] = useState<SAQuestion | null>(null)
+
+  // Local ordered list for optimistic drag-and-drop
+  const [localOrder, setLocalOrder] = useState<SAQuestion[] | null>(null)
+  const questions = localOrder ?? serverQuestions
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  )
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = questions.findIndex((q) => q.id === active.id)
+    const newIndex = questions.findIndex((q) => q.id === over.id)
+    const reordered = arrayMove(questions, oldIndex, newIndex)
+
+    // Optimistic update
+    setLocalOrder(reordered)
+
+    const items = reordered.map((q, i) => ({ id: q.id, orderIndex: i + 1 }))
+    try {
+      await reorder.mutateAsync(items)
+      setLocalOrder(null) // let server data take over
+    } catch {
+      setLocalOrder(null) // revert on failure
+      toast.error('فشل حفظ الترتيب')
+    }
+  }
 
   const handleDelete = async (id: string, text: string) => {
     if (!confirm(`حذف السؤال: "${text.slice(0, 40)}..."؟`)) return
@@ -303,8 +435,20 @@ export default function SelfAssessmentPage() {
                 >
                   {seed.isPending ? 'جاري الاستيراد...' : '↓ استيراد الأسئلة الافتراضية (15 سؤال)'}
                 </button>
-                <h2 className="font-bold text-slate-800">{questions.length} سؤال</h2>
+                <div className="flex items-center gap-2">
+                  {reorder.isPending && (
+                    <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                  )}
+                  <h2 className="font-bold text-slate-800">{questions.length} سؤال</h2>
+                </div>
               </div>
+
+              {/* Drag hint */}
+              {questions.length > 1 && (
+                <p className="text-xs text-slate-400 text-right">
+                  ☰ اسحب الأسئلة لإعادة ترتيبها
+                </p>
+              )}
 
               {isLoading && (
                 <div className="flex justify-center py-12">
@@ -320,79 +464,27 @@ export default function SelfAssessmentPage() {
                 </div>
               )}
 
-              {questions.map((q) => (
-                <div
-                  key={q.id}
-                  className={`bg-white rounded-2xl border shadow-sm p-4 transition-all ${q.isActive ? 'border-slate-200' : 'border-slate-100 opacity-60'}`}
-                >
-                  {/* Card row: actions on left, content on right */}
-                  <div className="flex items-start gap-3">
-                    {/* Content — right side in RTL */}
-                    <div className="flex-1 min-w-0">
-                      {/* Meta row */}
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <span className="text-xs text-slate-400 font-mono tabular-nums">#{q.orderIndex}</span>
-                        {!q.isActive && (
-                          <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">معطّل</span>
-                        )}
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${catStyle(q.category)}`}>
-                          {dimLabel(q)} · {q.category}
-                        </span>
-                      </div>
-                      {/* Question text */}
-                      <p className="text-sm text-slate-700 leading-relaxed text-right">{q.textAr}</p>
-                    </div>
-
-                    {/* Actions — left side in RTL */}
-                    <div className="flex flex-col gap-1.5 flex-shrink-0">
-                      {/* Edit */}
-                      <button
-                        onClick={() => setEditQ(q)}
-                        title="تعديل"
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                      </button>
-                      {/* Toggle active/inactive */}
-                      <button
-                        onClick={() => handleToggleActive(q)}
-                        title={q.isActive ? 'تعطيل' : 'تفعيل'}
-                        className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-colors ${
-                          q.isActive
-                            ? 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
-                            : 'border-slate-200 text-slate-400 hover:text-emerald-600 hover:border-emerald-200'
-                        }`}
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d={q.isActive
-                              ? 'M5 13l4 4L19 7'
-                              : 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636'
-                            }
-                          />
-                        </svg>
-                      </button>
-                      {/* Delete */}
-                      <button
-                        onClick={() => handleDelete(q.id, q.textAr)}
-                        title="حذف"
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 transition-colors"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={questions.map((q) => q.id)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-3">
+                    {questions.map((q, i) => (
+                      <SortableCard
+                        key={q.id}
+                        q={q}
+                        index={i}
+                        onEdit={() => setEditQ(q)}
+                        onToggle={() => handleToggleActive(q)}
+                        onDelete={() => handleDelete(q.id, q.textAr)}
+                      />
+                    ))}
                   </div>
-                </div>
-              ))}
+                </SortableContext>
+              </DndContext>
             </div>
 
             {/* Sidebar: Add + Guide */}
             <div className="space-y-4">
-              <AddForm nextOrder={questions.length + 1} />
+              <AddForm />
 
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <h3 className="font-bold text-slate-800 text-right mb-3">أنواع RIASEC</h3>

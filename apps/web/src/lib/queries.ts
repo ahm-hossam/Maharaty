@@ -465,6 +465,15 @@ export function useSeedSAQuestions() {
   })
 }
 
+export function useReorderSAQuestions() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (items: { id: string; orderIndex: number }[]) =>
+      api.patch('/self-assessment/questions/reorder', { items }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['self-assessment'] }),
+  })
+}
+
 export function useToggleReaction() {
   const qc = useQueryClient()
   return useMutation({
