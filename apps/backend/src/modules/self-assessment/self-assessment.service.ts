@@ -64,6 +64,15 @@ export class SelfAssessmentService {
     await this.prisma.selfAssessmentQuestion.delete({ where: { id } })
   }
 
+  async reorderQuestions(items: { id: string; orderIndex: number }[]) {
+    await this.prisma.$transaction(
+      items.map(({ id, orderIndex }) =>
+        this.prisma.selfAssessmentQuestion.update({ where: { id }, data: { orderIndex } })
+      )
+    )
+    return { reordered: items.length }
+  }
+
   async submitResult(dto: SubmitResultDto, userId: string) {
     return this.prisma.selfAssessmentResult.create({
       data: { userId, topType: dto.topType, scores: dto.scores },

@@ -47,6 +47,15 @@ export class SelfAssessmentController {
     return { success: true, data }
   }
 
+  @Patch('questions/reorder')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Reorder questions (admin)' })
+  async reorder(@Body() body: { items: { id: string; orderIndex: number }[] }) {
+    const data = await this.service.reorderQuestions(body.items)
+    return { success: true, data }
+  }
+
   @Patch('questions/:id')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, AdminGuard)
