@@ -16,11 +16,11 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ContentType = 'COURSE' | 'VIDEO' | 'ARTICLE'
+type ContentType = 'COURSE' | 'VIDEO'
 type TabFilter = 'ALL' | ContentType
 
 interface VideoItem {
-  id: string; title: string; url: string; youtubeId?: string; duration?: number; order: number
+  id: string; title: string; url: string; youtubeId?: string; duration?: number; description?: string; order: number
 }
 interface Lecture {
   id: string; title: string; description?: string; videoUrl?: string; youtubeId?: string
@@ -31,8 +31,6 @@ interface CourseMeta {
   level?: 'beginner' | 'intermediate' | 'advanced'
   whatYouLearn?: string[]; requirements?: string[]; lectures?: Lecture[]
 }
-interface ArticleMeta { content?: string; readTime?: number; tags?: string[] }
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function extractYouTubeId(url: string): string | null {
@@ -47,17 +45,15 @@ function extractYouTubeId(url: string): string | null {
 
 function uid() { return Math.random().toString(36).slice(2, 9) }
 
-const TYPE_LABELS: Record<ContentType, string> = { COURSE: 'دورة', VIDEO: 'فيديو', ARTICLE: 'مقال' }
+const TYPE_LABELS: Record<ContentType, string> = { COURSE: 'دورة', VIDEO: 'فيديو' }
 const TYPE_COLORS: Record<ContentType, string> = {
-  COURSE: 'bg-indigo-50 text-indigo-700',
+  COURSE: 'bg-[#EBF0FF] text-[#002880]',
   VIDEO: 'bg-violet-50 text-violet-700',
-  ARTICLE: 'bg-amber-50 text-amber-700',
 }
 const TABS: { label: string; value: TabFilter }[] = [
   { label: 'الكل', value: 'ALL' },
   { label: 'دورة', value: 'COURSE' },
   { label: 'فيديو', value: 'VIDEO' },
-  { label: 'مقال', value: 'ARTICLE' },
 ]
 
 // ─── Shared base fields ────────────────────────────────────────────────────────
@@ -95,11 +91,11 @@ function ThumbnailField({ value, onChange }: { value: string; onChange: (url: st
       <div className="flex items-center justify-between">
         <div className="flex rounded-lg overflow-hidden border border-slate-200 text-xs">
           <button type="button" onClick={() => setTab('upload')}
-            className={`px-3 py-1.5 font-semibold transition-colors ${tab === 'upload' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
+            className={`px-3 py-1.5 font-semibold transition-colors ${tab === 'upload' ? 'bg-[#0033A0] text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
             رفع صورة
           </button>
           <button type="button" onClick={() => setTab('url')}
-            className={`px-3 py-1.5 font-semibold transition-colors ${tab === 'url' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
+            className={`px-3 py-1.5 font-semibold transition-colors ${tab === 'url' ? 'bg-[#0033A0] text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
             رابط URL
           </button>
         </div>
@@ -108,11 +104,11 @@ function ThumbnailField({ value, onChange }: { value: string; onChange: (url: st
 
       {tab === 'upload' ? (
         <div
-          className="relative flex flex-col items-center justify-center h-24 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors cursor-pointer"
+          className="relative flex flex-col items-center justify-center h-24 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 hover:border-[#0033A0] hover:bg-[#EBF0FF]/30 transition-colors cursor-pointer"
           onClick={() => fileRef.current?.click()}
         >
           {uploading ? (
-            <span className="text-sm text-indigo-600 font-medium">جاري الرفع...</span>
+            <span className="text-sm text-[#0033A0] font-medium">جاري الرفع...</span>
           ) : (
             <>
               <svg className="w-7 h-7 text-slate-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,7 +168,7 @@ function BaseFieldsSection({ form, setForm }: { form: BaseFields; setForm: (f: B
               .filter(c => !form.category || c.toLowerCase().includes(form.category.toLowerCase()))
               .map(c => (
                 <button key={c} type="button"
-                  className="w-full text-right px-4 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                  className="w-full text-right px-4 py-2 text-sm text-slate-700 hover:bg-[#EBF0FF] hover:text-[#002880] transition-colors"
                   onMouseDown={() => { setForm({ ...form, category: c }); setCatOpen(false) }}>
                   {c}
                 </button>
@@ -189,8 +185,8 @@ function BaseFieldsSection({ form, setForm }: { form: BaseFields; setForm: (f: B
   )
 }
 
-const INPUT_CLS = 'w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors text-sm'
-const TEXTAREA_CLS = 'w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors resize-none text-sm'
+const INPUT_CLS = 'w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-[#0033A0] focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors text-sm'
+const TEXTAREA_CLS = 'w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-[#0033A0] focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors resize-none text-sm'
 
 // ─── Video Form ────────────────────────────────────────────────────────────────
 
@@ -275,7 +271,7 @@ function VideoForm({ initial, onClose }: { initial?: Content; onClose: () => voi
                     placeholder="https://youtube.com/watch?v=... أو رابط مباشر" className={INPUT_CLS + ' text-left'} />
                 </div>
                 {ytId && (
-                  <div className="rounded-xl overflow-hidden border border-violet-200 aspect-video bg-black">
+                  <div className="rounded-xl overflow-hidden border border-purple-200 aspect-video bg-black">
                     <iframe src={`https://www.youtube.com/embed/${ytId}`} className="w-full h-full" allowFullScreen title={v.title} />
                   </div>
                 )}
@@ -289,6 +285,11 @@ function VideoForm({ initial, onClose }: { initial?: Content; onClose: () => voi
                   <label className="block text-xs font-semibold text-slate-600 text-right mb-1">المدة (بالدقائق)</label>
                   <input type="number" min="0" dir="rtl" value={v.duration ?? ''} onChange={e => updateVideo(v.id, { duration: parseInt(e.target.value) || undefined })}
                     placeholder="0" className={INPUT_CLS} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 text-right mb-1">وصف الفيديو</label>
+                  <textarea dir="rtl" rows={3} value={v.description ?? ''} onChange={e => updateVideo(v.id, { description: e.target.value })}
+                    placeholder="وصف مختصر لمحتوى هذا الفيديو..." className={TEXTAREA_CLS} />
                 </div>
               </div>
             )
@@ -381,7 +382,7 @@ function CourseForm({ initial, onClose }: { initial?: Content; onClose: () => vo
         <div className="flex gap-2 ">
           {(['beginner', 'intermediate', 'advanced'] as const).map(lv => (
             <button key={lv} type="button" onClick={() => setLevel(lv)}
-              className={`flex-1 h-10 rounded-xl text-sm font-semibold border-2 transition-all ${level === lv ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}>
+              className={`flex-1 h-10 rounded-xl text-sm font-semibold border-2 transition-all ${level === lv ? 'border-[#0033A0] bg-[#EBF0FF] text-[#002880]' : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}>
               {LEVEL_LABELS[lv]}
             </button>
           ))}
@@ -392,7 +393,7 @@ function CourseForm({ initial, onClose }: { initial?: Content; onClose: () => vo
       <div>
         <div className="flex items-center justify-between mb-2">
           <button type="button" onClick={() => setWhatYouLearn(w => [...w, ''])}
-            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">+ إضافة</button>
+            className="text-xs font-semibold text-[#0033A0] hover:text-[#001E60]">+ إضافة</button>
           <label className="text-sm font-semibold text-slate-700">ماذا ستتعلم</label>
         </div>
         <div className="space-y-2">
@@ -413,7 +414,7 @@ function CourseForm({ initial, onClose }: { initial?: Content; onClose: () => vo
       <div>
         <div className="flex items-center justify-between mb-2">
           <button type="button" onClick={() => setRequirements(r => [...r, ''])}
-            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">+ إضافة</button>
+            className="text-xs font-semibold text-[#0033A0] hover:text-[#001E60]">+ إضافة</button>
           <label className="text-sm font-semibold text-slate-700">المتطلبات السابقة</label>
         </div>
         <div className="space-y-2">
@@ -434,7 +435,7 @@ function CourseForm({ initial, onClose }: { initial?: Content; onClose: () => vo
       <div>
         <div className="flex items-center justify-between mb-3">
           <button type="button" onClick={addLecture}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-semibold hover:bg-indigo-100 transition-colors">
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#EBF0FF] text-[#002880] rounded-lg text-sm font-semibold hover:bg-[#E0E8FF] transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             إضافة محاضرة
           </button>
@@ -482,7 +483,7 @@ function CourseForm({ initial, onClose }: { initial?: Content; onClose: () => vo
                     placeholder="https://youtube.com/watch?v=..." className={INPUT_CLS + ' text-left'} />
                 </div>
                 {ytId && (
-                  <div className="rounded-xl overflow-hidden border border-indigo-200 aspect-video bg-black">
+                  <div className="rounded-xl overflow-hidden border border-blue-100 aspect-video bg-black">
                     <iframe src={`https://www.youtube.com/embed/${ytId}`} className="w-full h-full" allowFullScreen title={lec.title} />
                   </div>
                 )}
@@ -507,104 +508,6 @@ function CourseForm({ initial, onClose }: { initial?: Content; onClose: () => vo
   )
 }
 
-// ─── Article Form ──────────────────────────────────────────────────────────────
-
-function ArticleForm({ initial, onClose }: { initial?: Content; onClose: () => void }) {
-  const createContent = useCreateContent()
-  const updateContent = useUpdateContent()
-  const initialMeta = (initial?.meta as unknown as ArticleMeta | null) ?? null
-
-  const [base, setBase] = useState<BaseFields>(
-    initial ? { titleAr: initial.titleAr, description: initial.description ?? '', category: initial.category ?? '', thumbnail: initial.thumbnail ?? '', isPublished: initial.isPublished } : emptyBase
-  )
-  const [content, setContent] = useState(initialMeta?.content ?? '')
-  const [tags, setTags] = useState(initialMeta?.tags?.join('، ') ?? '')
-  const [readTime, setReadTime] = useState(initialMeta?.readTime?.toString() ?? '')
-  const [preview, setPreview] = useState(false)
-
-  const autoReadTime = Math.max(1, Math.ceil(content.split(/\s+/).filter(Boolean).length / 200))
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!base.titleAr.trim()) { toast.error('يرجى إدخال عنوان المقال'); return }
-    if (!content.trim()) { toast.error('يرجى كتابة محتوى المقال'); return }
-    const tagList = tags.split(/[،,]/).map(t => t.trim()).filter(Boolean)
-    const rt = parseInt(readTime) || autoReadTime
-    const payload = {
-      type: 'ARTICLE' as ContentType,
-      titleAr: base.titleAr.trim(),
-      description: base.description || undefined,
-      category: base.category || undefined,
-      thumbnail: base.thumbnail || undefined,
-      isPublished: base.isPublished,
-      duration: rt,
-      meta: { content: content.trim(), readTime: rt, tags: tagList } as Record<string, unknown>,
-    }
-    try {
-      if (initial) { await updateContent.mutateAsync({ id: initial.id, ...payload }); toast.success('تم تحديث المقال') }
-      else { await createContent.mutateAsync(payload); toast.success('تم إضافة المقال') }
-      onClose()
-    } catch (err: any) {
-      const msg = err?.response?.data?.message ?? 'فشل الحفظ — تحقق من الاتصال وحاول مرة أخرى'
-      toast.error(msg, { duration: 6000 })
-    }
-  }
-
-  const isPending = createContent.isPending || updateContent.isPending
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <BaseFieldsSection form={base} setForm={setBase} />
-
-      {/* Article content */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <button type="button" onClick={() => setPreview(p => !p)}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${preview ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
-            {preview ? 'تعديل' : 'معاينة'}
-          </button>
-          <label className="text-sm font-semibold text-slate-700">محتوى المقال *</label>
-        </div>
-        {preview ? (
-          <div dir="rtl" className="min-h-[300px] p-4 border-2 border-slate-200 rounded-xl bg-white text-slate-800 text-sm leading-relaxed whitespace-pre-wrap text-right">
-            {content || <span className="text-slate-400">لا يوجد محتوى للمعاينة بعد...</span>}
-          </div>
-        ) : (
-          <textarea
-            dir="rtl"
-            value={content}
-            onChange={e => setContent(e.target.value)}
-            rows={16}
-            placeholder={`اكتب محتوى المقال هنا...\n\nيمكنك استخدام:\n# عنوان رئيسي\n## عنوان فرعي\n**نص عريض**\n- نقطة قائمة`}
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-amber-500 focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors resize-y text-sm font-mono leading-relaxed"
-          />
-        )}
-        <div className="flex items-center justify-between mt-1">
-          <p className="text-xs text-slate-400">{content.split(/\s+/).filter(Boolean).length} كلمة</p>
-          <p className="text-xs text-slate-400">وقت القراءة التقديري: ~{autoReadTime} دقيقة</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 text-right mb-1">الوسوم (tags)</label>
-          <input dir="rtl" value={tags} onChange={e => setTags(e.target.value)}
-            placeholder="مثال: برمجة، جافاسكريبت، ويب" className={INPUT_CLS} />
-          <p className="text-xs text-slate-400 text-right mt-1">مفصولة بفاصلة</p>
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 text-right mb-1">وقت القراءة (دقائق)</label>
-          <input type="number" min="1" dir="rtl" value={readTime} onChange={e => setReadTime(e.target.value)}
-            placeholder={autoReadTime.toString()} className={INPUT_CLS} />
-          <p className="text-xs text-slate-400 text-right mt-1">اتركه فارغاً للحساب التلقائي</p>
-        </div>
-      </div>
-
-      <FormActions onClose={onClose} isPending={isPending} isEditing={!!initial} />
-    </form>
-  )
-}
-
 // ─── Shared form actions ────────────────────────────────────────────────────────
 
 function FormActions({ onClose, isPending, isEditing }: { onClose: () => void; isPending: boolean; isEditing: boolean }) {
@@ -612,7 +515,7 @@ function FormActions({ onClose, isPending, isEditing }: { onClose: () => void; i
     <div className="flex gap-3 pt-2 border-t border-slate-100">
       <button type="button" onClick={onClose} className="flex-1 h-11 border-2 border-slate-200 rounded-xl text-slate-600 font-semibold hover:bg-slate-50 transition-all">إلغاء</button>
       <button type="submit" disabled={isPending}
-        className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-semibold disabled:opacity-70 hover:from-indigo-700 hover:to-violet-700 transition-all">
+        className="flex-1 h-11 bg-gradient-to-r from-[#0033A0] to-[#002880] text-white rounded-xl font-semibold disabled:opacity-70 hover:from-[#002880] hover:to-[#001E60] transition-all">
         {isPending ? 'جارٍ الحفظ...' : isEditing ? 'حفظ التغييرات' : 'إضافة'}
       </button>
     </div>
@@ -639,16 +542,7 @@ const TYPE_CONFIG = {
       </svg>
     ),
     label: 'دورة تعليمية', desc: 'أضف دورة كاملة بمحاضرات مرتبة مع تفاصيل كل محاضرة',
-    color: 'border-indigo-300 bg-indigo-50 text-indigo-700', hover: 'hover:border-indigo-500 hover:shadow-indigo-100',
-  },
-  ARTICLE: {
-    icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-    label: 'مقال', desc: 'اكتب مقالاً تعليمياً أو إرشادياً مع معاينة فورية',
-    color: 'border-amber-300 bg-amber-50 text-amber-700', hover: 'hover:border-amber-500 hover:shadow-amber-100',
+    color: 'border-blue-200 bg-[#EBF0FF] text-[#002880]', hover: 'hover:border-[#0033A0] hover:shadow-blue-100',
   },
 }
 
@@ -718,10 +612,8 @@ function ContentModal({ initial, onClose }: { initial?: Content; onClose: () => 
             <TypeSelector onSelect={setSelectedType} />
           ) : selectedType === 'VIDEO' ? (
             <VideoForm initial={initial} onClose={onClose} />
-          ) : selectedType === 'COURSE' ? (
-            <CourseForm initial={initial} onClose={onClose} />
           ) : (
-            <ArticleForm initial={initial} onClose={onClose} />
+            <CourseForm initial={initial} onClose={onClose} />
           )}
         </div>
       </div>
@@ -781,7 +673,7 @@ export default function ContentPage() {
         <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl p-1">
           {TABS.map(t => (
             <button key={t.value} onClick={() => setTab(t.value)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === t.value ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === t.value ? 'bg-[#0033A0] text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
               {t.label}
             </button>
           ))}
@@ -789,7 +681,7 @@ export default function ContentPage() {
 
         {/* Add — LEFT in RTL */}
         <button onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-500/25 hover:from-indigo-700 hover:to-violet-700 transition-all">
+          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#0033A0] to-[#002880] text-white rounded-xl text-sm font-semibold shadow-lg shadow-[#0033A0]/25 hover:from-[#002880] hover:to-[#001E60] transition-all">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
           إضافة محتوى
         </button>
@@ -823,9 +715,7 @@ export default function ContentPage() {
                     const meta = c.meta as any
                     const detailText = c.type === 'COURSE'
                       ? `${meta?.lectures?.length ?? 0} محاضرة`
-                      : c.type === 'VIDEO'
-                        ? `${meta?.videos?.length ?? 1} فيديو`
-                        : meta?.readTime ? `${meta.readTime} د قراءة` : '—'
+                      : `${meta?.videos?.length ?? 1} فيديو`
 
                     return (
                       <tr key={c.id} className="hover:bg-slate-50/50 transition-colors group">
@@ -850,7 +740,7 @@ export default function ContentPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => setEditingContent(c)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                            <button onClick={() => setEditingContent(c)} className="p-1.5 text-slate-400 hover:text-[#0033A0] hover:bg-[#EBF0FF] rounded-lg transition-all">
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                             </button>
                             <button onClick={() => handleDelete(c)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">

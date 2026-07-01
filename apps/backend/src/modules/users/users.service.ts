@@ -79,6 +79,10 @@ export class UsersService {
         avatar: true,
         role: true,
         isActive: true,
+        governorate: true,
+        gender: true,
+        education: true,
+        fieldOfStudy: true,
         createdAt: true,
         updatedAt: true,
         activities: {

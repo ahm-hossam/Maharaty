@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Animated,
+  PanResponder,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
@@ -163,7 +164,7 @@ function IntroScreen({ onStart, questionCount }: { onStart: () => void; question
           {[
             { num: String(questionCount), label: 'سؤال' },
             { num: '6', label: 'أبعاد' },
-            { num: '5 دق', label: 'تقريباً' },
+            { num: '2 دق', label: 'تقريباً' },
           ].map((s, i) => (
             <View key={i} style={IS.statChip}>
               <Text style={IS.statNum}>{s.num}</Text>
@@ -224,16 +225,23 @@ const DIMENSION_COLORS: Record<string, string> = {
   'الدقة التنظيمية': '#10B981',
 }
 
+const SWIPE_THRESHOLD = 90
+
 function QuestionScreen({
   question, qIndex, total, selected, onSelect,
 }: {
   question: AssessmentQuestion; qIndex: number; total: number; selected: number | undefined; onSelect: (v: number) => void
 }) {
-  const slideAnim = useRef(new Animated.Value(60)).current
-  const fadeAnim  = useRef(new Animated.Value(0)).current
-  const circleScales = useRef([1,2,3,4,5].map(() => new Animated.Value(1))).current
+  const translateX  = useRef(new Animated.Value(0)).current
+  const slideAnim   = useRef(new Animated.Value(60)).current
+  const fadeAnim    = useRef(new Animated.Value(0)).current
+  const onSelectRef = useRef(onSelect)
+  const flyOutRef   = useRef<(dir: 1 | -1, val: number) => void>(() => {})
+
+  useEffect(() => { onSelectRef.current = onSelect }, [onSelect])
 
   useEffect(() => {
+    translateX.setValue(0)
     slideAnim.setValue(60); fadeAnim.setValue(0)
     Animated.parallel([
       Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, damping: 22, stiffness: 180 }),
@@ -241,21 +249,37 @@ function QuestionScreen({
     ]).start()
   }, [qIndex])
 
+  const cardRotate = translateX.interpolate({ inputRange: [-200, 0, 200], outputRange: ['-12deg', '0deg', '12deg'] })
+  const yesOpacity = translateX.interpolate({ inputRange: [20, 90], outputRange: [0, 1], extrapolate: 'clamp' })
+  const noOpacity  = translateX.interpolate({ inputRange: [-90, -20], outputRange: [1, 0], extrapolate: 'clamp' })
+  const cardBgColor = translateX.interpolate({
+    inputRange: [-200, 0, 200],
+    outputRange: ['rgba(254,226,226,0.95)', 'rgba(248,249,255,0.98)', 'rgba(220,252,231,0.95)'],
+  })
+
+  const flyOut = (dir: 1 | -1, val: number) => {
+    Animated.timing(translateX, { toValue: dir * 500, duration: 200, useNativeDriver: false }).start(() => {
+      translateX.setValue(0)
+      onSelectRef.current(val)
+    })
+  }
+  flyOutRef.current = flyOut
+
+  const panResponder = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8 && Math.abs(g.dy) < 80,
+    onPanResponderMove: (_, g) => { translateX.setValue(g.dx) },
+    onPanResponderRelease: (_, g) => {
+      if (g.dx > SWIPE_THRESHOLD)        flyOutRef.current(1, 1)
+      else if (g.dx < -SWIPE_THRESHOLD)  flyOutRef.current(-1, 0)
+      else Animated.spring(translateX, { toValue: 0, useNativeDriver: false, damping: 15, stiffness: 220 }).start()
+    },
+  })).current
+
   const dimColor = DIMENSION_COLORS[question.dimension] || COLORS.primary
 
-  const handlePress = (v: number) => {
-    // Bounce animation on selected circle
-    const idx = v - 1
-    Animated.sequence([
-      Animated.spring(circleScales[idx], { toValue: 0.85, useNativeDriver: true, speed: 80 }),
-      Animated.spring(circleScales[idx], { toValue: 1,    useNativeDriver: true, speed: 50 }),
-    ]).start()
-    onSelect(v)
-  }
-
   return (
-    <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-      <ScrollView contentContainerStyle={QS.content} showsVerticalScrollIndicator={false}>
+    <Animated.View style={[QS.wrapper, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      <View style={QS.content}>
         {/* Progress bar */}
         <View style={QS.progressTrack}>
           <View style={[QS.progressFill, { width: `${((qIndex + 1) / total) * 100}%` as any }]} />
@@ -267,108 +291,92 @@ function QuestionScreen({
           </Text>
         </View>
 
-        {/* Question card */}
-        <View style={QS.card}>
-          <LinearGradient colors={['rgba(248,249,255,0.98)', 'rgba(240,244,255,1.0)']} style={QS.cardInner}>
-            <Text style={QS.questionText}>{question.text}</Text>
-          </LinearGradient>
+        {/* Swipeable card */}
+        <Animated.View
+          {...panResponder.panHandlers}
+          style={[QS.card, { backgroundColor: cardBgColor, transform: [{ translateX }, { rotate: cardRotate }] }]}
+        >
+          {/* Yes badge — appears on right swipe */}
+          <Animated.View style={[QS.swipeBadge, QS.yesBadge, { opacity: yesOpacity }]}>
+            <Text style={QS.yesBadgeText}>نعم ✓</Text>
+          </Animated.View>
+          {/* No badge — appears on left swipe */}
+          <Animated.View style={[QS.swipeBadge, QS.noBadge, { opacity: noOpacity }]}>
+            <Text style={QS.noBadgeText}>لا ✗</Text>
+          </Animated.View>
+
+          <Text style={QS.questionText}>{question.text}</Text>
+        </Animated.View>
+
+        {/* Swipe hint — row so labels align with buttons below */}
+        <View style={QS.swipeHintRow}>
+          <Text style={QS.swipeHintSide}>← لا</Text>
+          <Text style={QS.swipeHintCenter}>اسحب للإجابة</Text>
+          <Text style={QS.swipeHintSide}>نعم →</Text>
         </View>
 
-        {/* Likert scale */}
-        <Text style={QS.scaleLabel}>اختر ما ينطبق عليك</Text>
-
-        <View style={QS.likertWrap}>
-          {/* Endpoint labels */}
-          <View style={QS.likertEndRow}>
-            <Text style={QS.likertEndLabel}>لا ينطبق</Text>
-            <Text style={QS.likertEndLabel}>دائماً</Text>
-          </View>
-
-          {/* Circles with connecting line */}
-          <View style={QS.likertRow}>
-            <View style={[QS.likertLine, { backgroundColor: dimColor + '30' }]} />
-            {[1, 2, 3, 4, 5].map((v) => {
-              const isSelected = selected === v
-              const isPast = selected !== undefined && v < selected
-              return (
-                <Animated.View key={v} style={{ transform: [{ scale: circleScales[v - 1] }], zIndex: 2 }}>
-                  <TouchableOpacity onPress={() => handlePress(v)} activeOpacity={0.8} style={QS.likertBtn}>
-                    <View style={[
-                      QS.likertCircle,
-                      isPast && { borderColor: dimColor + '60', backgroundColor: dimColor + '15' },
-                      isSelected && { backgroundColor: dimColor, borderColor: dimColor },
-                    ]}>
-                      {isSelected
-                        ? <Ionicons name="checkmark" size={20} color="#fff" />
-                        : <Text style={[QS.likertNum, isPast && { color: dimColor }]}>{v}</Text>
-                      }
-                    </View>
-                    {isSelected && (
-                      <View style={[QS.likertDot, { backgroundColor: dimColor }]} />
-                    )}
-                  </TouchableOpacity>
-                </Animated.View>
-              )
-            })}
-          </View>
-
-          {/* Value labels below each circle */}
-          <View style={QS.likertValueRow}>
-            {['لا\nينطبق', 'نادراً', 'أحياناً', 'غالباً', 'دائماً'].map((label, i) => (
-              <Text
-                key={i}
-                style={[QS.likertValueLabel, selected === i + 1 && { color: dimColor, fontFamily: FONT.bold }]}
-              >
-                {label}
-              </Text>
-            ))}
-          </View>
+        {/* Yes / No buttons */}
+        <View style={QS.btnRow}>
+          <TouchableOpacity
+            onPress={() => flyOut(-1, 0)}
+            activeOpacity={0.82}
+            style={[QS.actionBtn, QS.noBtn, selected === 0 && QS.noBtnActive]}
+          >
+            <Ionicons name="close" size={30} color={selected === 0 ? '#fff' : '#EF4444'} />
+            <Text style={[QS.actionBtnText, { color: selected === 0 ? '#fff' : '#EF4444' }]}>لا</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => flyOut(1, 1)}
+            activeOpacity={0.82}
+            style={[QS.actionBtn, QS.yesBtn, selected === 1 && QS.yesBtnActive]}
+          >
+            <Ionicons name="checkmark" size={30} color={selected === 1 ? '#fff' : '#10B981'} />
+            <Text style={[QS.actionBtnText, { color: selected === 1 ? '#fff' : '#10B981' }]}>نعم</Text>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+      </View>
     </Animated.View>
   )
 }
 
 const QS = StyleSheet.create({
-  content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 40 },
+  wrapper: { flex: 1 },
+  content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 24, flex: 1 },
 
   progressTrack: { height: 3, backgroundColor: 'rgba(15,18,33,0.08)', borderRadius: 2, marginBottom: 14 },
   progressFill: { height: '100%', backgroundColor: COLORS.primary, borderRadius: 2, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 6 },
-  progressMeta: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 },
+  progressMeta: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   progressText: { fontSize: FS.sm, color: COLORS.textMuted, fontWeight: '700', fontFamily: FONT.bold },
   dimensionTag: { fontSize: FS.xs, fontWeight: '800', borderWidth: 1, borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 5, letterSpacing: 0.3, fontFamily: FONT.extrabold },
 
-  card: { borderRadius: RADIUS.xxl, overflow: 'hidden', marginBottom: 40, ...SHADOW.md },
-  cardInner: { padding: 28, borderWidth: 1, borderColor: 'rgba(15,18,33,0.09)', borderRadius: RADIUS.xxl },
-  questionText: { fontSize: FS.lg, fontWeight: '700', color: COLORS.text, textAlign: 'right', lineHeight: 30, fontFamily: FONT.bold },
-
-  scaleLabel: { fontSize: FS.xs, color: COLORS.textMuted, textAlign: 'right', marginBottom: 20, fontWeight: '700', letterSpacing: 0.8, fontFamily: FONT.bold },
-
-  // Likert
-  likertWrap: { paddingHorizontal: 4 },
-  likertEndRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', marginBottom: 10 },
-  likertEndLabel: { fontSize: FS.xs, color: COLORS.textMuted, fontFamily: FONT.semibold },
-
-  likertRow: {
-    flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center',
-    position: 'relative', marginBottom: 10, paddingHorizontal: 4,
-  },
-  likertLine: {
-    position: 'absolute', left: '8%', right: '8%', height: 2.5, borderRadius: 2, zIndex: 0,
-  },
-  likertBtn: { alignItems: 'center', gap: 4 },
-  likertCircle: {
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: COLORS.surface,
-    borderWidth: 2, borderColor: 'rgba(15,18,33,0.12)',
+  card: {
+    flex: 1,
+    borderRadius: RADIUS.xxl,
+    borderWidth: 1, borderColor: 'rgba(15,18,33,0.09)',
+    padding: 28,
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
+    marginBottom: 20,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 4,
   },
-  likertNum: { fontSize: FS.lg, fontWeight: '900', color: COLORS.textMuted, fontFamily: FONT.black },
-  likertDot: { width: 6, height: 6, borderRadius: 3 },
+  questionText: { fontSize: FS.xl, fontWeight: '700', color: COLORS.text, textAlign: 'center', lineHeight: 34, fontFamily: FONT.bold },
 
-  likertValueRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', paddingHorizontal: 2 },
-  likertValueLabel: { fontSize: 9.5, color: COLORS.textMuted, fontFamily: FONT.regular, textAlign: 'center', width: 56, lineHeight: 13 },
+  swipeBadge: { position: 'absolute', top: 24, borderRadius: RADIUS.lg, paddingHorizontal: 18, paddingVertical: 9, borderWidth: 2.5 },
+  yesBadge: { left: 20, backgroundColor: '#10B981', borderColor: '#059669', transform: [{ rotate: '-12deg' }] },
+  noBadge:  { right: 20, backgroundColor: '#EF4444', borderColor: '#DC2626', transform: [{ rotate: '12deg' }] },
+  yesBadgeText: { fontSize: FS.md, fontWeight: '900', color: '#fff', fontFamily: FONT.black },
+  noBadgeText:  { fontSize: FS.md, fontWeight: '900', color: '#fff', fontFamily: FONT.black },
+
+  swipeHintRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, paddingHorizontal: 4 },
+  swipeHintSide: { fontSize: FS.xs, color: COLORS.textMuted, fontFamily: FONT.semibold, letterSpacing: 0.2 },
+  swipeHintCenter: { fontSize: FS.xs, color: COLORS.textMuted, fontFamily: FONT.regular },
+
+  btnRow: { flexDirection: 'row', gap: 14 },
+  actionBtn: { flex: 1, height: 72, borderRadius: RADIUS.xxl, justifyContent: 'center', alignItems: 'center', gap: 4, borderWidth: 2 },
+  noBtn:       { backgroundColor: '#FEF2F2', borderColor: '#FECACA' },
+  noBtnActive: { backgroundColor: '#EF4444', borderColor: '#EF4444' },
+  yesBtn:       { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' },
+  yesBtnActive: { backgroundColor: '#10B981', borderColor: '#10B981' },
+  actionBtnText: { fontSize: FS.md, fontWeight: '800', fontFamily: FONT.extrabold },
 })
 
 // ─── Result Screen ────────────────────────────────────────────
@@ -533,7 +541,7 @@ export default function SelfAssessmentScreen() {
     const newAnswers = { ...answers, [questions[qIndex].id]: value }
     setAnswers(newAnswers)
 
-    // Auto-advance after 400ms
+    // Auto-advance after brief delay (swipe animation already provides visual feedback)
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current)
     autoAdvanceTimer.current = setTimeout(() => {
       if (qIndex < questions.length - 1) {
@@ -541,7 +549,7 @@ export default function SelfAssessmentScreen() {
       } else {
         finishQuiz(newAnswers)
       }
-    }, 400)
+    }, 300)
   }
 
   const goPrev = () => {
@@ -579,18 +587,17 @@ export default function SelfAssessmentScreen() {
             selected={answers[questions[qIndex]?.id]}
             onSelect={handleSelect}
           />
-          {/* Footer: prev only */}
+          {/* Footer */}
           <View style={[SC.footer, { paddingBottom: insets.bottom + 14 }]}>
-            <TouchableOpacity style={SC.prevBtn} onPress={goPrev}>
-              <Ionicons name="arrow-forward" size={18} color={COLORS.textMuted} />
-              <Text style={SC.prevBtnText}>السابق</Text>
-            </TouchableOpacity>
-
             <Text style={SC.footerHint}>
               {answers[questions[qIndex]?.id] !== undefined
                 ? 'جيد! سينتقل تلقائياً...'
                 : 'اختر إجابتك للمتابعة'}
             </Text>
+            <TouchableOpacity style={SC.prevBtn} onPress={goPrev} activeOpacity={0.75}>
+              <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+              <Text style={SC.prevBtnText}>السابق</Text>
+            </TouchableOpacity>
           </View>
         </>
       )}
@@ -616,11 +623,16 @@ const SC = StyleSheet.create({
 
   footer: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 16,
-    backgroundColor: COLORS.canvasAlt,
+    paddingHorizontal: 24, paddingTop: 14,
+    backgroundColor: COLORS.canvas,
     borderTopWidth: 1, borderTopColor: 'rgba(15,18,33,0.07)',
+    gap: 12,
   },
-  prevBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  prevBtnText: { fontSize: FS.sm, color: COLORS.textMuted, fontFamily: FONT.semibold },
-  footerHint: { fontSize: FS.xs, color: COLORS.textMuted, fontFamily: FONT.regular, textAlign: 'left', flex: 1, textAlignVertical: 'center', marginLeft: 8 },
+  footerHint: { flex: 1, fontSize: FS.sm, color: COLORS.textMuted, fontFamily: FONT.regular, textAlign: 'right' },
+  prevBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder,
+    borderRadius: RADIUS.xl, paddingHorizontal: 16, paddingVertical: 10,
+  },
+  prevBtnText: { fontSize: FS.sm, fontWeight: '700', color: COLORS.textSecondary, fontFamily: FONT.bold },
 })

@@ -94,7 +94,7 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
                 type={type}
                 value={form[key as keyof UserFormData]}
                 onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                className="w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors"
+                className="w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-[#0033A0] focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors"
               />
             </div>
           ))}
@@ -104,7 +104,7 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
               dir="rtl"
-              className="w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors"
+              className="w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-[#0033A0] focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors"
             >
               <option value="USER">مستخدم</option>
               <option value="ADMIN">مشرف</option>
@@ -113,7 +113,7 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 h-11 border-2 border-slate-200 rounded-xl text-slate-600 font-semibold hover:bg-slate-50 transition-all">إلغاء</button>
-            <button type="submit" disabled={createUser.isPending} className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-semibold disabled:opacity-70 hover:from-indigo-700 hover:to-violet-700 transition-all">
+            <button type="submit" disabled={createUser.isPending} className="flex-1 h-11 bg-gradient-to-r from-[#0033A0] to-[#002880] text-white rounded-xl font-semibold disabled:opacity-70 hover:from-[#002880] hover:to-[#001E60] transition-all">
               {createUser.isPending ? 'جارٍ الإنشاء...' : 'إنشاء'}
             </button>
           </div>
@@ -167,7 +167,7 @@ function EditUserModal({ user, onClose }: { user: User; onClose: () => void }) {
                 type={type}
                 value={form[key as keyof EditFormData] as string}
                 onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                className="w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors"
+                className="w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-[#0033A0] focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors"
               />
             </div>
           ))}
@@ -177,7 +177,7 @@ function EditUserModal({ user, onClose }: { user: User; onClose: () => void }) {
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
               dir="rtl"
-              className="w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors"
+              className="w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-[#0033A0] focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors"
             >
               <option value="USER">مستخدم</option>
               <option value="ADMIN">مشرف</option>
@@ -192,7 +192,7 @@ function EditUserModal({ user, onClose }: { user: User; onClose: () => void }) {
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 h-11 border-2 border-slate-200 rounded-xl text-slate-600 font-semibold hover:bg-slate-50 transition-all">إلغاء</button>
-            <button type="submit" disabled={updateUser.isPending} className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-semibold disabled:opacity-70 hover:from-indigo-700 hover:to-violet-700 transition-all">
+            <button type="submit" disabled={updateUser.isPending} className="flex-1 h-11 bg-gradient-to-r from-[#0033A0] to-[#002880] text-white rounded-xl font-semibold disabled:opacity-70 hover:from-[#002880] hover:to-[#001E60] transition-all">
               {updateUser.isPending ? 'جارٍ الحفظ...' : 'حفظ'}
             </button>
           </div>
@@ -249,7 +249,7 @@ export default function UsersPage() {
         {/* Add User */}
         <button
           onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-500/25 hover:from-indigo-700 hover:to-violet-700 transition-all"
+          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#0033A0] to-[#002880] text-white rounded-xl text-sm font-semibold shadow-lg shadow-[#0033A0]/25 hover:from-[#002880] hover:to-[#001E60] transition-all"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -268,7 +268,7 @@ export default function UsersPage() {
               key={f.value}
               onClick={() => { setStatusFilter(f.value); setPage(1) }}
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                statusFilter === f.value ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                statusFilter === f.value ? 'bg-[#0033A0] text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
               }`}
             >
               {f.label}
@@ -286,7 +286,7 @@ export default function UsersPage() {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="بحث بالاسم أو البريد..."
             dir="rtl"
-            className="w-full h-11 pr-10 pl-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-indigo-400"
+            className="w-full h-11 pr-10 pl-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#0033A0]"
           />
         </div>
       </div>
@@ -337,7 +337,7 @@ export default function UsersPage() {
                         <div className="flex items-center gap-2 justify-start">
                           <span className="text-sm font-semibold text-slate-600">{pathSteps}</span>
                           <div className="w-20 bg-slate-100 rounded-full h-1.5">
-                            <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${Math.min(pathSteps * 10, 100)}%` }} />
+                            <div className="bg-[#0033A0] h-1.5 rounded-full" style={{ width: `${Math.min(pathSteps * 10, 100)}%` }} />
                           </div>
                         </div>
                       </td>
@@ -361,7 +361,7 @@ export default function UsersPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                           </Link>
-                          <button onClick={() => setEditingUser(user)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                          <button onClick={() => setEditingUser(user)} className="p-1.5 text-slate-400 hover:text-[#0033A0] hover:bg-[#EBF0FF] rounded-lg transition-all">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
@@ -390,7 +390,7 @@ export default function UsersPage() {
           <button
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
-            className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors disabled:text-slate-300 disabled:cursor-not-allowed"
+            className="text-sm font-semibold text-[#0033A0] hover:text-[#001E60] transition-colors disabled:text-slate-300 disabled:cursor-not-allowed"
           >
             السابق →
           </button>
@@ -400,7 +400,7 @@ export default function UsersPage() {
           <button
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors disabled:text-slate-300 disabled:cursor-not-allowed"
+            className="text-sm font-semibold text-[#0033A0] hover:text-[#001E60] transition-colors disabled:text-slate-300 disabled:cursor-not-allowed"
           >
             ← التالي
           </button>

@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Modal,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
@@ -15,6 +16,106 @@ import { useState } from 'react'
 import { useRouter } from 'expo-router'
 import { COLORS, FONT, RADIUS, SHADOW, FS } from '@/constants/theme'
 
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+const GOVERNORATES = [
+  'القاهرة', 'الجيزة', 'الإسكندرية', 'الدقهلية', 'البحيرة',
+  'الشرقية', 'القليوبية', 'الغربية', 'المنوفية', 'كفر الشيخ',
+  'دمياط', 'بورسعيد', 'الإسماعيلية', 'السويس', 'شمال سيناء',
+  'جنوب سيناء', 'مطروح', 'الوادي الجديد', 'البحر الأحمر',
+  'أسوان', 'قنا', 'الأقصر', 'سوهاج', 'أسيوط', 'المنيا',
+  'بني سويف', 'الفيوم',
+].map((v) => ({ label: v, value: v }))
+
+const GENDERS = [
+  { label: 'ذكر', value: 'ذكر' },
+  { label: 'أنثى', value: 'أنثى' },
+]
+
+const EDUCATION_LEVELS = [
+  { label: 'ثانوي فأقل', value: 'ثانوي فأقل' },
+  { label: 'دبلوم', value: 'دبلوم' },
+  { label: 'بكالوريوس / ليسانس', value: 'بكالوريوس / ليسانس' },
+  { label: 'ماجستير', value: 'ماجستير' },
+  { label: 'دكتوراه', value: 'دكتوراه' },
+]
+
+// ─── SelectField ─────────────────────────────────────────────────────────────
+
+interface SelectOption { label: string; value: string }
+
+function SelectField({
+  label,
+  value,
+  options,
+  onSelect,
+  placeholder,
+}: {
+  label: string
+  value: string
+  options: SelectOption[]
+  onSelect: (v: string) => void
+  placeholder: string
+}) {
+  const [open, setOpen] = useState(false)
+  const selected = options.find((o) => o.value === value)
+
+  return (
+    <>
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>{label}</Text>
+        <TouchableOpacity
+          style={styles.inputWrap}
+          onPress={() => setOpen(true)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chevron-down-outline" size={18} color={COLORS.textMuted} style={styles.inputIcon} />
+          <Text style={[styles.input, { paddingVertical: 16, textAlign: 'right', color: selected ? COLORS.text : COLORS.textMuted }]}>
+            {selected ? selected.label : placeholder}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+        <View style={pickerStyles.overlay}>
+          <TouchableOpacity style={{ flex: 1 }} onPress={() => setOpen(false)} activeOpacity={1} />
+          <View style={pickerStyles.sheet}>
+            <View style={pickerStyles.header}>
+              <TouchableOpacity onPress={() => setOpen(false)} style={pickerStyles.closeBtn}>
+                <Ionicons name="close" size={22} color={COLORS.text} />
+              </TouchableOpacity>
+              <Text style={pickerStyles.title}>{label}</Text>
+              <View style={{ width: 40 }} />
+            </View>
+            <ScrollView contentContainerStyle={{ paddingVertical: 8 }} showsVerticalScrollIndicator={false}>
+              {options.map((opt) => {
+                const isSelected = value === opt.value
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    onPress={() => { onSelect(opt.value); setOpen(false) }}
+                    style={[pickerStyles.item, isSelected && pickerStyles.itemSelected]}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[pickerStyles.itemText, isSelected && pickerStyles.itemTextSelected]}>
+                      {opt.label}
+                    </Text>
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />
+                    )}
+                  </TouchableOpacity>
+                )
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </>
+  )
+}
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
@@ -22,6 +123,10 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [governorate, setGovernorate] = useState('')
+  const [gender, setGender] = useState('')
+  const [education, setEducation] = useState('')
+  const [fieldOfStudy, setFieldOfStudy] = useState('')
 
   const handleRegister = () => {
     router.replace('/(main)/home')
@@ -32,15 +137,14 @@ export default function RegisterScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Gradient header */}
       <LinearGradient
         colors={[COLORS.secondary, COLORS.primary]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.gradientBg, { paddingTop: insets.top }]}
       >
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-forward" size={22} color="#fff" />
+        <TouchableOpacity style={[styles.backBtn, { top: insets.top + 10 }]} onPress={() => router.back()}>
+          <Ionicons name="chevron-forward" size={22} color="#fff" />
         </TouchableOpacity>
         <View style={styles.logoSection}>
           <View style={styles.logoCircle}>
@@ -51,7 +155,6 @@ export default function RegisterScreen() {
         </View>
       </LinearGradient>
 
-      {/* Dark form card */}
       <ScrollView
         style={styles.card}
         contentContainerStyle={[styles.cardContent, { paddingBottom: insets.bottom + 32 }]}
@@ -110,6 +213,47 @@ export default function RegisterScreen() {
           </View>
         </View>
 
+        <SelectField
+          label="المحافظة"
+          value={governorate}
+          options={GOVERNORATES}
+          onSelect={setGovernorate}
+          placeholder="اختر محافظتك"
+        />
+
+        <SelectField
+          label="الجنس"
+          value={gender}
+          options={GENDERS}
+          onSelect={setGender}
+          placeholder="اختر الجنس"
+        />
+
+        <SelectField
+          label="المؤهل الدراسي"
+          value={education}
+          options={EDUCATION_LEVELS}
+          onSelect={(v) => { setEducation(v); if (v === 'ثانوي فأقل') setFieldOfStudy('') }}
+          placeholder="اختر مؤهلك الدراسي"
+        />
+
+        {education !== 'ثانوي فأقل' && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>مجال الدراسة</Text>
+            <View style={styles.inputWrap}>
+              <Ionicons name="school-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={fieldOfStudy}
+                onChangeText={setFieldOfStudy}
+                placeholder="مثال: هندسة، طب، تجارة..."
+                placeholderTextColor={COLORS.textMuted}
+                textAlign="right"
+              />
+            </View>
+          </View>
+        )}
+
         <TouchableOpacity onPress={handleRegister} activeOpacity={0.88} style={{ marginTop: 8 }}>
           <LinearGradient
             colors={[COLORS.secondary, COLORS.primary]}
@@ -144,7 +288,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.canvas },
 
   gradientBg: { height: 260, justifyContent: 'flex-end', alignItems: 'center' },
-  backBtn: { position: 'absolute', top: 0, right: 20, padding: 10, marginTop: 16 },
+  backBtn: {
+    position: 'absolute', right: 20,
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
+    justifyContent: 'center', alignItems: 'center',
+  },
 
   logoSection: { alignItems: 'center', paddingBottom: 36 },
   logoCircle: { width: 76, height: 76, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
@@ -172,4 +322,36 @@ const styles = StyleSheet.create({
   loginRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
   loginText: { fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.textMuted },
   loginLink: { fontSize: FS.md, fontFamily: FONT.bold, color: COLORS.primary },
+})
+
+const pickerStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: COLORS.canvas,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: '72%',
+    paddingBottom: 24,
+  },
+  header: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.surfaceBorder,
+  },
+  closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: FS.lg, fontFamily: FONT.bold, color: COLORS.text },
+  item: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  itemSelected: { backgroundColor: COLORS.primary + '10' },
+  itemText: { fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.text },
+  itemTextSelected: { fontFamily: FONT.bold, color: COLORS.primary },
 })
