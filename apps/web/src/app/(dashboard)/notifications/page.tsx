@@ -24,10 +24,10 @@ function NotifPreview({
   type: NotifType
 }) {
   return (
-    <div className="bg-slate-900 rounded-2xl p-4 text-white">
+    <div className="bg-[#1C1352] rounded-2xl p-4 text-white">
       <p className="text-xs text-slate-400 mb-3 text-right">معاينة الإشعار</p>
       <div className="bg-white/10 rounded-xl p-4 flex items-start gap-3 ">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0033A0] to-[#002880] flex items-center justify-center flex-shrink-0">
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
@@ -134,7 +134,7 @@ export default function NotificationsPage() {
                 onClick={() => setTab(t.value)}
                 className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
                   tab === t.value
-                    ? 'bg-indigo-600 text-white shadow-sm'
+                    ? 'bg-[#0033A0] text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -170,7 +170,7 @@ export default function NotificationsPage() {
                       setSelectedUserId('')
                     }}
                     placeholder="ابحث باسم المستخدم..."
-                    className="w-full h-11 pr-10 pl-4 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors text-sm"
+                    className="w-full h-11 pr-10 pl-4 border-2 border-slate-200 rounded-xl focus:border-[#0033A0] focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors text-sm"
                   />
                 </div>
                 {selectedUserId && (
@@ -194,7 +194,7 @@ export default function NotificationsPage() {
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors  text-right"
                       >
-                        <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#E0E8FF] text-[#002880] flex items-center justify-center text-xs font-bold flex-shrink-0">
                           {u.name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -222,7 +222,7 @@ export default function NotificationsPage() {
                     id="bulk-all"
                     checked={bulkAll}
                     onChange={(e) => setBulkAll(e.target.checked)}
-                    className="w-4 h-4 rounded accent-indigo-600"
+                    className="w-4 h-4 rounded accent-[#0033A0]"
                   />
                   <label htmlFor="bulk-all" className="text-sm font-semibold text-slate-700">
                     إرسال لجميع المستخدمين
@@ -235,7 +235,7 @@ export default function NotificationsPage() {
                     onChange={(e) => setBulkIds(e.target.value)}
                     placeholder="أدخل معرّفات المستخدمين مفصولة بفواصل..."
                     rows={3}
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-left text-slate-800 bg-slate-50 focus:bg-white transition-colors resize-none text-sm font-mono"
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-[#0033A0] focus:outline-none text-left text-slate-800 bg-slate-50 focus:bg-white transition-colors resize-none text-sm font-mono"
                   />
                 )}
               </div>
@@ -252,7 +252,7 @@ export default function NotificationsPage() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="عنوان الإشعار..."
-                className="w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors"
+                className="w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-[#0033A0] focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors"
               />
             </div>
 
@@ -268,7 +268,7 @@ export default function NotificationsPage() {
                 onChange={(e) => setBody(e.target.value)}
                 placeholder="نص الإشعار..."
                 rows={4}
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors resize-none"
+                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-[#0033A0] focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors resize-none"
               />
             </div>
 
@@ -285,7 +285,7 @@ export default function NotificationsPage() {
                     onClick={() => setType(opt.value)}
                     className={`flex-1 h-10 rounded-xl text-sm font-semibold transition-all border-2 ${
                       type === opt.value
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                        ? 'border-[#0033A0] bg-[#EBF0FF] text-[#002880]'
                         : 'border-slate-200 text-slate-500 hover:border-slate-300'
                     }`}
                   >
@@ -298,7 +298,7 @@ export default function NotificationsPage() {
             <button
               type="submit"
               disabled={sendNotification.isPending}
-              className="w-full h-12 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-bold text-base hover:from-indigo-700 hover:to-violet-700 transition-all shadow-lg shadow-indigo-500/30 disabled:opacity-70 flex items-center justify-center gap-2"
+              className="w-full h-12 bg-gradient-to-r from-[#0033A0] to-[#002880] text-white rounded-xl font-bold text-base hover:from-[#002880] hover:to-[#001E60] transition-all shadow-lg shadow-[#0033A0]/30 disabled:opacity-70 flex items-center justify-center gap-2"
             >
               {sendNotification.isPending ? (
                 <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
@@ -350,7 +350,7 @@ export default function NotificationsPage() {
                   key={i}
                   className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl "
                 >
-                  <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-[#E0E8FF] text-[#0033A0] flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>

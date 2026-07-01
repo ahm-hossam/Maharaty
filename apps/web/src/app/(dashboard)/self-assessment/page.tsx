@@ -38,9 +38,9 @@ const CATEGORIES = [
   { value: 'C', label: 'الدقة التنظيمية', color: 'bg-emerald-100 text-emerald-800' },
 ]
 
-const INPUT = 'w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors text-sm'
-const SELECT = 'w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors text-sm'
-const TEXTAREA = 'w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors resize-none text-sm'
+const INPUT = 'w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-[#0033A0] focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors text-sm'
+const SELECT = 'w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-[#0033A0] focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors text-sm'
+const TEXTAREA = 'w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-[#0033A0] focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors resize-none text-sm'
 
 function catStyle(cat: string) {
   return CATEGORIES.find((c) => c.value === cat)?.color ?? 'bg-slate-100 text-slate-600'
@@ -122,7 +122,7 @@ function EditModal({ question, onClose }: { question: SAQuestion; onClose: () =>
           <button
             type="button"
             onClick={() => setIsActive((v) => !v)}
-            className={`w-12 h-6 rounded-full transition-colors relative ${isActive ? 'bg-indigo-600' : 'bg-slate-200'}`}
+            className={`w-12 h-6 rounded-full transition-colors relative ${isActive ? 'bg-[#0033A0]' : 'bg-slate-200'}`}
           >
             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${isActive ? 'left-7' : 'left-1'}`} />
           </button>
@@ -131,7 +131,7 @@ function EditModal({ question, onClose }: { question: SAQuestion; onClose: () =>
         <button
           onClick={save}
           disabled={textAr.trim().length < 5 || update.isPending}
-          className="w-full h-11 bg-gradient-to-l from-indigo-600 to-violet-600 text-white font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 text-sm"
+          className="w-full h-11 bg-gradient-to-l from-[#0033A0] to-[#002880] text-white font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 text-sm"
         >
           {update.isPending ? 'جاري الحفظ...' : 'حفظ التغييرات'}
         </button>
@@ -208,7 +208,7 @@ function AddForm() {
         <button
           type="button"
           onClick={() => setIsActive((v) => !v)}
-          className={`w-12 h-6 rounded-full transition-colors relative ${isActive ? 'bg-indigo-600' : 'bg-slate-200'}`}
+          className={`w-12 h-6 rounded-full transition-colors relative ${isActive ? 'bg-[#0033A0]' : 'bg-slate-200'}`}
         >
           <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${isActive ? 'left-7' : 'left-1'}`} />
         </button>
@@ -217,7 +217,7 @@ function AddForm() {
       <button
         onClick={submit}
         disabled={!valid || create.isPending}
-        className="w-full h-11 bg-gradient-to-l from-indigo-600 to-violet-600 text-white font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 text-sm"
+        className="w-full h-11 bg-gradient-to-l from-[#0033A0] to-[#002880] text-white font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 text-sm"
       >
         {create.isPending ? 'جاري الإضافة...' : '+ إضافة السؤال'}
       </button>
@@ -255,7 +255,7 @@ function SortableCard({
       style={style}
       className={`bg-white rounded-2xl border shadow-sm p-4 transition-all ${
         q.isActive ? 'border-slate-200' : 'border-slate-100 opacity-60'
-      } ${isDragging ? 'shadow-lg ring-2 ring-indigo-300' : ''}`}
+      } ${isDragging ? 'shadow-lg ring-2 ring-[#0033A0]/40' : ''}`}
     >
       <div className="flex items-start gap-3">
         {/* Content — right side in RTL */}
@@ -291,7 +291,7 @@ function SortableCard({
           <button
             onClick={onEdit}
             title="تعديل"
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:text-[#0033A0] hover:border-blue-100 transition-colors"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -431,13 +431,13 @@ export default function SelfAssessmentPage() {
                 <button
                   onClick={handleSeed}
                   disabled={seed.isPending || (stats?.total ?? 0) > 0}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-blue-100 text-[#002880] hover:bg-[#EBF0FF] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   {seed.isPending ? 'جاري الاستيراد...' : '↓ استيراد الأسئلة الافتراضية (15 سؤال)'}
                 </button>
                 <div className="flex items-center gap-2">
                   {reorder.isPending && (
-                    <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-[#0033A0] border-t-transparent rounded-full animate-spin" />
                   )}
                   <h2 className="font-bold text-slate-800">{questions.length} سؤال</h2>
                 </div>
@@ -452,7 +452,7 @@ export default function SelfAssessmentPage() {
 
               {isLoading && (
                 <div className="flex justify-center py-12">
-                  <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-4 border-[#0033A0] border-t-transparent rounded-full animate-spin" />
                 </div>
               )}
 

@@ -32,7 +32,7 @@ export function DashboardHeader({ title, subtitle }: DashboardHeaderProps) {
           <input
             dir="rtl"
             placeholder="بحث..."
-            className="pr-10 pl-4 h-10 bg-white border border-slate-200 rounded-xl text-sm text-right text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-indigo-400 w-56"
+            className="pr-10 pl-4 h-10 bg-white border border-slate-200 rounded-xl text-sm text-right text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#0033A0] w-56"
           />
         </div>
       </div>

@@ -6,7 +6,7 @@ import { DashboardHeader } from '@/components/layout/DashboardHeader'
 import { Toggle } from '@/components/ui/Toggle'
 import { useBanner, useUpdateBanner, useAllContent, type BannerConfig } from '@/lib/queries'
 
-const INPUT_CLS = 'w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors text-sm'
+const INPUT_CLS = 'w-full h-11 px-4 border-2 border-slate-200 rounded-xl focus:border-[#0033A0] focus:outline-none text-right text-slate-800 bg-slate-50 focus:bg-white transition-colors text-sm'
 
 const PRESET_GRADIENTS = [
   { name: 'بنفسجي (افتراضي)', c1: '#6C63FF', c2: '#9C5CF7' },
@@ -100,7 +100,7 @@ export default function BannerPage() {
 
   if (isLoading) return (
     <div className="flex-1 flex items-center justify-center">
-      <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-4 border-[#0033A0] border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
@@ -210,7 +210,7 @@ export default function BannerPage() {
               type="button"
               onClick={handleSave}
               disabled={!dirty || updateBanner.isPending}
-              className="w-full h-12 bg-gradient-to-l from-indigo-600 to-violet-600 text-white font-bold rounded-2xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-indigo-200"
+              className="w-full h-12 bg-gradient-to-l from-[#0033A0] to-[#002880] text-white font-bold rounded-2xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-blue-100"
             >
               {updateBanner.isPending ? 'جاري الحفظ...' : dirty ? 'حفظ التغييرات' : 'لا توجد تغييرات'}
             </button>

@@ -14,9 +14,95 @@ import {
   BarChart,
   Bar,
   Cell,
+  PieChart,
+  Pie,
 } from 'recharts'
+import { type DemographicBreakdown } from '@/lib/queries'
 
 const CHART_COLORS = ['#3B82F6', '#8B5CF6', '#F97316', '#EC4899', '#10B981']
+const GENDER_COLORS: Record<string, string> = { 'ذكر': '#3B82F6', 'أنثى': '#EC4899' }
+const EDU_COLORS = ['#0033A0', '#8B5CF6', '#F97316', '#10B981', '#EC4899']
+
+function DemographicBar({ title, data, colors }: {
+  title: string
+  data: DemographicBreakdown[]
+  colors?: string[]
+}) {
+  if (!data.length) {
+    return (
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h3 className="text-base font-bold text-slate-800 text-right mb-4">{title}</h3>
+        <div className="h-40 flex items-center justify-center text-slate-400 text-sm">لا توجد بيانات بعد</div>
+      </div>
+    )
+  }
+  const chartData = data.map((d) => ({ name: d.label, count: d.count }))
+  return (
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+      <h3 className="text-base font-bold text-slate-800 text-right mb-4">{title}</h3>
+      <ResponsiveContainer width="100%" height={180}>
+        <BarChart data={chartData} layout="vertical" margin={{ right: 16, left: 8 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />
+          <XAxis type="number" tick={{ fontSize: 11, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
+          <YAxis
+            type="category"
+            dataKey="name"
+            tick={{ fontSize: 11, fill: '#64748B' }}
+            axisLine={false}
+            tickLine={false}
+            width={90}
+          />
+          <Tooltip contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }} />
+          <Bar dataKey="count" radius={[0, 6, 6, 0]}>
+            {chartData.map((_, i) => (
+              <Cell key={i} fill={colors?.[i] ?? CHART_COLORS[i % CHART_COLORS.length]} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function GenderPie({ data }: { data: DemographicBreakdown[] }) {
+  if (!data.length) {
+    return (
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h3 className="text-base font-bold text-slate-800 text-right mb-4">توزيع الجنس</h3>
+        <div className="h-40 flex items-center justify-center text-slate-400 text-sm">لا توجد بيانات بعد</div>
+      </div>
+    )
+  }
+  const chartData = data.map((d) => ({ name: d.label, value: d.count, fill: GENDER_COLORS[d.label] ?? '#94A3B8' }))
+  const total = data.reduce((s, d) => s + d.count, 0)
+  return (
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+      <h3 className="text-base font-bold text-slate-800 text-right mb-2">توزيع الجنس</h3>
+      <div className="flex items-center gap-4">
+        <ResponsiveContainer width="50%" height={160}>
+          <PieChart>
+            <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65} innerRadius={38}>
+              {chartData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+            </Pie>
+            <Tooltip contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }} />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="flex-1 space-y-2">
+          {chartData.map((d) => (
+            <div key={d.name} className="flex items-center justify-between">
+              <span className="text-sm font-bold text-slate-700">{((d.value / total) * 100).toFixed(0)}%</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-600">{d.name}</span>
+                <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: d.fill }} />
+              </div>
+            </div>
+          ))}
+          <p className="text-xs text-slate-400 text-right mt-1">{total} مستخدم</p>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function SkeletonCard() {
   return (
@@ -70,9 +156,9 @@ export default function OverviewPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           ),
-          bg: 'from-indigo-500 to-violet-600',
-          lightBg: 'bg-indigo-50',
-          textColor: 'text-indigo-600',
+          bg: 'from-[#0033A0] to-[#002880]',
+          lightBg: 'bg-[#EBF0FF]',
+          textColor: 'text-[#0033A0]',
           sub: `+${data.newUsersThisWeek} هذا الأسبوع`,
         },
         {
@@ -119,9 +205,8 @@ export default function OverviewPage() {
 
   const contentChartData = data
     ? [
-        { name: 'دورات', count: data.contentByType.COURSE, color: '#4F46E5' },
-        { name: 'فيديو', count: data.contentByType.VIDEO, color: '#8B5CF6' },
-        { name: 'مقالات', count: data.contentByType.ARTICLE, color: '#F97316' },
+        { name: 'دورات', count: data.contentByType.COURSE ?? 0, color: '#0033A0' },
+        { name: 'فيديو', count: data.contentByType.VIDEO ?? 0, color: '#8B5CF6' },
       ]
     : []
 
@@ -136,7 +221,7 @@ export default function OverviewPage() {
       <div className="flex justify-end mb-6 -mt-4">
         <button
           onClick={() => qc.invalidateQueries({ queryKey: ['analytics'] })}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:border-indigo-400 hover:text-indigo-600 transition-all shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:border-[#0033A0] hover:text-[#0033A0] transition-all shadow-sm"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -196,8 +281,8 @@ export default function OverviewPage() {
               <AreaChart data={data?.userGrowth ?? []}>
                 <defs>
                   <linearGradient id="userGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#4F46E5" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#0033A0" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#0033A0" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
@@ -234,10 +319,10 @@ export default function OverviewPage() {
                 <Area
                   type="monotone"
                   dataKey="count"
-                  stroke="#4F46E5"
+                  stroke="#0033A0"
                   strokeWidth={3}
                   fill="url(#userGradient)"
-                  dot={{ fill: '#4F46E5', strokeWidth: 2, r: 4, stroke: '#fff' }}
+                  dot={{ fill: '#0033A0', strokeWidth: 2, r: 4, stroke: '#fff' }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -287,6 +372,29 @@ export default function OverviewPage() {
         </div>
       </div>
 
+      {/* Demographics */}
+      {data && (
+        <div className="mb-8">
+          <h2 className="text-lg font-bold text-slate-800 text-right mb-4">التحليلات الديموغرافية</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <GenderPie data={data.genderBreakdown ?? []} />
+            <DemographicBar
+              title="توزيع المحافظات (أعلى 10)"
+              data={data.governorateBreakdown ?? []}
+            />
+            <DemographicBar
+              title="المؤهل الدراسي"
+              data={data.educationBreakdown ?? []}
+              colors={EDU_COLORS}
+            />
+            <DemographicBar
+              title="مجالات الدراسة (أعلى 10)"
+              data={data.fieldOfStudyBreakdown ?? []}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Recent Users Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         {/* Title RIGHT (first in DOM), link LEFT (second) */}
@@ -294,7 +402,7 @@ export default function OverviewPage() {
           <h3 className="text-lg font-bold text-slate-800">أحدث المستخدمين</h3>
           <a
             href="/users"
-            className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+            className="text-sm font-semibold text-[#0033A0] hover:text-[#001E60] transition-colors"
           >
             عرض الكل ←
           </a>
@@ -347,7 +455,7 @@ export default function OverviewPage() {
                             <span className="text-sm text-slate-500 font-medium">{activityCount}</span>
                             <div className="w-24 bg-slate-100 rounded-full h-1.5">
                               <div
-                                className="bg-indigo-500 h-1.5 rounded-full"
+                                className="bg-[#0033A0] h-1.5 rounded-full"
                                 style={{ width: `${Math.min(activityCount * 10, 100)}%` }}
                               />
                             </div>

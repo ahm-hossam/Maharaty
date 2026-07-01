@@ -59,6 +59,10 @@ export interface UserDetail {
   avatar?: string
   role: string
   isActive: boolean
+  governorate?: string
+  gender?: string
+  education?: string
+  fieldOfStudy?: string
   createdAt: string
   updatedAt: string
   activities: UserActivity[]
@@ -70,7 +74,7 @@ export interface UserDetail {
 
 export interface Content {
   id: string
-  type: 'COURSE' | 'VIDEO' | 'ARTICLE'
+  type: 'COURSE' | 'VIDEO'
   titleAr: string
   description?: string
   category?: string
@@ -80,6 +84,11 @@ export interface Content {
   url?: string
   meta?: Record<string, unknown>
   createdAt: string
+}
+
+export interface DemographicBreakdown {
+  label: string
+  count: number
 }
 
 export interface Analytics {
@@ -96,6 +105,10 @@ export interface Analytics {
   contentByType: { COURSE: number; VIDEO: number; ARTICLE: number }
   recentUsers: User[]
   recentActivities: Activity[]
+  genderBreakdown: DemographicBreakdown[]
+  governorateBreakdown: DemographicBreakdown[]
+  educationBreakdown: DemographicBreakdown[]
+  fieldOfStudyBreakdown: DemographicBreakdown[]
 }
 
 export interface UsersResponse {
@@ -228,7 +241,7 @@ export function useCreateContent() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: {
-      type: 'COURSE' | 'VIDEO' | 'ARTICLE'
+      type: 'COURSE' | 'VIDEO'
       titleAr: string
       description?: string
       category?: string
@@ -250,7 +263,7 @@ export function useUpdateContent() {
       ...data
     }: {
       id: string
-      type?: 'COURSE' | 'VIDEO' | 'ARTICLE'
+      type?: 'COURSE' | 'VIDEO'
       titleAr?: string
       description?: string
       category?: string

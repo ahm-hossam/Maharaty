@@ -22,7 +22,7 @@ const ACTIVITY_META: Record<string, { label: string; icon: string; color: string
   COMPLETE_COURSE:      { label: 'أكمل محتوى',          icon: '✅', color: 'bg-green-50 text-green-700 border-green-200' },
   START_ASSESSMENT:     { label: 'بدأ تقييم',           icon: '📝', color: 'bg-amber-50 text-amber-700 border-amber-200' },
   COMPLETE_ASSESSMENT:  { label: 'أكمل تقييم',          icon: '🏆', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-  BUILD_CV:             { label: 'بناء السيرة الذاتية', icon: '📄', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  BUILD_CV:             { label: 'بناء السيرة الذاتية', icon: '📄', color: 'bg-[#EBF0FF] text-[#002880] border-blue-100' },
   PRACTICE_INTERVIEW:   { label: 'تدريب مقابلة',        icon: '🎙️', color: 'bg-purple-50 text-purple-700 border-purple-200' },
   VIEW_JOBS:            { label: 'تصفح وظائف',          icon: '💼', color: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
   VIEW_COMMUNITY:       { label: 'زيارة المجتمع',       icon: '👥', color: 'bg-pink-50 text-pink-700 border-pink-200' },
@@ -51,7 +51,7 @@ const SKILL_LEVEL_LABELS: Record<string, string> = {
 const SKILL_LEVEL_COLORS: Record<string, string> = {
   BEGINNER: 'bg-slate-100 text-slate-600',
   INTERMEDIATE: 'bg-blue-50 text-blue-700',
-  ADVANCED: 'bg-indigo-50 text-indigo-700',
+  ADVANCED: 'bg-[#EBF0FF] text-[#002880]',
   EXPERT: 'bg-violet-100 text-violet-700',
 }
 
@@ -125,7 +125,7 @@ function ActivityTimeline({ activities }: { activities: UserActivity[] }) {
       {activities.length > 20 && (
         <button
           onClick={() => setShowAll((v) => !v)}
-          className="w-full py-2.5 text-sm font-semibold text-indigo-600 hover:text-indigo-800 border border-indigo-200 rounded-xl hover:bg-indigo-50 transition-all"
+          className="w-full py-2.5 text-sm font-semibold text-[#0033A0] hover:text-[#001E60] border border-blue-100 rounded-xl hover:bg-[#EBF0FF] transition-all"
         >
           {showAll ? 'إخفاء' : `عرض ${activities.length - 20} نشاط إضافي`}
         </button>
@@ -152,7 +152,7 @@ function ContentProgressSection({ items }: { items: UserDetail['contentProgress'
             {item.content.thumbnail ? (
               <img src={item.content.thumbnail} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
             ) : (
-              <div className="w-14 h-14 rounded-xl bg-indigo-100 flex items-center justify-center text-2xl flex-shrink-0">
+              <div className="w-14 h-14 rounded-xl bg-[#E0E8FF] flex items-center justify-center text-2xl flex-shrink-0">
                 {typeIcon}
               </div>
             )}
@@ -167,12 +167,12 @@ function ContentProgressSection({ items }: { items: UserDetail['contentProgress'
               <p className="font-semibold text-slate-800 text-sm mt-1 truncate">{item.content.titleAr}</p>
               {/* progress: % on right, bar on left in RTL */}
               <div className="flex items-center gap-2 mt-2">
-                <span className={`text-xs font-bold flex-shrink-0 ${completed ? 'text-emerald-600' : 'text-indigo-600'}`}>
+                <span className={`text-xs font-bold flex-shrink-0 ${completed ? 'text-emerald-600' : 'text-[#0033A0]'}`}>
                   {item.progress}%
                 </span>
                 <div className="flex-1 bg-slate-200 rounded-full h-1.5">
                   <div
-                    className={`h-1.5 rounded-full transition-all ${completed ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                    className={`h-1.5 rounded-full transition-all ${completed ? 'bg-emerald-500' : 'bg-[#0033A0]'}`}
                     style={{ width: `${item.progress}%` }}
                   />
                 </div>
@@ -243,9 +243,9 @@ function SkillsSection({ skills }: { skills: UserDetail['userSkills'] }) {
           </div>
           {/* RTL: % on RIGHT, bar on LEFT */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-indigo-600 w-8 text-right">{item.progress}%</span>
+            <span className="text-xs font-bold text-[#0033A0] w-8 text-right">{item.progress}%</span>
             <div className="flex-1 bg-slate-200 rounded-full h-2">
-              <div className="bg-indigo-500 h-2 rounded-full transition-all" style={{ width: `${item.progress}%` }} />
+              <div className="bg-[#0033A0] h-2 rounded-full transition-all" style={{ width: `${item.progress}%` }} />
             </div>
           </div>
         </div>
@@ -286,7 +286,7 @@ export default function UserDetailPage() {
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0033A0] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -295,7 +295,7 @@ export default function UserDetailPage() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <p className="text-slate-500">تعذّر تحميل بيانات المستخدم</p>
-        <button onClick={() => router.back()} className="text-sm text-indigo-600 underline">عودة</button>
+        <button onClick={() => router.back()} className="text-sm text-[#0033A0] underline">عودة</button>
       </div>
     )
   }
@@ -318,7 +318,7 @@ export default function UserDetailPage() {
 
       {/* ── Breadcrumb — RTL: المستخدمون RIGHT, / MIDDLE, user.name LEFT ── */}
       <div className="flex items-center gap-2 px-6 pt-6 pb-2 text-sm">
-        <Link href="/users" className="text-slate-400 hover:text-indigo-600 transition-colors">المستخدمون</Link>
+        <Link href="/users" className="text-slate-400 hover:text-[#0033A0] transition-colors">المستخدمون</Link>
         <span className="text-slate-300">/</span>
         <span className="text-slate-700 font-semibold truncate max-w-xs">{user.name}</span>
       </div>
@@ -354,6 +354,30 @@ export default function UserDetailPage() {
               <p className="text-xs text-slate-400 mt-1">
                 انضم في {new Date(user.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
+              {(user.governorate || user.gender || user.education || user.fieldOfStudy) && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {user.governorate && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                      📍 {user.governorate}
+                    </span>
+                  )}
+                  {user.gender && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-100">
+                      👤 {user.gender}
+                    </span>
+                  )}
+                  {user.education && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100">
+                      🎓 {user.education}
+                    </span>
+                  )}
+                  {user.fieldOfStudy && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                      📚 {user.fieldOfStudy}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Toggle — leftmost in RTL */}
@@ -368,7 +392,7 @@ export default function UserDetailPage() {
 
         {/* ── Stats ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard value={user._count.activities}      label="إجمالي الأنشطة"     color="bg-indigo-50 text-indigo-700" />
+          <StatCard value={user._count.activities}      label="إجمالي الأنشطة"     color="bg-[#EBF0FF] text-[#002880]" />
           <StatCard value={user._count.contentProgress} label="محتوى بدأه"          color="bg-blue-50 text-blue-700" />
           <StatCard value={completedContent}            label="محتوى أكمله"         color="bg-emerald-50 text-emerald-700" />
           <StatCard value={passedAssessments}           label="تقييمات نجح فيها"    color="bg-amber-50 text-amber-700" />
@@ -385,13 +409,13 @@ export default function UserDetailPage() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 py-3.5 text-sm font-semibold transition-all ${
                   activeTab === tab.key
-                    ? 'text-indigo-600 border-b-2 border-indigo-500 bg-indigo-50/40'
+                    ? 'text-[#0033A0] border-b-2 border-[#0033A0] bg-[#EBF0FF]/40'
                     : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                 }`}
               >
                 {tab.label}
                 {tab.key === 'activity' && user._count.activities > 0 && (
-                  <span className="mr-1.5 text-xs bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full">
+                  <span className="mr-1.5 text-xs bg-[#E0E8FF] text-[#0033A0] px-1.5 py-0.5 rounded-full">
                     {user._count.activities}
                   </span>
                 )}

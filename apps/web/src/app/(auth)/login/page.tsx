@@ -37,7 +37,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#1C1352] via-[#0033A0] to-[#1D4ED8] flex items-center justify-center p-4">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
@@ -81,7 +81,7 @@ export default function LoginPage() {
                 placeholder="admin@maharaty.com"
                 required
                 dir="rtl"
-                className="w-full h-12 px-4 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:outline-none text-right bg-slate-50 focus:bg-white transition-colors text-slate-800 placeholder:text-slate-400"
+                className="w-full h-12 px-4 rounded-xl border-2 border-slate-200 focus:border-[#0033A0] focus:outline-none text-right bg-slate-50 focus:bg-white transition-colors text-slate-800 placeholder:text-slate-400"
               />
             </div>
 
@@ -97,7 +97,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   required
                   dir="rtl"
-                  className="w-full h-12 px-4 pl-12 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:outline-none text-right bg-slate-50 focus:bg-white transition-colors text-slate-800"
+                  className="w-full h-12 px-4 pl-12 rounded-xl border-2 border-slate-200 focus:border-[#0033A0] focus:outline-none text-right bg-slate-50 focus:bg-white transition-colors text-slate-800"
                 />
                 <button
                   type="button"
@@ -121,7 +121,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-bold text-base hover:from-indigo-700 hover:to-violet-700 transition-all shadow-lg shadow-indigo-500/30 disabled:opacity-70 flex items-center justify-center gap-2"
+              className="w-full h-12 bg-gradient-to-r from-[#0033A0] to-[#002880] text-white rounded-xl font-bold text-base hover:from-[#002880] hover:to-[#001E60] transition-all shadow-lg shadow-[#0033A0]/30 disabled:opacity-70 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">

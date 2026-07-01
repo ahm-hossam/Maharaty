@@ -86,8 +86,8 @@ export default function AnalyticsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           ),
-          lightBg: 'bg-indigo-50',
-          textColor: 'text-indigo-600',
+          lightBg: 'bg-[#EBF0FF]',
+          textColor: 'text-[#0033A0]',
         },
         {
           label: 'نشط هذا الأسبوع',
@@ -337,7 +337,7 @@ export default function AnalyticsPage() {
                           <p className="text-xs text-slate-400 text-right">{a.user?.email ?? ''}</p>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-[#EBF0FF] text-[#002880]">
                             {ACTIVITY_LABELS[a.type] ?? a.type}
                           </span>
                         </td>
