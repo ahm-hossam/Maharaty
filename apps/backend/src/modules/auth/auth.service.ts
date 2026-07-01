@@ -33,6 +33,10 @@ export class AuthService {
         email: dto.email,
         password: hashedPassword,
         phone: dto.phone,
+        governorate: dto.governorate,
+        gender: dto.gender,
+        education: dto.education,
+        fieldOfStudy: dto.fieldOfStudy,
       },
       select: {
         id: true,

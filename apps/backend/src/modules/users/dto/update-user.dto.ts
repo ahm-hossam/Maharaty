@@ -32,4 +32,24 @@ export class UpdateUserDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  governorate?: string
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  gender?: string
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  education?: string
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  fieldOfStudy?: string
 }

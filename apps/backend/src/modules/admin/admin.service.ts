@@ -25,6 +25,10 @@ export class AdminService {
       recentUsers,
       recentActivities,
       contentByTypeRaw,
+      genderRaw,
+      governorateRaw,
+      educationRaw,
+      fieldOfStudyRaw,
     ] = await Promise.all([
       this.prisma.user.count({ where: userOnly }),
       this.prisma.user.count({ where: { ...userOnly, isActive: true } }),
@@ -59,6 +63,30 @@ export class AdminService {
         by: ['type'],
         _count: { id: true },
       }),
+      this.prisma.user.groupBy({
+        by: ['gender'],
+        _count: { id: true },
+        where: { ...userOnly, gender: { not: null } },
+      }),
+      this.prisma.user.groupBy({
+        by: ['governorate'],
+        _count: { id: true },
+        where: { ...userOnly, governorate: { not: null } },
+        orderBy: { _count: { id: 'desc' } },
+        take: 10,
+      }),
+      this.prisma.user.groupBy({
+        by: ['education'],
+        _count: { id: true },
+        where: { ...userOnly, education: { not: null } },
+      }),
+      this.prisma.user.groupBy({
+        by: ['fieldOfStudy'],
+        _count: { id: true },
+        where: { ...userOnly, fieldOfStudy: { not: null } },
+        orderBy: { _count: { id: 'desc' } },
+        take: 10,
+      }),
     ])
 
     // User growth: last 30 days
@@ -82,6 +110,26 @@ export class AdminService {
       contentByType[item.type] = item._count.id
     }
 
+    const genderBreakdown = genderRaw.map((g) => ({
+      label: g.gender as string,
+      count: g._count.id,
+    }))
+
+    const governorateBreakdown = governorateRaw.map((g) => ({
+      label: g.governorate as string,
+      count: g._count.id,
+    }))
+
+    const educationBreakdown = educationRaw.map((e) => ({
+      label: e.education as string,
+      count: e._count.id,
+    }))
+
+    const fieldOfStudyBreakdown = fieldOfStudyRaw.map((f) => ({
+      label: f.fieldOfStudy as string,
+      count: f._count.id,
+    }))
+
     return {
       totalUsers,
       activeUsers,
@@ -96,6 +144,10 @@ export class AdminService {
       contentByType,
       recentUsers,
       recentActivities,
+      genderBreakdown,
+      governorateBreakdown,
+      educationBreakdown,
+      fieldOfStudyBreakdown,
     }
   }
 

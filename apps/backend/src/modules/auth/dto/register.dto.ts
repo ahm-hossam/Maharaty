@@ -20,4 +20,24 @@ export class RegisterDto {
   @IsString()
   @IsOptional()
   phone?: string
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  governorate?: string
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  gender?: string
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  education?: string
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  fieldOfStudy?: string
 }

@@ -49,17 +49,31 @@ const PORTALS: Portal[] = [
     badge: 'الأكثر استخداماً',
   },
   {
-    id: 'icareer',
-    nameAr: 'iCareer',
-    nameEn: 'iCareer',
-    tagline: 'طوّر مسارك المهني',
-    description: 'منصة متكاملة للتطوير المهني توفر فرص عمل، تدريب مهني، وموارد لبناء مستقبلك.',
-    gradient: ['#4F46E5', '#7B5EA7', '#9D4EDD'],
-    accentColor: '#7B5EA7',
-    icon: 'rocket',
-    url: 'https://www.icareer.ai',
-    jobCount: '+30K',
-    features: ['تطوير مهني متكامل', 'دورات تدريبية', 'مرشد AI'],
+    id: 'wuzzuf',
+    nameAr: 'وظّف',
+    nameEn: 'Wuzzuf',
+    tagline: 'وظّفك في ثوانٍ',
+    description: 'أكبر منصة توظيف في مصر والشرق الأوسط. آلاف الوظائف في جميع التخصصات مع بحث ذكي وتصفية متقدمة.',
+    gradient: ['#00875A', '#00B87A', '#34D399'],
+    accentColor: '#00B87A',
+    icon: 'briefcase',
+    url: 'https://wuzzuf.net/jobs/egypt',
+    jobCount: '+70K',
+    features: ['بحث ذكي متقدم', 'تصفية حسب التخصص', 'تنبيهات الوظائف'],
+    badge: 'مصر والشرق الأوسط',
+  },
+  {
+    id: 'forasna',
+    nameAr: 'فرصنا',
+    nameEn: 'Forasna',
+    tagline: 'فرصتك في انتظارك',
+    description: 'منصة مصرية متخصصة في الوظائف والفرص المهنية. تقديم سهل بنقرة واحدة مع تنبيهات فورية لأحدث الإعلانات.',
+    gradient: ['#0F52BA', '#1A73E8', '#4FC3F7'],
+    accentColor: '#1A73E8',
+    icon: 'star',
+    url: 'https://www.forasna.com',
+    jobCount: '+25K',
+    features: ['وظائف محلية', 'تقديم بنقرة واحدة', 'تنبيهات فورية'],
   },
   {
     id: 'linkedin',
@@ -376,7 +390,8 @@ export default function JobPortalsScreen() {
   }
 
   const shaghlni = PORTALS.find((p) => p.id === 'shaghlni')!
-  const icareer  = PORTALS.find((p) => p.id === 'icareer')!
+  const wuzzuf   = PORTALS.find((p) => p.id === 'wuzzuf')!
+  const forasna  = PORTALS.find((p) => p.id === 'forasna')!
   const linkedin = PORTALS.find((p) => p.id === 'linkedin')!
 
   return (
@@ -407,13 +422,16 @@ export default function JobPortalsScreen() {
         </View>
 
         {/* ── Bento Grid ── */}
-        {/* Row 1: Shaghlni (large) + iCareer (small) */}
+        {/* Row 1: Shaghlni (full width, featured) */}
+        <BentoPortalCard portal={shaghlni} onPress={() => openPortal(shaghlni)} large />
+
+        {/* Row 2: Wuzzuf + Forasna (side by side) */}
         <View style={S.bentoRow}>
-          <BentoPortalCard portal={shaghlni} onPress={() => openPortal(shaghlni)} />
-          <BentoPortalCard portal={icareer}  onPress={() => openPortal(icareer)} />
+          <BentoPortalCard portal={wuzzuf}  onPress={() => openPortal(wuzzuf)} />
+          <BentoPortalCard portal={forasna} onPress={() => openPortal(forasna)} />
         </View>
 
-        {/* Row 2: LinkedIn (full width) */}
+        {/* Row 3: LinkedIn (full width) */}
         <BentoPortalCard portal={linkedin} onPress={() => openPortal(linkedin)} large />
 
         {/* ── Tip carousel ── */}

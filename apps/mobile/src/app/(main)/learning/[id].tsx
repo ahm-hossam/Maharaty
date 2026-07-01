@@ -32,12 +32,11 @@ interface CourseMeta {
   level?: 'beginner' | 'intermediate' | 'advanced'
   whatYouLearn?: string[]; requirements?: string[]; lectures?: Lecture[]
 }
-interface ArticleMeta { content?: string; readTime?: number; tags?: string[] }
 
 interface Content {
-  id: string; type: 'COURSE' | 'VIDEO' | 'ARTICLE'; titleAr: string
+  id: string; type: 'COURSE' | 'VIDEO'; titleAr: string
   description?: string; category?: string; thumbnail?: string
-  duration?: number; meta?: VideoMeta | CourseMeta | ArticleMeta
+  duration?: number; meta?: VideoMeta | CourseMeta
   isPublished: boolean; createdAt: string
 }
 
@@ -115,6 +114,9 @@ function VideoContent({ meta }: { meta: VideoMeta }) {
       ) : null}
       {active.duration ? (
         <Text style={styles.videoDuration}>{formatDuration(active.duration)}</Text>
+      ) : null}
+      {active.description ? (
+        <Text style={styles.videoDesc}>{active.description}</Text>
       ) : null}
 
       {videos.length > 1 && (
@@ -269,35 +271,6 @@ function CourseContent({ meta }: { meta: CourseMeta }) {
   )
 }
 
-// ─── Article Content ───────────────────────────────────────────────────────────
-
-function ArticleContent({ meta }: { meta: ArticleMeta }) {
-  const words = (meta.content ?? '').split(/\s+/).filter(Boolean).length
-  const readTime = meta.readTime ?? Math.max(1, Math.ceil(words / 200))
-
-  return (
-    <View>
-      <View style={styles.badgeRow}>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{readTime} د قراءة</Text>
-        </View>
-        {(meta.tags?.length ?? 0) > 0 && meta.tags!.map((tag, i) => (
-          <View key={i} style={[styles.badge, styles.tagBadge]}>
-            <Text style={[styles.badgeText, styles.tagBadgeText]}>{tag}</Text>
-          </View>
-        ))}
-      </View>
-      {meta.content ? (
-        <View style={styles.section}>
-          <Text style={styles.articleBody}>{meta.content}</Text>
-        </View>
-      ) : (
-        <Text style={styles.empty}>لا يوجد محتوى نصي لهذا المقال</Text>
-      )}
-    </View>
-  )
-}
-
 // ─── Screen ────────────────────────────────────────────────────────────────────
 
 export default function ContentDetailScreen() {
@@ -349,11 +322,6 @@ export default function ContentDetailScreen() {
 
       {data.type === 'VIDEO' && <VideoContent meta={meta as VideoMeta} />}
       {data.type === 'COURSE' && <CourseContent meta={meta as CourseMeta} />}
-      {data.type === 'ARTICLE' && (
-        <View style={styles.contentPad}>
-          <ArticleContent meta={meta as ArticleMeta} />
-        </View>
-      )}
     </ScrollView>
   )
 }
@@ -396,6 +364,7 @@ const styles = StyleSheet.create({
 
   videoTitle: { fontSize: FS.md, fontFamily: FONT.bold, color: COLORS.text, textAlign: 'right', marginTop: 12 },
   videoDuration: { fontSize: FS.sm - 2, color: COLORS.textMuted, textAlign: 'right', marginTop: 4 },
+  videoDesc: { fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textMuted, textAlign: 'right', marginTop: 8, lineHeight: 22 },
 
   section: { marginTop: 20 },
   sectionTitle: { fontSize: FS.md, fontFamily: FONT.extrabold, color: COLORS.text, textAlign: 'right', marginBottom: 12 },
@@ -426,8 +395,6 @@ const styles = StyleSheet.create({
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end', marginBottom: 4 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, backgroundColor: '#e0e7ff', borderRadius: 20 },
   badgeText: { fontSize: FS.sm - 1, fontFamily: FONT.bold, color: '#4338ca' },
-  tagBadge: { backgroundColor: '#fef3c7' },
-  tagBadgeText: { color: '#92400e' },
 
   freeBadge: { backgroundColor: '#dcfce7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
   freeBadgeText: { fontSize: FS.sm - 3, fontFamily: FONT.bold, color: '#16a34a' },
@@ -436,12 +403,6 @@ const styles = StyleSheet.create({
   bulletRow: { flexDirection: 'row', gap: 10, marginBottom: 8, alignItems: 'flex-start' },
   bulletDot: { fontSize: FS.sm, color: '#6366f1', fontFamily: FONT.extrabold, width: 18, textAlign: 'center' },
   bulletText: { flex: 1, fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textSecondary, textAlign: 'right', lineHeight: 21 },
-
-  articleBody: {
-    fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.text, textAlign: 'right', lineHeight: 28,
-    backgroundColor: COLORS.surface, borderRadius: 14, padding: 16,
-    borderWidth: 1, borderColor: COLORS.surfaceBorder,
-  },
 
   empty: { fontSize: FS.sm, color: COLORS.textMuted, fontFamily: FONT.regular, textAlign: 'center', marginTop: 20 },
 })
