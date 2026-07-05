@@ -15,6 +15,7 @@ import { UploadModule } from './modules/upload/upload.module'
 import { BannerModule } from './modules/banner/banner.module'
 import { CommunityModule } from './modules/community/community.module'
 import { SelfAssessmentModule } from './modules/self-assessment/self-assessment.module'
+import { LmsModule } from './modules/lms/lms.module'
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { SelfAssessmentModule } from './modules/self-assessment/self-assessment.
     BannerModule,
     CommunityModule,
     SelfAssessmentModule,
+    LmsModule,
   ],
 })
 export class AppModule {}

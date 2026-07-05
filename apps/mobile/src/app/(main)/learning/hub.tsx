@@ -198,9 +198,14 @@ export default function LearningHubScreen() {
   ]
 
   // API returns { content: [...], pagination: {...} }
-  const rawCourses: CourseItem[] = Array.isArray(apiResponse)
+  const rawCourses: CourseItem[] = (Array.isArray(apiResponse)
     ? apiResponse
     : (apiResponse?.content ?? [])
+  ).map((c: CourseItem, i: number) => ({
+    ...c,
+    color: c.color || getCategoryMeta(c.category ?? '', i).color,
+    icon:  c.icon  || getCategoryMeta(c.category ?? '', i).icon,
+  }))
 
   const courses = rawCourses.filter((c: CourseItem) =>
     activeCategory === 'الكل' || c.category === activeCategory
@@ -234,7 +239,7 @@ export default function LearningHubScreen() {
           {/* Top row: back button + title */}
           <View style={S.headerTopRow}>
             <Text style={S.headerTitle}>اكتشف وتعلّم</Text>
-            <TouchableOpacity style={S.backBtn} onPress={() => router.back()}>
+            <TouchableOpacity style={S.backBtn} onPress={() => router.navigate('/(main)/home')}>
               <Ionicons name="arrow-back" size={20} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>

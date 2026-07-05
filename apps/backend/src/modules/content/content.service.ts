@@ -100,6 +100,17 @@ export class ContentService {
           createdAt: true,
           updatedAt: true,
           _count: { select: { progresses: true } },
+          sections: {
+            orderBy: { order: 'asc' },
+            select: {
+              id: true, title: true, order: true,
+              _count: { select: { lectures: true } },
+              lectures: {
+                orderBy: { order: 'asc' },
+                select: { id: true, duration: true },
+              },
+            },
+          },
         },
       }),
     ])
@@ -115,6 +126,20 @@ export class ContentService {
         thumbnail: true, url: true, duration: true, category: true,
         meta: true, isPublished: true, createdBy: true, createdAt: true, updatedAt: true,
         _count: { select: { progresses: true } },
+        sections: {
+          orderBy: { order: 'asc' },
+          select: {
+            id: true, title: true, order: true,
+            lectures: {
+              orderBy: { order: 'asc' },
+              select: {
+                id: true, title: true, description: true, videoUrl: true,
+                youtubeId: true, content: true, attachments: true,
+                duration: true, order: true, isFree: true, isPublished: true,
+              },
+            },
+          },
+        },
       },
     })
     if (!content) throw new NotFoundException('Content not found')
