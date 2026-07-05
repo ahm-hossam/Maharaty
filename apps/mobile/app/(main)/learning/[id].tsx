@@ -1,59 +1,59 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState } from 'react'
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   StyleSheet,
   Dimensions,
   Platform,
 } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import YoutubePlayer from 'react-native-youtube-iframe'
 import { WebView } from 'react-native-webview'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
-import { api } from '../../../services/api'
-import { FONT, FS, COLORS, RADIUS, SHADOW } from '../../../constants/theme'
+import { FONT, FS, COLORS, RADIUS, SHADOW } from '@/constants/theme'
 
 const { width: W } = Dimensions.get('window')
 const PLAYER_H = Math.round((W * 9) / 16)
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Static demo data ──────────────────────────────────────────────────────────
 
-interface Lecture {
-  id: string
-  title: string
-  description?: string
-  videoUrl?: string
-  youtubeId?: string
-  duration?: number
-  isFree: boolean
-  isPublished: boolean
-  order: number
-}
-
-interface Section {
-  id: string
-  title: string
-  order: number
-  lectures: Lecture[]
-}
-
-interface Content {
-  id: string
-  type: 'COURSE' | 'VIDEO'
-  titleAr: string
-  description?: string
-  category?: string
-  thumbnail?: string
-  duration?: number
-  isPublished: boolean
-  sections: Section[]
-  meta?: any
+const DEMO_CONTENT: Record<string, any> = {
+  default: {
+    id: 'demo',
+    type: 'COURSE',
+    titleAr: 'دورة تعليمية',
+    category: 'مهارات مهنية',
+    description: 'محتوى تعليمي متميز يساعدك في تطوير مهاراتك المهنية.',
+    meta: {
+      whatYouLearn: ['أساسيات المجال', 'تطبيقات عملية', 'مهارات احترافية'],
+      requirements: ['لا يوجد متطلبات مسبقة'],
+    },
+    sections: [
+      {
+        id: 's1',
+        title: 'المقدمة والأساسيات',
+        order: 0,
+        lectures: [
+          { id: 'l1', title: 'مقدمة الدورة', youtubeId: null, videoUrl: null, duration: 5, isFree: true, isPublished: true, order: 0 },
+          { id: 'l2', title: 'ما ستتعلمه في هذه الدورة', youtubeId: null, videoUrl: null, duration: 8, isFree: true, isPublished: true, order: 1 },
+        ],
+      },
+      {
+        id: 's2',
+        title: 'المحتوى الرئيسي',
+        order: 1,
+        lectures: [
+          { id: 'l3', title: 'المفاهيم الأساسية', youtubeId: null, videoUrl: null, duration: 15, isFree: false, isPublished: true, order: 0 },
+          { id: 'l4', title: 'التطبيق العملي', youtubeId: null, videoUrl: null, duration: 20, isFree: false, isPublished: true, order: 1 },
+          { id: 'l5', title: 'أمثلة من الواقع', youtubeId: null, videoUrl: null, duration: 18, isFree: false, isPublished: true, order: 2 },
+        ],
+      },
+    ],
+  },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ function extractYouTubeId(url: string): string | null {
 
 // ─── Video Player ──────────────────────────────────────────────────────────────
 
-function VideoPlayer({ lecture }: { lecture: Lecture }) {
+function VideoPlayer({ lecture }: { lecture: any }) {
   const [playing, setPlaying] = useState(false)
 
   // Resolve YouTube ID from the dedicated field OR by parsing a full YouTube URL
@@ -97,13 +97,13 @@ function VideoPlayer({ lecture }: { lecture: Lecture }) {
           width={W}
           videoId={ytId}
           play={playing}
-          onChangeState={(s) => { if (s === 'ended') setPlaying(false) }}
+          onChangeState={(s: string) => { if (s === 'ended') setPlaying(false) }}
           webViewProps={{
             allowsFullscreenVideo: true,
             allowsInlineMediaPlayback: true,
             mediaPlaybackRequiresUserAction: false,
           }}
-          initialPlayerParams={{ controls: true, rel: false, modestbranding: true }}
+          initialPlayerParams={{ controls: true, rel: false }}
         />
       </View>
     )
@@ -137,20 +137,20 @@ function VideoPlayer({ lecture }: { lecture: Lecture }) {
 function SectionAccordion({
   section,
   sectionIdx,
-  activeLecture,
+  activeLectureId,
   onSelectLecture,
-  mergedProgress,
+  completedIds,
 }: {
-  section: Section
+  section: any
   sectionIdx: number
-  activeLecture: Lecture | null
-  onSelectLecture: (lec: Lecture) => void
-  mergedProgress: Record<string, { isCompleted: boolean }>
+  activeLectureId: string | null
+  onSelectLecture: (lec: any) => void
+  completedIds: Set<string>
 }) {
   const [expanded, setExpanded] = useState(sectionIdx === 0)
-  const doneCount = section.lectures.filter((l) => mergedProgress[l.id]?.isCompleted).length
+  const doneCount = section.lectures.filter((l: any) => completedIds.has(l.id)).length
   const allDone = doneCount === section.lectures.length && section.lectures.length > 0
-  const sectionDur = section.lectures.reduce((a, l) => a + (l.duration ?? 0), 0)
+  const sectionDur = section.lectures.reduce((a: number, l: any) => a + (l.duration ?? 0), 0)
 
   return (
     <View style={S.sCard}>
@@ -159,14 +159,11 @@ function SectionAccordion({
         onPress={() => setExpanded((v) => !v)}
         activeOpacity={0.75}
       >
-        {/* Chevron — LEFT on screen (trailing in RTL) */}
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={16}
           color={COLORS.textMuted}
         />
-
-        {/* Title + meta — MIDDLE */}
         <View style={S.sTitleArea}>
           <Text style={S.sTitle}>{section.title}</Text>
           <View style={S.sMeta}>
@@ -183,8 +180,6 @@ function SectionAccordion({
             {sectionDur > 0 && <Text style={S.sDurText}>{fmt(sectionDur)}</Text>}
           </View>
         </View>
-
-        {/* Number badge — RIGHT on screen (leading in RTL) */}
         <View style={[S.sNumBadge, allDone && S.sNumBadgeDone]}>
           {allDone
             ? <Ionicons name="checkmark" size={14} color="#fff" />
@@ -193,9 +188,9 @@ function SectionAccordion({
         </View>
       </TouchableOpacity>
 
-      {expanded && section.lectures.map((lec, li) => {
-        const isActive = activeLecture?.id === lec.id
-        const isDone = mergedProgress[lec.id]?.isCompleted ?? false
+      {expanded && section.lectures.map((lec: any, li: number) => {
+        const isActive = activeLectureId === lec.id
+        const isDone = completedIds.has(lec.id)
         const hasVideo = !!(lec.youtubeId || lec.videoUrl)
 
         return (
@@ -205,10 +200,7 @@ function SectionAccordion({
             onPress={() => onSelectLecture(lec)}
             activeOpacity={0.7}
           >
-            {/* Active indicator bar on RIGHT (RTL leading edge) */}
             {isActive && <View style={S.lActiveMark} />}
-
-            {/* Lecture info — flex RIGHT (RTL natural) */}
             <View style={S.lInfo}>
               <View style={S.lTitleRow}>
                 {lec.isFree && !isDone && (
@@ -225,17 +217,11 @@ function SectionAccordion({
               </View>
               {lec.duration ? <Text style={S.lDur}>{fmt(lec.duration)}</Text> : null}
             </View>
-
-            {/* Status icon — LEFT on screen (trailing in RTL) */}
             <View style={[S.lIcon, isDone && S.lIconDone, isActive && !isDone && S.lIconActive]}>
               {isDone ? (
                 <Ionicons name="checkmark" size={12} color="#fff" />
               ) : hasVideo ? (
-                <Ionicons
-                  name="play"
-                  size={10}
-                  color={isActive ? COLORS.primary : COLORS.textMuted}
-                />
+                <Ionicons name="play" size={10} color={isActive ? COLORS.primary : COLORS.textMuted} />
               ) : (
                 <Text style={S.lIconNum}>{li + 1}</Text>
               )}
@@ -252,82 +238,27 @@ function SectionAccordion({
 export default function LearningScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const insets = useSafeAreaInsets()
-  const queryClient = useQueryClient()
-  const [activeLecture, setActiveLecture] = useState<Lecture | null>(null)
-  const [localCompleted, setLocalCompleted] = useState<Set<string>>(new Set())
+  const [activeLecture, setActiveLecture] = useState<any | null>(null)
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<'curriculum' | 'about'>('curriculum')
 
-  const { data, isLoading, isError } = useQuery<Content>({
-    queryKey: ['content', id],
-    queryFn: () => api.get(`/content/${id}`).then((r) => r.data.data),
-    enabled: !!id,
-  })
-
-  const { data: progressData } = useQuery({
-    queryKey: ['lms-progress', id],
-    queryFn: () => api.get(`/lms/${id}/my-progress`).then((r) => r.data.data),
-    enabled: !!id,
-  })
-
-  const updateProgress = useMutation({
-    mutationFn: ({ lectureId, watchedSeconds, isCompleted }: {
-      lectureId: string
-      watchedSeconds: number
-      isCompleted?: boolean
-    }) => api.post(`/lms/lectures/${lectureId}/progress`, { watchedSeconds, isCompleted }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lms-progress', id] })
-    },
-  })
-
-  // Merge server progress with optimistic local completions
-  const mergedProgress = useMemo<Record<string, { isCompleted: boolean }>>(() => {
-    const base: Record<string, { isCompleted: boolean }> = progressData?.lectureProgress ?? {}
-    const merged = { ...base }
-    for (const lid of localCompleted) {
-      merged[lid] = { isCompleted: true }
-    }
-    return merged
-  }, [progressData, localCompleted])
-
-  const sections: Section[] = (() => {
-    if (data?.sections?.length) return data.sections
-    if (data?.meta?.lectures?.length) {
-      return [{ id: '__meta', title: 'المحاضرات', order: 0, lectures: data.meta.lectures }]
-    }
-    if (data?.meta?.videos?.length) {
-      return [{
-        id: '__meta', title: 'الحلقات', order: 0,
-        lectures: data.meta.videos.map((v: any) => ({ ...v, isFree: true, isPublished: true })),
-      }]
-    }
-    return []
-  })()
-
-  const allLectures = sections.flatMap((s) => s.lectures)
+  const data = DEMO_CONTENT[id ?? ''] ?? DEMO_CONTENT.default
+  const sections: any[] = data.sections ?? []
+  const allLectures = sections.flatMap((s: any) => s.lectures)
   const totalLectures = allLectures.length
-  const totalMinutes = allLectures.reduce((a, l) => a + (l.duration ?? 0), 0)
-  const completedCount = allLectures.filter((l) => mergedProgress[l.id]?.isCompleted).length
-  const progressPct = totalLectures > 0 ? Math.round((completedCount / totalLectures) * 100) : 0
+  const totalMinutes = allLectures.reduce((a: number, l: any) => a + (l.duration ?? 0), 0)
+  const progressPct = totalLectures > 0 ? Math.round((completedIds.size / totalLectures) * 100) : 0
 
-  const activeLectureIdx = allLectures.findIndex((l) => l.id === activeLecture?.id)
+  const activeLectureIdx = allLectures.findIndex((l: any) => l.id === activeLecture?.id)
   const hasPrev = activeLectureIdx > 0
   const hasNext = activeLectureIdx !== -1 && activeLectureIdx < allLectures.length - 1
-  const isCurrentDone = activeLecture ? (mergedProgress[activeLecture.id]?.isCompleted ?? false) : false
+  const isCurrentDone = activeLecture ? completedIds.has(activeLecture.id) : false
 
-  const handleSelectLecture = (lec: Lecture) => {
-    setActiveLecture(lec)
-    updateProgress.mutate({ lectureId: lec.id, watchedSeconds: 0 })
-  }
+  const handleSelectLecture = (lec: any) => setActiveLecture(lec)
 
   const handleMarkDone = () => {
     if (!activeLecture || isCurrentDone) return
-    setLocalCompleted((prev) => new Set([...prev, activeLecture.id]))
-    updateProgress.mutate({
-      lectureId: activeLecture.id,
-      watchedSeconds: (activeLecture.duration ?? 0) * 60,
-      isCompleted: true,
-    })
+    setCompletedIds((prev) => new Set([...prev, activeLecture.id]))
   }
 
   const handleNext = () => {
@@ -338,22 +269,6 @@ export default function LearningScreen() {
   const handlePrev = () => {
     if (hasPrev) setActiveLecture(allLectures[activeLectureIdx - 1])
   }
-
-  if (isLoading) return (
-    <View style={S.center}>
-      <ActivityIndicator size="large" color={COLORS.primary} />
-    </View>
-  )
-
-  if (isError || !data) return (
-    <View style={S.center}>
-      <Ionicons name="alert-circle-outline" size={48} color={COLORS.textMuted} />
-      <Text style={S.errText}>تعذّر تحميل المحتوى</Text>
-      <TouchableOpacity onPress={() => router.navigate('/(main)/learning/hub')} style={S.errBtn}>
-        <Text style={S.errBtnText}>العودة</Text>
-      </TouchableOpacity>
-    </View>
-  )
 
   return (
     <View style={S.root}>
@@ -369,7 +284,6 @@ export default function LearningScreen() {
             <TouchableOpacity style={[S.playerBackBtn, { top: insets.top + 8 }]} onPress={() => setActiveLecture(null)}>
               <Ionicons name="chevron-back" size={18} color="#fff" />
             </TouchableOpacity>
-            {/* Lecture info panel below player */}
             <View style={S.lecInfoPanel}>
               <View style={S.lecInfoTop}>
                 {isCurrentDone && (
@@ -380,9 +294,7 @@ export default function LearningScreen() {
                 )}
                 <Text style={S.lecInfoTitle}>{activeLecture.title}</Text>
                 {activeLecture.description ? (
-                  <Text style={S.lecInfoDesc} numberOfLines={2}>
-                    {activeLecture.description}
-                  </Text>
+                  <Text style={S.lecInfoDesc} numberOfLines={2}>{activeLecture.description}</Text>
                 ) : null}
               </View>
               <View style={S.lecInfoMeta}>
@@ -451,7 +363,7 @@ export default function LearningScreen() {
         {totalLectures > 0 && (
           <View style={S.progressStrip}>
             <View style={S.progressRow}>
-              <Text style={S.progressLabel}>{completedCount}/{totalLectures} مكتملة</Text>
+              <Text style={S.progressLabel}>{completedIds.size}/{totalLectures} مكتملة</Text>
               <Text style={S.progressPct}>{progressPct}%</Text>
             </View>
             <View style={S.progressTrack}>
@@ -485,14 +397,14 @@ export default function LearningScreen() {
               </View>
             ) : (
               <View style={{ gap: 10 }}>
-                {sections.map((section, si) => (
+                {sections.map((section: any, si: number) => (
                   <SectionAccordion
                     key={section.id}
                     section={section}
                     sectionIdx={si}
-                    activeLecture={activeLecture}
+                    activeLectureId={activeLecture?.id ?? null}
                     onSelectLecture={handleSelectLecture}
-                    mergedProgress={mergedProgress}
+                    completedIds={completedIds}
                   />
                 ))}
               </View>
@@ -590,16 +502,9 @@ const S = StyleSheet.create({
   scroll: { flex: 1 },
   pad: { paddingHorizontal: 16, paddingTop: 12 },
 
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: COLORS.canvas },
-  errText: { fontSize: FS.md, color: COLORS.textMuted, fontFamily: FONT.semibold },
-  errBtn: { paddingHorizontal: 24, paddingVertical: 10, backgroundColor: COLORS.primary, borderRadius: RADIUS.md, marginTop: 8 },
-  errBtnText: { color: '#fff', fontFamily: FONT.bold, fontSize: FS.sm },
-
-  // Video placeholder
   noVideoPlaceholder: { width: W, height: PLAYER_H, backgroundColor: '#1a1a2e', justifyContent: 'center', alignItems: 'center', gap: 10 },
   noVideoText: { color: 'rgba(255,255,255,0.35)', fontFamily: FONT.regular, fontSize: FS.sm },
 
-  // Hero
   hero: { height: 240, justifyContent: 'flex-end', paddingBottom: 28, paddingHorizontal: 20 },
   heroBackBtn: {
     position: 'absolute', left: 16,
@@ -616,7 +521,6 @@ const S = StyleSheet.create({
   heroStat: { flexDirection: 'row', gap: 4, alignItems: 'center' },
   heroStatTxt: { color: 'rgba(255,255,255,0.78)', fontSize: FS.xs, fontFamily: FONT.medium },
 
-  // Player
   playerWrap: { backgroundColor: '#000' },
   playerBackBtn: {
     position: 'absolute', left: 16, zIndex: 10,
@@ -625,12 +529,7 @@ const S = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
 
-  // Lecture info panel
-  lecInfoPanel: {
-    paddingHorizontal: 16, paddingVertical: 14,
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1, borderBottomColor: COLORS.surfaceBorder,
-  },
+  lecInfoPanel: { paddingHorizontal: 16, paddingVertical: 14, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceBorder },
   lecInfoTop: { alignItems: 'flex-end' },
   doneBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 6, alignSelf: 'flex-end' },
   doneBadgeText: { fontSize: FS.xs, fontFamily: FONT.bold, color: COLORS.teal },
@@ -643,7 +542,6 @@ const S = StyleSheet.create({
   metaChipFreeText: { fontSize: FS.xs, fontFamily: FONT.bold, color: '#16a34a' },
   lecCounter: { fontSize: FS.xs, fontFamily: FONT.bold, color: COLORS.textMuted },
 
-  // Progress strip
   progressStrip: { paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceBorder },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   progressLabel: { fontSize: FS.xs, fontFamily: FONT.semibold, color: COLORS.textSecondary },
@@ -651,14 +549,12 @@ const S = StyleSheet.create({
   progressTrack: { height: 7, backgroundColor: COLORS.surfaceBorder, borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: 7, backgroundColor: COLORS.primary, borderRadius: 4 },
 
-  // Tabs
   tabBar: { flexDirection: 'row', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceBorder },
   tabItem: { flex: 1, paddingVertical: 13, alignItems: 'center' },
   tabItemActive: { borderBottomWidth: 2.5, borderBottomColor: COLORS.primary },
   tabLabel: { fontSize: FS.sm, fontFamily: FONT.semibold, color: COLORS.textMuted },
   tabLabelActive: { color: COLORS.primary, fontFamily: FONT.bold },
 
-  // Section card
   sCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, borderWidth: 1.5, borderColor: COLORS.surfaceBorder, overflow: 'hidden' },
   sHeader: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
   sTitleArea: { flex: 1, alignItems: 'flex-end', gap: 4 },
@@ -676,7 +572,6 @@ const S = StyleSheet.create({
   sNumBadgeDone: { backgroundColor: COLORS.teal },
   sNumText: { color: '#fff', fontSize: FS.xs, fontFamily: FONT.extrabold },
 
-  // Lecture row
   lRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14, gap: 10, borderTopWidth: 1, borderTopColor: COLORS.surfaceBorder },
   lRowActive: { backgroundColor: `${COLORS.primary}08` },
   lRowDone: { backgroundColor: `${COLORS.teal}06` },
@@ -694,7 +589,6 @@ const S = StyleSheet.create({
   lIconDone: { backgroundColor: COLORS.teal, borderColor: COLORS.teal },
   lIconNum: { color: COLORS.textMuted, fontSize: FS.micro, fontFamily: FONT.bold },
 
-  // About
   aboutCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16, borderWidth: 1, borderColor: COLORS.surfaceBorder, marginBottom: 12 },
   aboutHeading: { fontSize: FS.sm, fontFamily: FONT.extrabold, color: COLORS.text, textAlign: 'right', marginBottom: 10 },
   aboutBody: { fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textSecondary, textAlign: 'right', lineHeight: 22 },
@@ -702,16 +596,13 @@ const S = StyleSheet.create({
   bulletCheck: { color: COLORS.primary, fontFamily: FONT.extrabold, fontSize: FS.sm, width: 18, textAlign: 'center' },
   bulletText: { flex: 1, fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textSecondary, textAlign: 'right', lineHeight: 21 },
 
-  // Empty
   emptyBox: { alignItems: 'center', paddingVertical: 48, gap: 10 },
   emptyText: { fontSize: FS.sm, color: COLORS.textMuted, fontFamily: FONT.semibold },
 
-  // Action bar
   actionBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 14,
-    paddingTop: 12,
+    paddingHorizontal: 14, paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 28 : 14,
     backgroundColor: COLORS.surface,
     borderTopWidth: 1, borderTopColor: COLORS.surfaceBorder,

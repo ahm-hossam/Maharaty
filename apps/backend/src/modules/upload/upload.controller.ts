@@ -42,4 +42,39 @@ export class UploadController {
 
     return { success: true, url: `/uploads/${filename}` }
   }
+
+  @Post('file')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Upload a file (image or PDF), returns public URL + metadata' })
+  @ApiConsumes('multipart/form-data')
+  async uploadFile(@Req() req: any) {
+    if (!req.isMultipart()) throw new BadRequestException('multipart request required')
+
+    const data = await req.file()
+    if (!data) throw new BadRequestException('no file uploaded')
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']
+    if (!allowed.includes(data.mimetype)) {
+      throw new BadRequestException('only jpeg/png/webp/gif/pdf allowed')
+    }
+
+    const buffer = await data.toBuffer()
+    const ext = path.extname(data.filename) || (data.mimetype === 'application/pdf' ? '.pdf' : '.bin')
+    const filename = crypto.randomBytes(16).toString('hex') + ext
+
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true })
+    const dest = path.join(UPLOAD_DIR, filename)
+    await fs.promises.writeFile(dest, buffer)
+
+    const fileType = data.mimetype === 'application/pdf' ? 'pdf' : 'image'
+    const originalName = data.filename || filename
+
+    return {
+      success: true,
+      url: `/uploads/${filename}`,
+      name: originalName,
+      type: fileType,
+      size: buffer.length,
+    }
+  }
 }

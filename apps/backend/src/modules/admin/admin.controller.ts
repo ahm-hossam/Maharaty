@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, UseGuards } from '@nestjs/common'
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger'
 import { AdminService } from './admin.service'
 import { JwtAuthGuard } from '../auth/guards/jwt.guard'
@@ -15,6 +15,13 @@ export class AdminController {
   @ApiOperation({ summary: 'Get dashboard analytics (admin)' })
   async getAnalytics() {
     const data = await this.adminService.getAnalytics()
+    return { success: true, data }
+  }
+
+  @Post('seed-demo')
+  @ApiOperation({ summary: 'Seed demo content for all categories' })
+  async seedDemo() {
+    const data = await this.adminService.seedDemoContent()
     return { success: true, data }
   }
 }
