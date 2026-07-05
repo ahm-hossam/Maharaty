@@ -11,6 +11,7 @@ import {
   useCreateContent,
   useUpdateContent,
   useDeleteContent,
+  useSeedDemoContent,
   type Content,
 } from '@/lib/queries'
 
@@ -639,9 +640,20 @@ export default function ContentPage() {
   const { data: allContent, isLoading, isError } = useAllContent()
   const deleteContent = useDeleteContent()
   const updateContent = useUpdateContent()
+  const seedDemo = useSeedDemoContent()
   const [tab, setTab] = useState<TabFilter>('ALL')
   const [showAdd, setShowAdd] = useState(false)
   const [editingContent, setEditingContent] = useState<Content | null>(null)
+
+  const handleSeedDemo = async () => {
+    if (!confirm('سيتم حذف أي بيانات تجريبية سابقة وإضافة 15 عنصر محتوى جديد. هل تريد المتابعة؟')) return
+    try {
+      const res = await seedDemo.mutateAsync()
+      toast.success(`تم إضافة ${(res as any)?.data?.data?.seeded ?? 15} عنصر محتوى تجريبي`)
+    } catch {
+      toast.error('فشل تحميل البيانات التجريبية')
+    }
+  }
 
   const list: Content[] = Array.isArray(allContent) ? allContent : (allContent as any)?.content ?? []
 
@@ -679,12 +691,19 @@ export default function ContentPage() {
           ))}
         </div>
 
-        {/* Add — LEFT in RTL */}
-        <button onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#0033A0] to-[#002880] text-white rounded-xl text-sm font-semibold shadow-lg shadow-[#0033A0]/25 hover:from-[#002880] hover:to-[#001E60] transition-all">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-          إضافة محتوى
-        </button>
+        {/* Actions — LEFT in RTL */}
+        <div className="flex items-center gap-2">
+          <button onClick={handleSeedDemo} disabled={seedDemo.isPending}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 hover:border-[#0033A0] hover:text-[#0033A0] transition-all disabled:opacity-50">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+            {seedDemo.isPending ? 'جارٍ التحميل...' : 'بيانات تجريبية'}
+          </button>
+          <button onClick={() => setShowAdd(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#0033A0] to-[#002880] text-white rounded-xl text-sm font-semibold shadow-lg shadow-[#0033A0]/25 hover:from-[#002880] hover:to-[#001E60] transition-all">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            إضافة محتوى
+          </button>
+        </div>
       </div>
 
       {isError && (

@@ -487,6 +487,170 @@ export function useReorderSAQuestions() {
   })
 }
 
+// ─── LMS ──────────────────────────────────────────────────────────────────────
+
+export interface LmsAttachment {
+  url: string
+  name: string
+  type: 'pdf' | 'image'
+  size?: number
+}
+
+export interface LmsLecture {
+  id: string
+  sectionId?: string
+  title: string
+  description?: string
+  videoUrl?: string
+  youtubeId?: string
+  content?: string
+  attachments?: LmsAttachment[]
+  duration?: number
+  order: number
+  isFree: boolean
+  isPublished: boolean
+  createdAt?: string
+}
+
+export interface LmsSection {
+  id: string
+  contentId?: string
+  title: string
+  order: number
+  lectures: LmsLecture[]
+  createdAt?: string
+}
+
+export interface LmsCurriculum {
+  id: string
+  type: 'COURSE' | 'VIDEO'
+  titleAr: string
+  description?: string
+  category?: string
+  thumbnail?: string
+  duration?: number
+  isPublished: boolean
+  meta?: Record<string, unknown>
+  sections: LmsSection[]
+  _count?: { progresses: number }
+}
+
+export interface LectureProgressMap {
+  [lectureId: string]: {
+    watchedSeconds: number
+    isCompleted: boolean
+    completedAt?: string
+  }
+}
+
+export interface UserCourseProgress {
+  totalLectures: number
+  completedLectures: number
+  progressPercent: number
+  lectureProgress: LectureProgressMap
+}
+
+export function useCurriculum(contentId: string | null) {
+  return useQuery<LmsCurriculum>({
+    queryKey: ['lms', 'curriculum', contentId],
+    queryFn: () => api.get(`/lms/${contentId}/curriculum`).then((r) => r.data.data),
+    enabled: !!contentId,
+  })
+}
+
+export function useMyProgress(contentId: string | null) {
+  return useQuery<UserCourseProgress>({
+    queryKey: ['lms', 'progress', contentId],
+    queryFn: () => api.get(`/lms/${contentId}/my-progress`).then((r) => r.data.data),
+    enabled: !!contentId,
+  })
+}
+
+export function useCreateSection(contentId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { title: string; order?: number }) =>
+      api.post(`/lms/${contentId}/sections`, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['lms', 'curriculum', contentId] }),
+  })
+}
+
+export function useUpdateSection(contentId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string; title: string }) =>
+      api.patch(`/lms/sections/${id}`, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['lms', 'curriculum', contentId] }),
+  })
+}
+
+export function useDeleteSection(contentId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/lms/sections/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['lms', 'curriculum', contentId] }),
+  })
+}
+
+export function useReorderSections(contentId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (items: { id: string; order: number }[]) =>
+      api.patch(`/lms/${contentId}/sections/reorder`, { items }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['lms', 'curriculum', contentId] }),
+  })
+}
+
+export function useCreateLecture(contentId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ sectionId, ...data }: { sectionId: string; title: string; description?: string; videoUrl?: string; youtubeId?: string; duration?: number; isFree?: boolean; isPublished?: boolean }) =>
+      api.post(`/lms/sections/${sectionId}/lectures`, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['lms', 'curriculum', contentId] }),
+  })
+}
+
+export function useUpdateLecture(contentId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string; title?: string; description?: string; videoUrl?: string; youtubeId?: string; duration?: number; isFree?: boolean; isPublished?: boolean }) =>
+      api.patch(`/lms/lectures/${id}`, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['lms', 'curriculum', contentId] }),
+  })
+}
+
+export function useDeleteLecture(contentId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/lms/lectures/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['lms', 'curriculum', contentId] }),
+  })
+}
+
+export function useReorderLectures(contentId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ sectionId, items }: { sectionId: string; items: { id: string; order: number }[] }) =>
+      api.patch(`/lms/sections/${sectionId}/lectures/reorder`, { items }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['lms', 'curriculum', contentId] }),
+  })
+}
+
+export function useUpdateLectureProgress() {
+  return useMutation({
+    mutationFn: ({ lectureId, watchedSeconds, isCompleted }: { lectureId: string; watchedSeconds: number; isCompleted?: boolean }) =>
+      api.post(`/lms/lectures/${lectureId}/progress`, { watchedSeconds, isCompleted }),
+  })
+}
+
+export function useSeedDemoContent() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.post('/admin/seed-demo'),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['content'] }),
+  })
+}
+
 export function useToggleReaction() {
   const qc = useQueryClient()
   return useMutation({
