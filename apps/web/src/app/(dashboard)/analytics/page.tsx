@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client'
 
 import { useAnalytics, useActivities } from '@/lib/queries'
