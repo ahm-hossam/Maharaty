@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
+import { api } from '@/lib/axios'
 import { Sidebar } from '@/components/layout/Sidebar'
 
 export default function DashboardLayout({
@@ -10,10 +11,10 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { accessToken, isAdmin } = useAuthStore()
+  const { accessToken, refreshToken, isAdmin, setAuth, clearAuth, user } = useAuthStore()
   const router = useRouter()
-  // Wait for client mount so Zustand can read from localStorage before auth check
   const [mounted, setMounted] = useState(false)
+  const [restoring, setRestoring] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -21,12 +22,29 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (!mounted) return
+
+    // accessToken expired (15 min TTL) but refreshToken still in sessionStorage — silently restore
+    if (!accessToken && refreshToken) {
+      setRestoring(true)
+      api.post('/auth/refresh', { refreshToken })
+        .then((res) => {
+          const { accessToken: newToken, refreshToken: newRefresh } = res.data.data
+          setAuth(newToken, newRefresh, user!)
+        })
+        .catch(() => {
+          clearAuth()
+          router.replace('/login')
+        })
+        .finally(() => setRestoring(false))
+      return
+    }
+
     if (!accessToken || !isAdmin()) {
       router.replace('/login')
     }
-  }, [mounted, accessToken, isAdmin, router])
+  }, [mounted, accessToken, refreshToken, isAdmin, setAuth, clearAuth, user, router])
 
-  if (!mounted) return null
+  if (!mounted || restoring) return null
   if (!accessToken || !isAdmin()) return null
 
   return (

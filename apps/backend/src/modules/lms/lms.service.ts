@@ -15,9 +15,11 @@ export class LmsService {
 
   // ─── Curriculum ──────────────────────────────────────────────────────────────
 
-  async getCurriculum(contentId: string) {
-    const content = await this.prisma.content.findUnique({
-      where: { id: contentId },
+  async getCurriculum(contentId: string, userRole = 'USER') {
+    const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(userRole)
+
+    const item = await this.prisma.content.findUnique({
+      where: { id: contentId, ...(isAdmin ? {} : { isPublished: true }) },
       include: {
         sections: {
           orderBy: { order: 'asc' },
@@ -25,8 +27,22 @@ export class LmsService {
         },
       },
     })
-    if (!content) throw new NotFoundException('Content not found')
-    return content
+    if (!item) throw new NotFoundException('Content not found')
+
+    if (isAdmin) return item
+
+    // Strip media fields from locked (non-free) lectures for regular users
+    return {
+      ...item,
+      sections: item.sections.map((section) => ({
+        ...section,
+        lectures: section.lectures.map((lecture) => {
+          if (lecture.isFree) return lecture
+          const { videoUrl: _v, youtubeId: _y, content: _c, attachments: _a, ...meta } = lecture
+          return meta
+        }),
+      })),
+    }
   }
 
   // ─── Sections ────────────────────────────────────────────────────────────────

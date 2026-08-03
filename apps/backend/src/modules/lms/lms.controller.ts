@@ -21,8 +21,8 @@ export class LmsController {
 
   @Get(':contentId/curriculum')
   @ApiOperation({ summary: 'Get full curriculum for a content item' })
-  async getCurriculum(@Param('contentId') contentId: string) {
-    return { success: true, data: await this.lmsService.getCurriculum(contentId) }
+  async getCurriculum(@Param('contentId') contentId: string, @Request() req: any) {
+    return { success: true, data: await this.lmsService.getCurriculum(contentId, req.user.role) }
   }
 
   @Get(':contentId/my-progress')

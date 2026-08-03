@@ -72,8 +72,9 @@ export class ContentController {
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get single content item with full meta' })
-  async findOne(@Param('id') id: string) {
-    const data = await this.contentService.findOne(id)
+  async findOne(@Param('id') id: string, @Request() req: any) {
+    const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)
+    const data = await this.contentService.findOne(id, isAdmin)
     return { success: true, data }
   }
 
