@@ -33,8 +33,13 @@ async function bootstrap() {
     // @fastify/helmet not installed, skipping
   }
 
-  const rawOrigins = configService.get<string>('CORS_ORIGINS', '*')
-  const origins = rawOrigins === '*' ? true : rawOrigins.split(',').map((o) => o.trim())
+  const rawOrigins = configService.get<string>('CORS_ORIGINS', '')
+  if (!rawOrigins || rawOrigins === '*') {
+    console.error('WARNING: CORS_ORIGINS is not configured — all cross-origin requests will be rejected')
+  }
+  const origins = rawOrigins && rawOrigins !== '*'
+    ? rawOrigins.split(',').map((o) => o.trim())
+    : []
   app.enableCors({
     origin: origins,
     credentials: true,
@@ -52,15 +57,16 @@ async function bootstrap() {
     }),
   )
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Maharaty API')
-    .setDescription('مهاراتي - Skills platform API')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build()
-
-  const document = SwaggerModule.createDocument(app, swaggerConfig)
-  SwaggerModule.setup('docs', app, document)
+  if (process.env.NODE_ENV !== 'production') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Maharaty API')
+      .setDescription('مهاراتي - Skills platform API')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build()
+    const document = SwaggerModule.createDocument(app, swaggerConfig)
+    SwaggerModule.setup('docs', app, document)
+  }
 
   const port = configService.get<number>('PORT', 3001)
   await app.listen(port, '0.0.0.0')

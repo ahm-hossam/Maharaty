@@ -118,9 +118,9 @@ export class ContentService {
     return { content, pagination: { total, page, limit, totalPages: Math.ceil(total / limit) } }
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, isAdmin = false) {
     const content = await this.prisma.content.findUnique({
-      where: { id },
+      where: { id, ...(isAdmin ? {} : { isPublished: true }) },
       select: {
         id: true, type: true, title: true, titleAr: true, description: true,
         thumbnail: true, url: true, duration: true, category: true,
