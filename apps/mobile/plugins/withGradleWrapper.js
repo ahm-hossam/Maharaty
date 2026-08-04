@@ -5,7 +5,7 @@ const path = require('path');
 // Expo SDK 52 is tested with Gradle 8.6. Gradle 8.8+ breaks expo-module-gradle-plugin
 // resolution via includeBuild and introduces 'components.release' incompatibilities
 // in expo-modules-core.
-const GRADLE_VERSION = '8.6';
+const GRADLE_VERSION = '8.7';
 
 const withGradleWrapper = (config) => {
   return withDangerousMod(config, [
