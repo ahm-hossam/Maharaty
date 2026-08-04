@@ -37,7 +37,8 @@
           "icon": "./assets/icon.png",
           "color": "#2F6CFF"
         }
-      ]
+      ],
+      "./plugins/withGradleWrapper"
     ],
     "experiments": {
       "typedRoutes": true
