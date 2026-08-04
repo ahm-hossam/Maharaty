@@ -26,7 +26,9 @@
       "expo-router",
       [
         "expo-splash-screen",
-        { "backgroundColor": "#F5F7FF" }
+        {
+          "backgroundColor": "#F5F7FF"
+        }
       ],
       "expo-secure-store",
       [
@@ -39,6 +41,15 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "ca0d1d73-f41e-441d-887d-c171e9ffbdbc"
+      }
+    },
+    "owner": "ah-ho"
   }
 }
