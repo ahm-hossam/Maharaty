@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "scheme": "maharaty",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "backgroundColor": "#F5F7FF",
       "resizeMode": "contain"
