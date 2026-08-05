@@ -38,7 +38,8 @@
           "color": "#2F6CFF"
         }
       ],
-      "./plugins/withGradleWrapper"
+      "./plugins/withGradleWrapper",
+      "./plugins/withGradleProperties"
     ],
     "experiments": {
       "typedRoutes": true
