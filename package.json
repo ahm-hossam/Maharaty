@@ -17,8 +17,5 @@
   "devDependencies": {
     "ajv": "^8.20.0",
     "concurrently": "^9.0.0"
-  },
-  "dependencies": {
-    "react-native-webview": "13.12.5"
   }
 }

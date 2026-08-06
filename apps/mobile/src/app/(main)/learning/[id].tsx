@@ -86,8 +86,13 @@ function extractYouTubeId(url: string): string | null {
 function VideoPlayer({ lecture }: { lecture: Lecture }) {
   const [playing, setPlaying] = useState(false)
 
-  // Resolve YouTube ID from the dedicated field OR by parsing a full YouTube URL
-  const ytId = lecture.youtubeId ?? (lecture.videoUrl ? extractYouTubeId(lecture.videoUrl) : null)
+  // Resolve YouTube ID — handles plain IDs, full URLs in youtubeId, or videoUrl
+  const ytId = (() => {
+    const raw = lecture.youtubeId || (lecture.videoUrl ? extractYouTubeId(lecture.videoUrl) : null)
+    if (!raw) return null
+    if (raw.startsWith('http')) return extractYouTubeId(raw)
+    return raw
+  })()
 
   if (ytId) {
     return (

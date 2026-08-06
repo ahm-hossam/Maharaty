@@ -7,7 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "maharaty",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "backgroundColor": "#F5F7FF",
@@ -42,7 +41,8 @@
         }
       ],
       "./plugins/withGradleWrapper",
-      "./plugins/withGradleProperties"
+      "./plugins/withGradleProperties",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
@@ -55,6 +55,12 @@
         "projectId": "ca0d1d73-f41e-441d-887d-c171e9ffbdbc"
       }
     },
-    "owner": "ah-ho"
+    "owner": "ah-ho",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ca0d1d73-f41e-441d-887d-c171e9ffbdbc"
+    }
   }
 }

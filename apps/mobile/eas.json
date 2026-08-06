@@ -8,7 +8,8 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_URL": "http://localhost:3004/v1"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -17,17 +18,19 @@
         "gradleCommand": ":app:assembleRelease --quiet --stacktrace"
       },
       "ios": {
-        "simulator": true
+        "distribution": "internal"
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://maharaty-api.onrender.com/v1"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_URL": "https://maharaty-api.onrender.com/v1"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {
