@@ -22,6 +22,7 @@ import { usePathStore } from '../../store/pathStore'
 import { useAuthStore } from '../../store/authStore'
 import { useActivity } from '../../hooks/useActivity'
 import { api } from '../../services/api'
+import { useDrawer } from '../../context/DrawerContext'
 
 const { width } = Dimensions.get('window')
 const CARD_SIZE = (width - 60) / 2
@@ -81,16 +82,6 @@ const FEATURES = [
     accentAlt: '#0D9488',
     route: '/(main)/learning/hub',
   },
-]
-
-const MENU_ITEMS = [
-  { icon: 'document-text-outline', label: 'السيرة الذاتية', route: '/(main)/cv/builder' },
-  { icon: 'bulb-outline',          label: 'تقييم المهارات', route: '/(main)/self-assessment' },
-  { icon: 'briefcase-outline',     label: 'بوابات التوظيف', route: '/(main)/jobs' },
-  { icon: 'mic-outline',           label: 'محاكاة المقابلة', route: '/(main)/interview/simulator' },
-  { icon: 'trending-up-outline',   label: 'موارد التطوير', route: '/(main)/search' },
-  { icon: 'people-outline',        label: 'مجتمع مهاراتي', route: '/(main)/community' },
-  { icon: 'star-outline',          label: 'قيّمنا', route: null },
 ]
 
 // ─── Feature Card ─────────────────────────────────────────────
@@ -250,32 +241,15 @@ export default function HomeScreen() {
     setRefreshing(false)
   }
 
-  // Drawer
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const slideAnim   = useRef(new Animated.Value(width * 0.82)).current
-  const overlayAnim = useRef(new Animated.Value(0)).current
+  // Drawer — handled by global DrawerProvider in _layout.tsx
+  const { openDrawer } = useDrawer()
 
   // Notifications sheet
   const [notifOpen, setNotifOpen] = useState(false)
   const notifSlide   = useRef(new Animated.Value(600)).current
   const notifOverlay = useRef(new Animated.Value(0)).current
 
-  const openDrawer = () => {
-    setDrawerOpen(true)
-    Animated.parallel([
-      Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, damping: 18, stiffness: 180 }),
-      Animated.timing(overlayAnim, { toValue: 1, duration: 260, useNativeDriver: true }),
-    ]).start()
-  }
-
-  const closeDrawer = () => {
-    Animated.parallel([
-      Animated.timing(slideAnim, { toValue: width * 0.82, duration: 240, useNativeDriver: true }),
-      Animated.timing(overlayAnim, { toValue: 0, duration: 240, useNativeDriver: true }),
-    ]).start(() => setDrawerOpen(false))
-  }
-
-  // Path sheet
+    // Path sheet
   const [pathOpen, setPathOpen] = useState(false)
   const pathSlide   = useRef(new Animated.Value(600)).current
   const pathOverlay = useRef(new Animated.Value(0)).current
@@ -418,73 +392,6 @@ export default function HomeScreen() {
         </View>
 
       </ScrollView>
-
-      {/* ── Drawer ── */}
-      <Modal visible={drawerOpen} transparent animationType="none" onRequestClose={closeDrawer}>
-        {/* Overlay */}
-        <Animated.View style={[S.overlay, { opacity: overlayAnim }]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={closeDrawer} />
-        </Animated.View>
-
-        {/* Panel — slides in from the right (RTL-native) */}
-        <Animated.View style={[S.drawer, { transform: [{ translateX: slideAnim }] }]}>
-          {/* Header */}
-          <View style={[S.drawerHeader, { paddingTop: insets.top + 24 }]}>
-            <TouchableOpacity style={[S.drawerCloseBtn, { top: insets.top + 16 }]} onPress={closeDrawer}>
-              <Ionicons name="close" size={20} color={COLORS.textMuted} />
-            </TouchableOpacity>
-
-            <View style={S.drawerLogoWrap}>
-              <LinearGradient
-                colors={[COLORS.primary, COLORS.secondary]}
-                style={S.drawerLogo}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              >
-                <Ionicons name="bulb" size={28} color="#fff" />
-              </LinearGradient>
-            </View>
-            <Text style={S.drawerTitle}>مهاراتي</Text>
-            <Text style={S.drawerSub}>منصة تطوير المهارات المهنية</Text>
-          </View>
-
-          <View style={S.drawerDivider} />
-
-          {/* Menu */}
-          <ScrollView style={S.drawerMenuScroll} showsVerticalScrollIndicator={false}>
-            {MENU_ITEMS.map((item, i) => (
-              <TouchableOpacity
-                key={i}
-                style={S.menuRow}
-                onPress={() => { closeDrawer(); if (item.route) router.push(item.route as any) }}
-              >
-                <View style={S.menuIconCircle}>
-                  <Ionicons name={item.icon as any} size={18} color={COLORS.primary} />
-                </View>
-                <Text style={S.menuLabel}>{item.label}</Text>
-                <Ionicons name="chevron-forward" size={14} color={COLORS.textMuted} />
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          {/* Footer */}
-          <View style={[S.drawerFooter, { paddingBottom: insets.bottom + 20 }]}>
-            <TouchableOpacity
-              style={S.logoutRow}
-              onPress={async () => {
-                closeDrawer()
-                setTimeout(async () => {
-                  await useAuthStore.getState().logout()
-                  router.replace('/(auth)/login')
-                }, 260)
-              }}
-              activeOpacity={0.75}
-            >
-              <Ionicons name="log-out-outline" size={18} color={COLORS.error} />
-              <Text style={S.logoutText}>تسجيل الخروج</Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-      </Modal>
 
       {/* ── Career Path Sheet ── */}
       <Modal visible={pathOpen} transparent animationType="none" onRequestClose={closePath}>

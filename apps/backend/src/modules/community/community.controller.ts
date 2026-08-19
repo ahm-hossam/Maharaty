@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Request,
@@ -41,6 +42,17 @@ export class CommunityController {
   @ApiOperation({ summary: 'Create a community post' })
   async createPost(@Body() dto: CreatePostDto, @Request() req: any) {
     const data = await this.communityService.createPost(dto, req.user.id, req.user.role)
+    return { success: true, data }
+  }
+
+  @Patch('posts/:id')
+  @ApiOperation({ summary: 'Edit a post (own or admin)' })
+  async updatePost(
+    @Param('id') id: string,
+    @Body() dto: CreatePostDto,
+    @Request() req: any,
+  ) {
+    const data = await this.communityService.updatePost(id, dto.content, req.user.id, req.user.role)
     return { success: true, data }
   }
 

@@ -177,7 +177,7 @@ function IntroScreen({ onStart, questionCount }: { onStart: () => void; question
       <TouchableOpacity onPress={onStart} activeOpacity={0.9} style={IS.startBtnWrap}>
         <LinearGradient colors={[COLORS.primary, COLORS.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={IS.startBtn}>
           <Text style={IS.startBtnText}>ابدأ التقييم</Text>
-          <Ionicons name="chevron-forward" size={20} color="#fff" />
+          <Ionicons name="chevron-back" size={20} color="#fff" />
         </LinearGradient>
       </TouchableOpacity>
     </ScrollView>
@@ -259,6 +259,7 @@ function QuestionScreen({
 
   const flyOut = (dir: 1 | -1, val: number) => {
     Animated.timing(translateX, { toValue: dir * 500, duration: 200, useNativeDriver: false }).start(() => {
+      fadeAnim.setValue(0)
       translateX.setValue(0)
       onSelectRef.current(val)
     })
@@ -565,7 +566,7 @@ export default function SelfAssessmentScreen() {
       {/* Header */}
       <View style={SC.header}>
         <TouchableOpacity style={SC.backBtn} onPress={() => (phase === 'quiz' ? goPrev() : router.back())}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
+          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
         <Text style={SC.headerTitle}>
           {phase === 'intro' ? 'اختبار الشخصية المهنية' : phase === 'quiz' ? 'التقييم' : 'نتيجتك'}

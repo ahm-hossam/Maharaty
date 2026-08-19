@@ -55,6 +55,14 @@ export class CommunityService {
     }).then(({ reactions, ...p }) => ({ ...p, hasReacted: reactions.length > 0 }))
   }
 
+  async updatePost(id: string, content: string, userId: string, role: string) {
+    const post = await this.prisma.post.findUnique({ where: { id }, select: { authorId: true } })
+    if (!post) throw new NotFoundException('Post not found')
+    const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+    if (post.authorId !== userId && !isAdmin) throw new ForbiddenException('Not allowed')
+    return this.prisma.post.update({ where: { id }, data: { content }, select: POST_SELECT })
+  }
+
   async deletePost(id: string, userId: string, role: string) {
     const post = await this.prisma.post.findUnique({ where: { id }, select: { authorId: true } })
     if (!post) throw new NotFoundException('Post not found')

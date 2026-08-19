@@ -22,6 +22,7 @@ import { COLORS, FONT, RADIUS, FS } from '@/constants/theme'
 import { useActivity } from '../../hooks/useActivity'
 import { useAuthStore } from '../../store/authStore'
 import { api } from '../../services/api'
+import { useDrawer } from '../../context/DrawerContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -89,12 +90,14 @@ function PostCard({
   onToggleReaction,
   onOpenComments,
   onDelete,
+  onEdit,
 }: {
   post: Post
   currentUserId?: string
   onToggleReaction: (id: string) => void
   onOpenComments: (post: Post) => void
   onDelete: (id: string) => void
+  onEdit: (post: Post) => void
 }) {
   return (
     <View style={[styles.postCard, post.isAdminPost && styles.adminPostCard]}>
@@ -114,9 +117,14 @@ function PostCard({
         </View>
         <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
           {currentUserId === post.author.id && (
-            <TouchableOpacity onPress={() => onDelete(post.id)} style={styles.deleteBtn}>
-              <Ionicons name="trash-outline" size={15} color={COLORS.textMuted} />
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity onPress={() => onEdit(post)} style={styles.deleteBtn}>
+                <Ionicons name="pencil-outline" size={15} color={COLORS.textMuted} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => onDelete(post.id)} style={styles.deleteBtn}>
+                <Ionicons name="trash-outline" size={15} color={COLORS.textMuted} />
+              </TouchableOpacity>
+            </>
           )}
           <View
             style={[
@@ -160,6 +168,7 @@ function PostCard({
 export default function CommunityScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { openDrawer } = useDrawer()
   const { trackActivity } = useActivity()
   const isLoggedIn = useAuthStore((s) => s.isAuthenticated)
   const currentUser = useAuthStore((s) => s.user)
@@ -170,6 +179,7 @@ export default function CommunityScreen() {
 
   const [showCreate, setShowCreate] = useState(false)
   const [newPostContent, setNewPostContent] = useState('')
+  const [editingPost, setEditingPost] = useState<Post | null>(null)
   const [creating, setCreating] = useState(false)
 
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
@@ -288,6 +298,25 @@ export default function CommunityScreen() {
     }
   }
 
+  const saveEditPost = async () => {
+    if (!editingPost || !newPostContent.trim()) return
+    setCreating(true)
+    try {
+      await api.patch(`/community/posts/${editingPost.id}`, { content: newPostContent.trim() })
+      setPosts((prev) =>
+        prev.map((p) => (p.id === editingPost.id ? { ...p, content: newPostContent.trim() } : p)),
+      )
+      setEditingPost(null)
+      setNewPostContent('')
+      setShowCreate(false)
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? err?.message ?? 'فشل تعديل المنشور'
+      Alert.alert('خطأ', msg)
+    } finally {
+      setCreating(false)
+    }
+  }
+
   const handleDeletePost = (postId: string) => {
     Alert.alert('حذف المنشور', 'هل أنت متأكد من حذف هذا المنشور؟', [
       { text: 'إلغاء', style: 'cancel' },
@@ -313,13 +342,18 @@ export default function CommunityScreen() {
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
           <View style={styles.headerRow}>
-            <View style={styles.headerBadge}>
-              <Ionicons name="people" size={20} color={COLORS.teal} />
+            <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 14 }}>
+              <View style={styles.headerBadge}>
+                <Ionicons name="people" size={20} color={COLORS.teal} />
+              </View>
+              <View>
+                <Text style={styles.headerTitle}>مجتمع مهاراتي</Text>
+                <Text style={styles.headerSubtitle}>تواصل، شارك، تعلم</Text>
+              </View>
             </View>
-            <View>
-              <Text style={styles.headerTitle}>مجتمع مهاراتي</Text>
-              <Text style={styles.headerSubtitle}>تواصل، شارك، تعلم</Text>
-            </View>
+            <TouchableOpacity style={[styles.menuBtn, { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder }]} onPress={openDrawer}>
+              <Ionicons name="menu-outline" size={24} color={COLORS.textSecondary} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -382,13 +416,18 @@ export default function CommunityScreen() {
         style={[styles.header, { paddingTop: insets.top + 12 }]}
       >
         <View style={styles.headerRow}>
-          <View style={styles.headerBadge}>
-            <Ionicons name="people" size={20} color="#fff" />
+          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 14 }}>
+            <View style={styles.headerBadge}>
+              <Ionicons name="people" size={20} color="#fff" />
+            </View>
+            <View>
+              <Text style={[styles.headerTitle, { color: '#fff' }]}>مجتمع مهاراتي</Text>
+              <Text style={styles.headerSubtitle}>تواصل، شارك، تعلم</Text>
+            </View>
           </View>
-          <View>
-            <Text style={[styles.headerTitle, { color: '#fff' }]}>مجتمع مهاراتي</Text>
-            <Text style={styles.headerSubtitle}>تواصل، شارك، تعلم</Text>
-          </View>
+          <TouchableOpacity style={styles.menuBtn} onPress={openDrawer}>
+            <Ionicons name="menu-outline" size={24} color="#fff" />
+          </TouchableOpacity>
         </View>
       </LinearGradient>
 
@@ -424,6 +463,11 @@ export default function CommunityScreen() {
               onToggleReaction={toggleReaction}
               onOpenComments={openComments}
               onDelete={handleDeletePost}
+              onEdit={(p) => {
+                setEditingPost(p)
+                setNewPostContent(p.content)
+                setShowCreate(true)
+              }}
             />
           ))}
         </ScrollView>
@@ -446,11 +490,12 @@ export default function CommunityScreen() {
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <View style={styles.createModal}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>منشور جديد</Text>
+                <Text style={styles.modalTitle}>{editingPost ? 'تعديل المنشور' : 'منشور جديد'}</Text>
                 <TouchableOpacity
                   onPress={() => {
                     setShowCreate(false)
                     setNewPostContent('')
+                    setEditingPost(null)
                   }}
                 >
                   <Ionicons name="close" size={24} color={COLORS.textMuted} />
@@ -468,7 +513,7 @@ export default function CommunityScreen() {
                 autoFocus
               />
               <TouchableOpacity
-                onPress={createPost}
+                onPress={editingPost ? saveEditPost : createPost}
                 disabled={!newPostContent.trim() || creating}
                 activeOpacity={0.85}
               >
@@ -483,7 +528,7 @@ export default function CommunityScreen() {
                   {creating ? (
                     <ActivityIndicator color="#fff" size="small" />
                   ) : (
-                    <Text style={styles.submitBtnText}>نشر</Text>
+                    <Text style={styles.submitBtnText}>{editingPost ? 'حفظ' : 'نشر'}</Text>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
@@ -588,7 +633,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(15,18,33,0.07)',
   },
-  headerRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 14 },
+  headerRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 14, justifyContent: 'space-between' },
+  menuBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
   headerBadge: {
     width: 48,
     height: 48,

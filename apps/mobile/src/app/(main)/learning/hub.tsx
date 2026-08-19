@@ -240,7 +240,7 @@ export default function LearningHubScreen() {
           <View style={S.headerTopRow}>
             <Text style={S.headerTitle}>اكتشف وتعلّم</Text>
             <TouchableOpacity style={S.backBtn} onPress={() => router.navigate('/(main)/home')}>
-              <Ionicons name="arrow-back" size={20} color={COLORS.textSecondary} />
+              <Ionicons name="arrow-forward" size={20} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
 

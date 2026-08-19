@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useState } from 'react'
 import { COLORS, FONT, RADIUS, SHADOW, FS } from '@/constants/theme'
+import { useDrawer } from '../../context/DrawerContext'
 
 const CATEGORIES = [
   { label: 'برمجة وتقنية', icon: 'code-slash', color: '#3B82F6', bg: '#EFF6FF' },
@@ -31,12 +32,20 @@ const TRENDING = [
 export default function SearchScreen() {
   const insets = useSafeAreaInsets()
   const [query, setQuery] = useState('')
+  const { openDrawer } = useDrawer()
 
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.headerTitle}>اكتشف وتعلم</Text>
-        <Text style={styles.headerSubtitle}>ابحث عن المهارات والدورات</Text>
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.menuBtn} onPress={openDrawer}>
+            <Ionicons name="menu-outline" size={24} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.headerTitle}>اكتشف وتعلم</Text>
+            <Text style={styles.headerSubtitle}>ابحث عن المهارات والدورات</Text>
+          </View>
+        </View>
         <View style={styles.searchBox}>
           <Ionicons name="search" size={20} color={COLORS.textMuted} />
           <TextInput
@@ -100,8 +109,10 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.canvas },
   header: { paddingHorizontal: 24, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.07)' },
-  headerTitle: { fontSize: FS.h3, fontWeight: '900', fontFamily: FONT.black, color: COLORS.text, textAlign: 'right', marginBottom: 4 },
-  headerSubtitle: { fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.textMuted, textAlign: 'right', marginBottom: 16 },
+  headerRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  menuBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: FS.h3, fontWeight: '900', fontFamily: FONT.black, color: COLORS.text, textAlign: 'right' },
+  headerSubtitle: { fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.textMuted, textAlign: 'right' },
   searchBox: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, borderRadius: RADIUS.xl, paddingHorizontal: 16, height: 52, gap: 10 },
   searchInput: { flex: 1, fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.text },
 

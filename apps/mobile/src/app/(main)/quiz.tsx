@@ -164,7 +164,7 @@ export default function CareerQuizScreen() {
         <LinearGradient colors={['#1E1B4B', '#312E81']} style={styles.introHeader}>
           <Text style={styles.introHeaderTitle}>اكتشف مسارك المهني</Text>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+            <Ionicons name="arrow-forward" size={24} color="#fff" />
           </TouchableOpacity>
         </LinearGradient>
 
@@ -202,7 +202,7 @@ export default function CareerQuizScreen() {
           <TouchableOpacity style={styles.startQuizBtn} onPress={() => { animateIn(); setPhase('quiz') }}>
             <LinearGradient colors={['#4F46E5', '#7C3AED']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.startQuizGrad}>
               <Text style={styles.startQuizText}>ابدأ التقييم</Text>
-              <Ionicons name="chevron-forward" size={22} color="#fff" />
+              <Ionicons name="chevron-back" size={22} color="#fff" />
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -218,7 +218,7 @@ export default function CareerQuizScreen() {
           <View style={{ width: 40 }} />
           <Text style={styles.quizCounter}>{current + 1} / {QUESTIONS.length}</Text>
           <TouchableOpacity onPress={() => { if (current > 0) setCurrent((c) => c - 1); else setPhase('intro') }} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+            <Ionicons name="arrow-forward" size={24} color="#fff" />
           </TouchableOpacity>
         </LinearGradient>
 

@@ -3,6 +3,7 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   StyleSheet,
   Linking,
 } from 'react-native'
@@ -11,12 +12,13 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { COLORS, FONT, RADIUS, SHADOW, FS } from '@/constants/theme'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useActivity } from '../../hooks/useActivity'
+import { useDrawer } from '../../context/DrawerContext'
 
 const JOB_PORTALS = [
   {
-    id: 'shaghlni',
+    id: 'shaghalni',
     name: 'شغلني',
     nameEn: 'Shaghlni',
     tagline: 'ينغير حياة الناس',
@@ -24,7 +26,7 @@ const JOB_PORTALS = [
     color: '#0EA5E9',
     gradient: ['#0EA5E9', '#0284C7'] as const,
     icon: 'briefcase',
-    url: 'https://shaghlni.com',
+    url: 'https://shaghalni.com',
     count: '+12,000 وظيفة',
   },
   {
@@ -56,7 +58,9 @@ const JOB_PORTALS = [
 export default function JobsScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const [query, setQuery] = useState('')
   const { trackActivity } = useActivity()
+  const { openDrawer } = useDrawer()
 
   useEffect(() => {
     trackActivity('VIEW_JOBS')
@@ -66,24 +70,49 @@ export default function JobsScreen() {
     Linking.openURL(url)
   }
 
+  const filteredPortals = query.trim()
+    ? JOB_PORTALS.filter((p) =>
+        p.name.includes(query) ||
+        p.nameEn.toLowerCase().includes(query.toLowerCase()) ||
+        p.description.includes(query)
+      )
+    : JOB_PORTALS
+
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.headerRow}>
-          <View style={styles.headerBadge}>
-            <Ionicons name="briefcase" size={18} color={COLORS.primary} />
+          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 14 }}>
+            <View style={styles.headerBadge}>
+              <Ionicons name="briefcase" size={18} color={COLORS.primary} />
+            </View>
+            <View style={styles.headerText}>
+              <Text style={styles.headerTitle}>فرص العمل</Text>
+              <Text style={styles.headerSubtitle}>اكتشف الوظيفة المناسبة لك</Text>
+            </View>
           </View>
-          <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>فرص العمل</Text>
-            <Text style={styles.headerSubtitle}>اكتشف الوظيفة المناسبة لك</Text>
-          </View>
+          <TouchableOpacity style={styles.menuBtn} onPress={openDrawer}>
+            <Ionicons name="menu-outline" size={24} color={COLORS.textSecondary} />
+          </TouchableOpacity>
         </View>
 
-        {/* Search hint */}
-        <TouchableOpacity style={styles.searchBar}>
+        <View style={styles.searchBar}>
           <Ionicons name="search-outline" size={18} color="#94A3B8" />
-          <Text style={styles.searchPlaceholder}>ابحث عن وظيفة أو شركة...</Text>
-        </TouchableOpacity>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="ابحث عن وظيفة أو شركة..."
+            placeholderTextColor="#94A3B8"
+            value={query}
+            onChangeText={setQuery}
+            textAlign="right"
+            returnKeyType="search"
+          />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => setQuery('')}>
+              <Ionicons name="close-circle" size={18} color="#94A3B8" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -106,7 +135,10 @@ export default function JobsScreen() {
 
         <Text style={styles.sectionTitle}>مصادر الوظائف</Text>
 
-        {JOB_PORTALS.map((portal) => (
+        {filteredPortals.length === 0 && (
+          <Text style={styles.noResults}>لا توجد نتائج لـ "{query}"</Text>
+        )}
+        {filteredPortals.map((portal) => (
           <View key={portal.id} style={styles.portalCard}>
             <LinearGradient
               colors={portal.gradient}
@@ -160,14 +192,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.canvas },
 
   header: { paddingHorizontal: 24, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.07)' },
-  headerRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 14, marginBottom: 18 },
+  headerRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 14, marginBottom: 18, justifyContent: 'space-between' },
+  menuBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, justifyContent: 'center', alignItems: 'center' },
   headerBadge: { width: 48, height: 48, borderRadius: 14, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, justifyContent: 'center', alignItems: 'center' },
   headerText: {},
   headerTitle: { fontSize: FS.h3, fontWeight: '900', fontFamily: FONT.black, color: COLORS.text, textAlign: 'right' },
   headerSubtitle: { fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textMuted, marginTop: 2, textAlign: 'right' },
 
   searchBar: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, borderRadius: RADIUS.xl, paddingHorizontal: 16, height: 48 },
-  searchPlaceholder: { fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.textMuted, flex: 1, textAlign: 'right' },
+  searchInput: { flex: 1, fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.text, textAlign: 'right' },
+  noResults: { textAlign: 'center', color: COLORS.textMuted, fontFamily: FONT.regular, fontSize: FS.sm, paddingVertical: 32 },
 
   content: { padding: 20, paddingBottom: 40, gap: 16 },
   sectionTitle: { fontSize: FS.sm, fontWeight: '800', fontFamily: FONT.extrabold, color: COLORS.textMuted, textAlign: 'right', letterSpacing: 0.8, textTransform: 'uppercase' },

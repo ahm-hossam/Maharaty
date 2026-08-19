@@ -11,7 +11,9 @@ import {
   Platform,
   Animated,
   FlatList,
+  Share,
 } from 'react-native'
+import * as Speech from 'expo-speech'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -459,9 +461,11 @@ function SkillsStep() {
   const { draft, addSkill, removeSkill } = useCvStore()
   const [name, setName] = useState('')
   const [level, setLevel] = useState<SkillItem['level']>('متوسط')
+  const [error, setError] = useState('')
 
   const add = () => {
-    if (!name.trim()) return
+    if (!name.trim()) { setError('أدخل اسم المهارة أولاً'); return }
+    setError('')
     addSkill({ id: uid(), name: name.trim(), level })
     setName('')
   }
@@ -469,7 +473,8 @@ function SkillsStep() {
   return (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.stepContent}>
       <StepSection title="أضف مهاراتك التقنية والناعمة">
-        <FloatingLabelInput label="اسم المهارة" value={name} onChangeText={setName} />
+        <FloatingLabelInput label="اسم المهارة" value={name} onChangeText={(v) => { setName(v); setError('') }} />
+        {error ? <Text style={S.fieldError}>{error}</Text> : null}
         <Text style={S.fieldSubLabel}>مستوى الإتقان</Text>
         <View style={S.levelRow}>
           {SKILL_LEVELS.map((l) => (
@@ -517,9 +522,11 @@ function SkillsStep() {
 function CertificationsStep() {
   const { draft, addCertification, removeCertification } = useCvStore()
   const [form, setForm] = useState({ name: '', issuer: '', date: '' })
+  const [certError, setCertError] = useState('')
 
   const add = () => {
-    if (!form.name.trim()) return
+    if (!form.name.trim()) { setCertError('أدخل اسم الشهادة أولاً'); return }
+    setCertError('')
     addCertification({ id: uid(), ...form })
     setForm({ name: '', issuer: '', date: '' })
   }
@@ -527,7 +534,8 @@ function CertificationsStep() {
   return (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.stepContent}>
       <StepSection title="أضف شهاداتك ودوراتك">
-        <FloatingLabelInput label="اسم الشهادة" value={form.name} onChangeText={(v) => setForm((f) => ({ ...f, name: v }))} />
+        <FloatingLabelInput label="اسم الشهادة" value={form.name} onChangeText={(v) => { setForm((f) => ({ ...f, name: v })); setCertError('') }} />
+        {certError ? <Text style={S.fieldError}>{certError}</Text> : null}
         <FloatingLabelInput label="الجهة المانحة" value={form.issuer} onChangeText={(v) => setForm((f) => ({ ...f, issuer: v }))} />
         <FloatingLabelInput label="تاريخ الحصول" value={form.date} onChangeText={(v) => setForm((f) => ({ ...f, date: v }))} />
         <TouchableOpacity style={S.addItemBtn} onPress={add}>
@@ -566,9 +574,11 @@ function LanguagesStep() {
   const { draft, addLanguage, removeLanguage } = useCvStore()
   const [langName, setLangName] = useState('')
   const [langLevel, setLangLevel] = useState(LANG_LEVELS[3])
+  const [langError, setLangError] = useState('')
 
   const add = () => {
-    if (!langName.trim()) return
+    if (!langName.trim()) { setLangError('أدخل اسم اللغة أولاً'); return }
+    setLangError('')
     addLanguage({ id: uid(), name: langName.trim(), level: langLevel })
     setLangName('')
   }
@@ -576,7 +586,8 @@ function LanguagesStep() {
   return (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.stepContent}>
       <StepSection title="اللغات التي تتحدثها">
-        <FloatingLabelInput label="اللغة" value={langName} onChangeText={setLangName} />
+        <FloatingLabelInput label="اللغة" value={langName} onChangeText={(v) => { setLangName(v); setLangError('') }} />
+        {langError ? <Text style={S.fieldError}>{langError}</Text> : null}
         <Text style={S.fieldSubLabel}>مستوى الإجادة</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
           <View style={S.levelRow}>
@@ -758,10 +769,27 @@ interface FormatSelectionScreenProps {
   onContinue: () => void
 }
 
+const FORMAT_TIP = 'السيرة الذاتية الزمنية تعرض تاريخك الوظيفي من الأحدث إلى الأقدم، وهي الأنسب لمن لديهم خبرة واضحة في مجال واحد. السيرة الوظيفية تركز على مهاراتك وكفاءاتك، وهي مثالية لمن يغيرون مجالهم المهني. أما المختلطة فتجمع بين الأسلوبين وتناسب معظم المرشحين.'
+
 function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSelectionScreenProps) {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const [playingAudio, setPlayingAudio] = useState(false)
+
+  const toggleAudio = () => {
+    if (playingAudio) {
+      Speech.stop()
+      setPlayingAudio(false)
+    } else {
+      setPlayingAudio(true)
+      Speech.speak(FORMAT_TIP, {
+        language: 'ar',
+        onDone: () => setPlayingAudio(false),
+        onStopped: () => setPlayingAudio(false),
+        onError: () => setPlayingAudio(false),
+      })
+    }
+  }
 
   return (
     <View style={[S.root, { paddingTop: insets.top }]}>
@@ -771,7 +799,7 @@ function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSele
           <Text style={S.headerTitle}>منشئ السيرة الذاتية</Text>
         </View>
         <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
+          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -824,7 +852,7 @@ function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSele
             <TouchableOpacity
               style={S.audioBtn}
               activeOpacity={0.75}
-              onPress={() => setPlayingAudio((p) => !p)}
+              onPress={toggleAudio}
             >
               <Ionicons
                 name={playingAudio ? 'pause' : 'play'}
@@ -860,8 +888,34 @@ function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSele
 export default function CvBuilderScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { currentStep, setStep } = useCvStore()
+  const { currentStep, setStep, draft } = useCvStore()
   const { trackActivity } = useActivity()
+
+  const handleShare = async () => {
+    const { personal, experiences, education, skills, certifications, languages } = draft
+    const lines: string[] = [
+      personal.fullName && `${personal.fullName}`,
+      personal.title && `${personal.title}`,
+      personal.email && `البريد: ${personal.email}`,
+      personal.phone && `الهاتف: ${personal.phone}`,
+      personal.city && `المدينة: ${personal.city}`,
+      '',
+      experiences.length > 0 && '── الخبرة العملية ──',
+      ...experiences.map((e) => `• ${e.role} — ${e.company} (${e.startDate} - ${e.isCurrent ? 'حتى الآن' : e.endDate})`),
+      '',
+      education.length > 0 && '── التعليم ──',
+      ...education.map((e) => `• ${e.degree} — ${e.institution} (${e.graduationYear})`),
+      '',
+      skills.length > 0 && `── المهارات ──\n${skills.map((s) => `${s.name} (${s.level})`).join(' · ')}`,
+      '',
+      languages.length > 0 && `── اللغات ──\n${languages.map((l) => `${l.name} (${l.level})`).join(' · ')}`,
+      '',
+      certifications.length > 0 && '── الشهادات ──',
+      ...certifications.map((c) => `• ${c.name} — ${c.issuer} (${c.date})`),
+    ].filter(Boolean) as string[]
+
+    await Share.share({ message: lines.join('\n'), title: `سيرة ذاتية — ${personal.fullName || 'مهاراتي'}` })
+  }
   const [previewVisible, setPreviewVisible] = useState(false)
   const [formatSelected, setFormatSelected] = useState(false)
   const [cvFormat, setCvFormat] = useState<CvFormatType>('زمنية')
@@ -903,7 +957,7 @@ export default function CvBuilderScreen() {
           <Text style={S.headerTitle}>منشئ السيرة الذاتية</Text>
         </View>
         <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
+          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -961,7 +1015,7 @@ export default function CvBuilderScreen() {
               <Ionicons name="close" size={24} color="#1F2937" />
             </TouchableOpacity>
             <Text style={S.previewModalTitle}>معاينة السيرة الذاتية</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={handleShare}>
               <Ionicons name="share-outline" size={22} color={COLORS.primary} />
             </TouchableOpacity>
           </View>
@@ -1080,6 +1134,7 @@ const S = StyleSheet.create({
   checkboxActive: { backgroundColor: COLORS.primary },
   checkLabel: { fontSize: FS.sm, color: COLORS.textSecondary, fontFamily: FONT.regular },
 
+  fieldError: { fontSize: FS.xs, color: '#EF4444', fontFamily: FONT.regular, textAlign: 'right', marginTop: -8, marginBottom: 8 },
   fieldSubLabel: {
     fontSize: FS.xs, color: COLORS.textMuted,
     textAlign: 'right', marginBottom: 12,

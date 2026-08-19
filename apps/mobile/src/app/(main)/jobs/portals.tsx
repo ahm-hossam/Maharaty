@@ -409,7 +409,7 @@ export default function JobPortalsScreen() {
           <Text style={S.headerSub}>اختر المنصة الأنسب لك</Text>
         </View>
         <TouchableOpacity style={S.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
+          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
       </View>
 

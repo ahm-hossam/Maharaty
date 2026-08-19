@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router'
 import { View, Text, StyleSheet, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { COLORS, FONT, RADIUS } from '@/constants/theme'
+import { DrawerProvider } from '../../context/DrawerContext'
 
 function TabIcon({ name, focused, label }: { name: any; focused: boolean; label: string }) {
   return (
@@ -25,7 +26,9 @@ function TabIcon({ name, focused, label }: { name: any; focused: boolean; label:
 
 export default function MainLayout() {
   return (
+    <DrawerProvider>
     <Tabs
+      initialRouteName="home"
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
@@ -33,18 +36,10 @@ export default function MainLayout() {
       }}
     >
       <Tabs.Screen
-        name="home"
+        name="search"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} label="الرئيسية" />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="jobs"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'briefcase' : 'briefcase-outline'} focused={focused} label="وظائف" />
+            <TabIcon name={focused ? 'search' : 'search-outline'} focused={focused} label="بحث" />
           ),
         }}
       />
@@ -57,10 +52,18 @@ export default function MainLayout() {
         }}
       />
       <Tabs.Screen
-        name="search"
+        name="jobs"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'search' : 'search-outline'} focused={focused} label="بحث" />
+            <TabIcon name={focused ? 'briefcase' : 'briefcase-outline'} focused={focused} label="وظائف" />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="home"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} label="الرئيسية" />
           ),
         }}
       />
@@ -73,6 +76,7 @@ export default function MainLayout() {
       <Tabs.Screen name="jobs/InternalBrowser"  options={{ href: null }} />
       <Tabs.Screen name="learning"              options={{ href: null }} />
     </Tabs>
+    </DrawerProvider>
   )
 }
 

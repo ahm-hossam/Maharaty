@@ -372,7 +372,7 @@ export default function LearningScreen() {
           <View style={[S.playerWrap, { paddingTop: insets.top }]}>
             <VideoPlayer lecture={activeLecture} />
             <TouchableOpacity style={[S.playerBackBtn, { top: insets.top + 8 }]} onPress={() => setActiveLecture(null)}>
-              <Ionicons name="chevron-back" size={18} color="#fff" />
+              <Ionicons name="chevron-forward" size={18} color="#fff" />
             </TouchableOpacity>
             {/* Lecture info panel below player */}
             <View style={S.lecInfoPanel}>
@@ -414,7 +414,7 @@ export default function LearningScreen() {
             style={S.hero}
           >
             <TouchableOpacity style={[S.heroBackBtn, { top: insets.top + 8 }]} onPress={() => router.navigate('/(main)/learning/hub')}>
-              <Ionicons name="chevron-back" size={18} color="#fff" />
+              <Ionicons name="chevron-forward" size={18} color="#fff" />
             </TouchableOpacity>
             <View style={S.heroBody}>
               <View style={S.heroPills}>
@@ -550,7 +550,7 @@ export default function LearningScreen() {
             disabled={!hasPrev}
             activeOpacity={0.8}
           >
-            <Ionicons name="chevron-back" size={16} color={hasPrev ? COLORS.primary : COLORS.textMuted} />
+            <Ionicons name="chevron-forward" size={16} color={hasPrev ? COLORS.primary : COLORS.textMuted} />
             <Text style={[S.actionBtnTxt, { color: hasPrev ? COLORS.primary : COLORS.textMuted }]}>
               السابق
             </Text>
@@ -580,7 +580,7 @@ export default function LearningScreen() {
             activeOpacity={0.8}
           >
             <Text style={[S.actionBtnTxt, !hasNext && { color: COLORS.textMuted }]}>التالي</Text>
-            <Ionicons name="chevron-forward" size={16} color={hasNext ? '#fff' : COLORS.textMuted} />
+            <Ionicons name="chevron-back" size={16} color={hasNext ? '#fff' : COLORS.textMuted} />
           </TouchableOpacity>
         </View>
       )}
