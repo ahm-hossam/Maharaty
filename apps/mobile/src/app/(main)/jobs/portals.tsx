@@ -35,7 +35,7 @@ interface Portal {
 
 const PORTALS: Portal[] = [
   {
-    id: 'shaghlni',
+    id: 'shaghalni',
     nameAr: 'شغلني',
     nameEn: 'Shaghlni',
     tagline: 'بيغير حياة الناس',
@@ -43,7 +43,7 @@ const PORTALS: Portal[] = [
     gradient: ['#0369A1', '#0EA5E9', '#38BDF8'],
     accentColor: '#0EA5E9',
     icon: 'briefcase',
-    url: 'https://www.shaghlni.com',
+    url: 'https://www.shaghalni.com',
     jobCount: '+50K',
     features: ['AI مطابقة ذكية', 'إشعارات فورية', 'رفع CV مباشر'],
     badge: 'الأكثر استخداماً',

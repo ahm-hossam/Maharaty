@@ -138,7 +138,7 @@ export default function LoginScreen() {
             ) : (
               <>
                 <Text style={styles.loginBtnText}>تسجيل الدخول</Text>
-                <Ionicons name="chevron-forward" size={20} color="#fff" />
+                <Ionicons name="chevron-back" size={20} color="#fff" />
               </>
             )}
           </LinearGradient>

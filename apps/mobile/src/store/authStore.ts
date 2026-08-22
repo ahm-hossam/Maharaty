@@ -57,16 +57,23 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
       })
-    } catch {
-      await SecureStore.deleteItemAsync('access_token')
-      await SecureStore.deleteItemAsync('refresh_token')
-      set({
-        user: null,
-        accessToken: null,
-        refreshToken: null,
-        isAuthenticated: false,
-        isLoading: false,
-      })
+    } catch (err: any) {
+      const status = err?.response?.status
+      if (status === 401 || status === 403) {
+        // Genuine auth failure — stored credentials are no longer valid.
+        await SecureStore.deleteItemAsync('access_token')
+        await SecureStore.deleteItemAsync('refresh_token')
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          isAuthenticated: false,
+          isLoading: false,
+        })
+      } else {
+        // Network/server error — the stored tokens may still be valid, don't force a logout over a flaky connection.
+        set({ isAuthenticated: true, isLoading: false })
+      }
     }
   },
 

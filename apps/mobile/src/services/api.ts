@@ -8,6 +8,7 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001/v1'
 export const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
+  timeout: 15000,
 })
 
 api.interceptors.request.use(async (config) => {
@@ -43,10 +44,15 @@ api.interceptors.response.use(
         original.headers.Authorization = `Bearer ${data.data.accessToken}`
         console.log('[API] Token refreshed, retrying request')
         return api(original)
-      } catch {
-        console.error('[API] Token refresh failed, logging out')
-        await useAuthStore.getState().logout()
-        router.replace('/(auth)/login')
+      } catch (refreshError: any) {
+        const refreshStatus = refreshError.response?.status
+        if (refreshStatus === 401 || refreshStatus === 403) {
+          console.error('[API] Refresh token invalid, logging out')
+          await useAuthStore.getState().logout()
+          router.replace('/(auth)/login')
+        } else {
+          console.error('[API] Token refresh failed due to network/server error — keeping session, will retry later')
+        }
       }
     }
     return Promise.reject(error)

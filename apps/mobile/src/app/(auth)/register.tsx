@@ -297,7 +297,7 @@ export default function RegisterScreen() {
             ) : (
               <>
                 <Text style={styles.registerBtnText}>إنشاء الحساب</Text>
-                <Ionicons name="chevron-forward" size={20} color="#fff" />
+                <Ionicons name="chevron-back" size={20} color="#fff" />
               </>
             )}
           </LinearGradient>

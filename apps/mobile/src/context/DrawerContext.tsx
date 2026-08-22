@@ -31,7 +31,7 @@ const MENU_ITEMS = [
   { icon: 'bulb-outline',          label: 'تقييم المهارات',   route: '/(main)/self-assessment' },
   { icon: 'briefcase-outline',     label: 'بوابات التوظيف',   route: '/(main)/jobs' },
   { icon: 'mic-outline',           label: 'محاكاة المقابلة',  route: '/(main)/interview/simulator' },
-  { icon: 'trending-up-outline',   label: 'موارد التطوير',    route: '/(main)/search' },
+  { icon: 'trending-up-outline',   label: 'موارد التطوير',    route: '/(main)/learning/hub' },
   { icon: 'people-outline',        label: 'مجتمع مهاراتي',    route: '/(main)/community' },
   { icon: 'star-outline',          label: 'قيّمنا',           route: null },
 ]

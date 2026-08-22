@@ -20,7 +20,7 @@ const JOB_PORTALS = [
   {
     id: 'shaghalni',
     name: 'شغلني',
-    nameEn: 'Shaghlni',
+    nameEn: 'Shaghalni',
     tagline: 'ينغير حياة الناس',
     description: 'آلاف الوظائف في مختلف المجالات تنتظرك، اكتشف فرصتك الآن',
     color: '#0EA5E9',

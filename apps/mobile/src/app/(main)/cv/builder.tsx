@@ -968,7 +968,7 @@ export default function CvBuilderScreen() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={120}
+        keyboardVerticalOffset={insets.top + 130}
       >
         <ActiveStep />
       </KeyboardAvoidingView>

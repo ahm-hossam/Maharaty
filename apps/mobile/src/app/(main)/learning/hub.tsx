@@ -18,6 +18,7 @@ import { useQuery } from '@tanstack/react-query'
 import { COLORS, FONT, RADIUS, SHADOW, FS } from '../../../constants/theme'
 import { api } from '../../../services/api'
 import { useActivity } from '../../../hooks/useActivity'
+import { useDrawer } from '../../../context/DrawerContext'
 
 const { width } = Dimensions.get('window')
 
@@ -162,6 +163,7 @@ function SkeletonCard() {
 export default function LearningHubScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { openDrawer } = useDrawer()
   const { trackActivity } = useActivity()
   const [activeCategory, setActiveCategory] = useState('الكل')
   const [searchQuery, setSearchQuery] = useState('')
@@ -239,8 +241,8 @@ export default function LearningHubScreen() {
           {/* Top row: back button + title */}
           <View style={S.headerTopRow}>
             <Text style={S.headerTitle}>اكتشف وتعلّم</Text>
-            <TouchableOpacity style={S.backBtn} onPress={() => router.navigate('/(main)/home')}>
-              <Ionicons name="arrow-forward" size={20} color={COLORS.textSecondary} />
+            <TouchableOpacity style={S.backBtn} onPress={openDrawer}>
+              <Ionicons name="menu-outline" size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -301,7 +303,6 @@ export default function LearningHubScreen() {
         {bannerConfig?.isActive && (
           <TouchableOpacity
             style={S.featuredWrapper}
-            activeOpacity={0.88}
             onPress={() => {
               if (bannerConfig.contentId) {
                 router.push(`/(main)/learning/${bannerConfig.contentId}`)
