@@ -589,12 +589,11 @@ const S = StyleSheet.create({
 
   // ── Section title ──
   sectionHeader: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 12,
     paddingHorizontal: 24,
     marginBottom: 16,
-    justifyContent: 'flex-end',
   },
 
   sectionLine: {
@@ -607,8 +606,6 @@ const S = StyleSheet.create({
     fontSize: FS.sm,
     fontFamily: FONT.extrabold,
     color: COLORS.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     textAlign: 'right',
   },
 

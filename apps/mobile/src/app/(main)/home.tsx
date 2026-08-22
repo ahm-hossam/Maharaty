@@ -542,7 +542,7 @@ const S = StyleSheet.create({
 
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logoDot: { width: 8, height: 8, borderRadius: 4 },
-  logoText: { fontSize: FS.xl, fontFamily: FONT.black, fontWeight: '900', color: COLORS.text, letterSpacing: 0.4 },
+  logoText: { fontSize: FS.xl, fontFamily: FONT.black, fontWeight: '900', color: COLORS.text },
 
   scrollContent: { paddingBottom: 48 },
 
@@ -573,7 +573,7 @@ const S = StyleSheet.create({
   progressRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   progressLabel: { fontSize: FS.sm, color: COLORS.textSecondary, fontFamily: FONT.semibold, fontWeight: '600' },
   progressPct: { fontSize: FS.sm, color: COLORS.primary, fontFamily: FONT.black, fontWeight: '900' },
-  progressTrack: { height: 4, backgroundColor: 'rgba(15,18,33,0.08)', borderRadius: 2, marginBottom: 10 },
+  progressTrack: { height: 4, backgroundColor: 'rgba(15,18,33,0.08)', borderRadius: 2, marginBottom: 10, flexDirection: 'row-reverse' },
   progressFill: {
     height: '100%', width: '0%', borderRadius: 2,
     backgroundColor: COLORS.primary,
@@ -593,11 +593,11 @@ const S = StyleSheet.create({
 
   // Section header
   sectionHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingHorizontal: 24, marginBottom: 16, justifyContent: 'flex-end',
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 12,
+    paddingHorizontal: 24, marginBottom: 16,
   },
   sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(15,18,33,0.08)' },
-  sectionTitle: { fontSize: FS.sm, fontFamily: FONT.extrabold, fontWeight: '800', color: COLORS.textMuted, letterSpacing: 0.8, textTransform: 'uppercase' },
+  sectionTitle: { fontSize: FS.sm, fontFamily: FONT.extrabold, fontWeight: '800', color: COLORS.textMuted },
 
   // Feature grid
   grid: {
@@ -720,7 +720,7 @@ const S = StyleSheet.create({
   pathBody: { flex: 1, gap: 2 },
   pathStep: {
     fontSize: FS.xs, fontFamily: FONT.semibold, color: COLORS.textMuted,
-    textAlign: 'right', letterSpacing: 0.4,
+    textAlign: 'right',
   },
   pathStepTitle: {
     fontSize: FS.md, fontFamily: FONT.bold, fontWeight: '700',

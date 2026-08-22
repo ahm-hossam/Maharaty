@@ -280,7 +280,7 @@ const MB = StyleSheet.create({
     position: 'absolute', width: 88, height: 88,
     borderRadius: 44, borderWidth: 2, alignSelf: 'center',
   },
-  label: { fontSize: FS.sm, fontWeight: '600', letterSpacing: 0.5, fontFamily: FONT.semibold },
+  label: { fontSize: FS.sm, fontWeight: '600', fontFamily: FONT.semibold },
 })
 
 // ─── Timer Ring ───────────────────────────────────────────────
@@ -873,7 +873,7 @@ const S = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 4,
   },
   specialtyBadgeText: {
-    fontSize: FS.xs, fontWeight: '700', fontFamily: FONT.bold, letterSpacing: 0.3,
+    fontSize: FS.xs, fontWeight: '700', fontFamily: FONT.bold,
   },
   hintBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
@@ -885,7 +885,7 @@ const S = StyleSheet.create({
     fontSize: FS.sm, color: COLORS.primary, fontWeight: '700', fontFamily: FONT.bold,
   },
 
-  progressStrip: { flexDirection: 'row', gap: 4, paddingHorizontal: 24, paddingVertical: 10 },
+  progressStrip: { flexDirection: 'row-reverse', gap: 4, paddingHorizontal: 24, paddingVertical: 10 },
   progressSeg: {
     flex: 1, height: 3, borderRadius: 2,
     backgroundColor: 'rgba(15,18,33,0.08)',
@@ -932,7 +932,7 @@ const S = StyleSheet.create({
   },
 
   pastScores: { width: '100%', alignItems: 'flex-end', gap: 10 },
-  pastScoresLabel: { fontSize: FS.xs, color: COLORS.textMuted, fontWeight: '700', letterSpacing: 0.5, fontFamily: FONT.bold },
+  pastScoresLabel: { fontSize: FS.xs, color: COLORS.textMuted, fontWeight: '700', fontFamily: FONT.bold },
   pastScoresRow: { flexDirection: 'row', gap: 8 },
   pastScore: {
     width: 38, height: 38, borderRadius: 12, borderWidth: 1.5,

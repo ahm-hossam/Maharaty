@@ -18,6 +18,22 @@ api.interceptors.request.use(async (config) => {
   return config
 })
 
+let refreshPromise: Promise<{ accessToken: string; refreshToken: string }> | null = null
+
+function refreshTokens() {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      const refreshToken = await SecureStore.getItemAsync('refresh_token')
+      const { data } = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken })
+      return data.data as { accessToken: string; refreshToken: string }
+    })()
+    refreshPromise.finally(() => {
+      refreshPromise = null
+    })
+  }
+  return refreshPromise
+}
+
 api.interceptors.response.use(
   (response) => {
     console.log(`[API] ✓ ${response.status} ${response.config.url}`)
@@ -38,10 +54,9 @@ api.interceptors.response.use(
     if (status === 401 && !original._retry) {
       original._retry = true
       try {
-        const refreshToken = await SecureStore.getItemAsync('refresh_token')
-        const { data } = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken })
-        await SecureStore.setItemAsync('access_token', data.data.accessToken)
-        original.headers.Authorization = `Bearer ${data.data.accessToken}`
+        const { accessToken, refreshToken } = await refreshTokens()
+        await useAuthStore.getState().setTokens(accessToken, refreshToken)
+        original.headers.Authorization = `Bearer ${accessToken}`
         console.log('[API] Token refreshed, retrying request')
         return api(original)
       } catch (refreshError: any) {

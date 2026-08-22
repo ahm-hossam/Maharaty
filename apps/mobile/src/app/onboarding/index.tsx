@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   appTagline: { fontSize: 15, fontFamily: FONT.regular, color: 'rgba(255,255,255,0.65)' },
 
   progressWrap: { marginBottom: 24 },
-  progressTrack: { height: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 3, overflow: 'hidden' },
+  progressTrack: { height: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 3, overflow: 'hidden', flexDirection: 'row-reverse' },
   progressFill: { height: '100%', backgroundColor: '#22C55E', borderRadius: 3 },
 
   stepsCard: { backgroundColor: 'rgba(255,255,255,0.10)', borderRadius: RADIUS.xxl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', marginBottom: 32, overflow: 'hidden' },

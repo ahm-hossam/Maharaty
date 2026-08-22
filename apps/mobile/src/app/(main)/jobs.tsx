@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   noResults: { textAlign: 'center', color: COLORS.textMuted, fontFamily: FONT.regular, fontSize: FS.sm, paddingVertical: 32 },
 
   content: { padding: 20, paddingBottom: 40, gap: 16 },
-  sectionTitle: { fontSize: FS.sm, fontWeight: '800', fontFamily: FONT.extrabold, color: COLORS.textMuted, textAlign: 'right', letterSpacing: 0.8, textTransform: 'uppercase' },
+  sectionTitle: { fontSize: FS.sm, fontWeight: '800', fontFamily: FONT.extrabold, color: COLORS.textMuted, textAlign: 'right' },
 
   portalCard: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, borderRadius: RADIUS.xxl, overflow: 'hidden' },
   portalHeader: { padding: 18, flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center' },

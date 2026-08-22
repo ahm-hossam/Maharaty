@@ -204,7 +204,7 @@ const IS = StyleSheet.create({
   },
   featureText: { flex: 1, fontSize: FS.md, color: COLORS.textSecondary, textAlign: 'right', lineHeight: 22, fontFamily: FONT.regular },
   statsCard: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, borderRadius: RADIUS.xxl, padding: 20, width: '100%', marginBottom: 40 },
-  statsCardLabel: { fontSize: FS.xs, fontWeight: '800', fontFamily: FONT.extrabold, color: COLORS.textMuted, textAlign: 'right', marginBottom: 16, letterSpacing: 0.8 },
+  statsCardLabel: { fontSize: FS.xs, fontWeight: '800', fontFamily: FONT.extrabold, color: COLORS.textMuted, textAlign: 'right', marginBottom: 16 },
   statsRow: { flexDirection: 'row-reverse', gap: 12 },
   statChip: { flex: 1, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, borderRadius: RADIUS.xl, paddingVertical: 16, alignItems: 'center', gap: 4 },
   statNum: { fontSize: FS.xl, fontWeight: '900', color: COLORS.primary, fontFamily: FONT.black },
@@ -344,11 +344,11 @@ const QS = StyleSheet.create({
   wrapper: { flex: 1 },
   content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 24, flex: 1 },
 
-  progressTrack: { height: 3, backgroundColor: 'rgba(15,18,33,0.08)', borderRadius: 2, marginBottom: 14 },
+  progressTrack: { height: 3, backgroundColor: 'rgba(15,18,33,0.08)', borderRadius: 2, marginBottom: 14, flexDirection: 'row-reverse' },
   progressFill: { height: '100%', backgroundColor: COLORS.primary, borderRadius: 2, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 6 },
   progressMeta: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   progressText: { fontSize: FS.sm, color: COLORS.textMuted, fontWeight: '700', fontFamily: FONT.bold },
-  dimensionTag: { fontSize: FS.xs, fontWeight: '800', borderWidth: 1, borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 5, letterSpacing: 0.3, fontFamily: FONT.extrabold },
+  dimensionTag: { fontSize: FS.xs, fontWeight: '800', borderWidth: 1, borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 5, fontFamily: FONT.extrabold },
 
   card: {
     flex: 1,
@@ -368,7 +368,7 @@ const QS = StyleSheet.create({
   noBadgeText:  { fontSize: FS.md, fontWeight: '900', color: '#fff', fontFamily: FONT.black },
 
   swipeHintRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, paddingHorizontal: 4 },
-  swipeHintSide: { fontSize: FS.xs, color: COLORS.textMuted, fontFamily: FONT.semibold, letterSpacing: 0.2 },
+  swipeHintSide: { fontSize: FS.xs, color: COLORS.textMuted, fontFamily: FONT.semibold },
   swipeHintCenter: { fontSize: FS.xs, color: COLORS.textMuted, fontFamily: FONT.regular },
 
   btnRow: { flexDirection: 'row', gap: 14 },
@@ -475,7 +475,7 @@ const RS = StyleSheet.create({
   hero: { borderRadius: RADIUS.xxl, overflow: 'hidden', alignItems: 'center', paddingVertical: 44, marginBottom: 24 },
   heroBg: { ...StyleSheet.absoluteFillObject },
   heroIcon: { width: 88, height: 88, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.18)', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  profileType: { fontSize: FS.sm, color: 'rgba(255,255,255,0.7)', fontWeight: '800', letterSpacing: 2, marginBottom: 8, fontFamily: FONT.extrabold },
+  profileType: { fontSize: FS.sm, color: 'rgba(255,255,255,0.7)', fontWeight: '800', marginBottom: 8, fontFamily: FONT.extrabold },
   profileTitle: { fontSize: FS.h2, fontWeight: '900', color: '#fff', marginBottom: 6, fontFamily: FONT.black },
   profileSub: { fontSize: FS.md, color: 'rgba(255,255,255,0.72)', fontWeight: '600', fontFamily: FONT.semibold },
   careerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'flex-end' },

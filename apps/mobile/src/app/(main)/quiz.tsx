@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   quizCounter: { fontSize: FS.md, fontFamily: FONT.bold, color: '#fff' },
 
   progressWrap: { paddingHorizontal: 20, paddingBottom: 8, backgroundColor: COLORS.canvasAlt },
-  progressTrack: { height: 6, backgroundColor: 'rgba(15,18,33,0.10)', borderRadius: 3 },
+  progressTrack: { height: 6, backgroundColor: 'rgba(15,18,33,0.10)', borderRadius: 3, flexDirection: 'row-reverse' },
   progressFill: { height: '100%', backgroundColor: COLORS.primary, borderRadius: 3 },
 
   quizBody: { flex: 1, paddingHorizontal: 20, paddingTop: 24 },

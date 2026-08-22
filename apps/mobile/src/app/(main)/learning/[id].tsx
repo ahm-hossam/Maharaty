@@ -607,7 +607,7 @@ const S = StyleSheet.create({
   // Hero
   hero: { height: 240, justifyContent: 'flex-end', paddingBottom: 28, paddingHorizontal: 20 },
   heroBackBtn: {
-    position: 'absolute', left: 16,
+    position: 'absolute', right: 16,
     width: 38, height: 38, borderRadius: RADIUS.sm,
     backgroundColor: 'rgba(255,255,255,0.18)',
     justifyContent: 'center', alignItems: 'center',
@@ -624,7 +624,7 @@ const S = StyleSheet.create({
   // Player
   playerWrap: { backgroundColor: '#000' },
   playerBackBtn: {
-    position: 'absolute', left: 16, zIndex: 10,
+    position: 'absolute', right: 16, zIndex: 10,
     width: 36, height: 36, borderRadius: RADIUS.sm,
     backgroundColor: 'rgba(0,0,0,0.55)',
     justifyContent: 'center', alignItems: 'center',
@@ -653,7 +653,7 @@ const S = StyleSheet.create({
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   progressLabel: { fontSize: FS.xs, fontFamily: FONT.semibold, color: COLORS.textSecondary },
   progressPct: { fontSize: FS.xs, fontFamily: FONT.extrabold, color: COLORS.primary },
-  progressTrack: { height: 7, backgroundColor: COLORS.surfaceBorder, borderRadius: 4, overflow: 'hidden' },
+  progressTrack: { height: 7, backgroundColor: COLORS.surfaceBorder, borderRadius: 4, overflow: 'hidden', flexDirection: 'row-reverse' },
   progressFill: { height: 7, backgroundColor: COLORS.primary, borderRadius: 4 },
 
   // Tabs

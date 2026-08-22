@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   inputIcon: { padding: 2 },
   input: { flex: 1, height: 52, fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.text },
 
-  forgotBtn: { alignSelf: 'flex-start', marginBottom: 16 },
+  forgotBtn: { alignSelf: 'flex-end', marginBottom: 16 },
   forgotText: { fontSize: FS.sm, color: COLORS.primary, fontFamily: FONT.semibold },
 
   errorWrap: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12, justifyContent: 'flex-end' },

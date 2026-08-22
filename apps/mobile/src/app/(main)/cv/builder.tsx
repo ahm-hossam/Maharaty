@@ -17,8 +17,8 @@ import * as Speech from 'expo-speech'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useRouter, useNavigation } from 'expo-router'
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react'
 import { COLORS, RADIUS, SHADOW, FONT, FS } from '@/constants/theme'
 import { useCvStore } from '@/store/cvStore'
 import { getCvSuggestions, CvSuggestion } from '@/services/mockAi'
@@ -888,8 +888,17 @@ function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSele
 export default function CvBuilderScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const navigation = useNavigation()
   const { currentStep, setStep, draft } = useCvStore()
   const { trackActivity } = useActivity()
+
+  // Hide the tab bar while the CV wizard is focused — otherwise it sits on top of
+  // this screen's bottom-anchored buttons (format picker's "Next", the step footer nav)
+  // and silently swallows taps meant for them.
+  useLayoutEffect(() => {
+    navigation.setOptions({ tabBarStyle: { display: 'none' } })
+    return () => navigation.setOptions({ tabBarStyle: undefined })
+  }, [navigation])
 
   const handleShare = async () => {
     const { personal, experiences, education, skills, certifications, languages } = draft
@@ -1055,6 +1064,7 @@ const S = StyleSheet.create({
   // Neon progress line
   progressTrack: {
     height: 3, backgroundColor: 'rgba(15,18,33,0.08)', overflow: 'hidden',
+    flexDirection: 'row-reverse',
   },
   progressFill: {
     height: '100%', backgroundColor: COLORS.primary,
@@ -1062,7 +1072,7 @@ const S = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 }, shadowOpacity: 1, shadowRadius: 8,
   },
   stepDots: {
-    flexDirection: 'row', justifyContent: 'center',
+    flexDirection: 'row-reverse', justifyContent: 'center',
     gap: 6, paddingTop: 18, paddingBottom: 4,
   },
   stepDot: {
@@ -1074,12 +1084,12 @@ const S = StyleSheet.create({
   stepLabel: {
     textAlign: 'center', color: COLORS.textMuted,
     fontSize: FS.xs, fontWeight: '600', paddingBottom: 14,
-    letterSpacing: 0.5, fontFamily: FONT.semibold,
+    fontFamily: FONT.semibold,
   },
 
   // Floating Label Input
   floatWrap: { paddingTop: 26, marginBottom: 22, position: 'relative' },
-  floatLabel: { position: 'absolute', right: 0, fontWeight: '600', letterSpacing: 0.2, fontFamily: FONT.semibold },
+  floatLabel: { position: 'absolute', right: 0, fontWeight: '600', fontFamily: FONT.semibold },
   floatInput: {
     fontSize: FS.lg, color: COLORS.text, textAlign: 'right',
     paddingVertical: 6, paddingHorizontal: 0,
@@ -1115,7 +1125,7 @@ const S = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', marginBottom: 8,
   },
-  cardNum: { fontSize: FS.sm, color: COLORS.primary, fontWeight: '700', letterSpacing: 0.5, fontFamily: FONT.bold },
+  cardNum: { fontSize: FS.sm, color: COLORS.primary, fontWeight: '700', fontFamily: FONT.bold },
   deleteBtn: {
     width: 34, height: 34, borderRadius: RADIUS.md,
     backgroundColor: 'rgba(255,59,107,0.1)',
@@ -1123,7 +1133,7 @@ const S = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
 
-  row2: { flexDirection: 'row', gap: 16 },
+  row2: { flexDirection: 'row-reverse', gap: 16 },
 
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20, justifyContent: 'flex-end' },
   checkbox: {
@@ -1138,7 +1148,7 @@ const S = StyleSheet.create({
   fieldSubLabel: {
     fontSize: FS.xs, color: COLORS.textMuted,
     textAlign: 'right', marginBottom: 12,
-    fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', fontFamily: FONT.semibold,
+    fontWeight: '600', fontFamily: FONT.semibold,
   },
 
   bulletRow: {

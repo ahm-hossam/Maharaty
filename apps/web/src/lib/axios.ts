@@ -12,6 +12,23 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+let refreshPromise: Promise<{ accessToken: string; refreshToken: string }> | null = null
+
+function refreshTokens(refreshToken: string) {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post(
+        `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/v1'}/auth/refresh`,
+        { refreshToken }
+      )
+      .then((res) => res.data.data as { accessToken: string; refreshToken: string })
+      .finally(() => {
+        refreshPromise = null
+      })
+  }
+  return refreshPromise
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -21,14 +38,10 @@ api.interceptors.response.use(
       try {
         const { refreshToken } = useAuthStore.getState()
         if (!refreshToken) throw new Error('No refresh token')
-        const { data } = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/v1'}/auth/refresh`,
-          { refreshToken }
-        )
-        const newAccessToken = data.data.accessToken
+        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await refreshTokens(refreshToken)
         useAuthStore.getState().setAuth(
           newAccessToken,
-          refreshToken,
+          newRefreshToken,
           useAuthStore.getState().user!
         )
         original.headers.Authorization = `Bearer ${newAccessToken}`

@@ -219,12 +219,12 @@ const DS = StyleSheet.create({
   jobCount: { fontSize: 18, fontWeight: '900', fontFamily: FONT.black },
   jobCountLabel: { fontSize: 12, color: COLORS.textMuted, fontWeight: '600', fontFamily: FONT.semibold },
   badgeChip: { borderWidth: 1, borderRadius: RADIUS.full, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.3, fontFamily: FONT.extrabold },
+  badgeText: { fontSize: 10, fontWeight: '800', fontFamily: FONT.extrabold },
 
   content: { paddingHorizontal: 24, paddingBottom: 16 },
   description: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'right', lineHeight: 24, marginBottom: 24, fontFamily: FONT.regular },
 
-  featuresLabel: { fontSize: 11, color: COLORS.textMuted, fontWeight: '800', letterSpacing: 0.8, textAlign: 'right', marginBottom: 14, textTransform: 'uppercase', fontFamily: FONT.extrabold },
+  featuresLabel: { fontSize: 11, color: COLORS.textMuted, fontWeight: '800', textAlign: 'right', marginBottom: 14, fontFamily: FONT.extrabold },
   featuresList: { gap: 10 },
   featureRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -494,9 +494,9 @@ const S = StyleSheet.create({
 
   content: { paddingTop: 28, paddingHorizontal: 24, paddingBottom: 60, gap: 16 },
 
-  sectionRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 4, justifyContent: 'flex-end' },
+  sectionRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, marginBottom: 4 },
   sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(15,18,33,0.07)' },
-  sectionLabel: { fontSize: 11, color: COLORS.textMuted, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase', fontFamily: FONT.extrabold },
+  sectionLabel: { fontSize: 11, color: COLORS.textMuted, fontWeight: '800', fontFamily: FONT.extrabold },
 
   bentoRow: { flexDirection: 'row', gap: 12, height: 200 },
 
