@@ -307,12 +307,9 @@ export default function HomeScreen() {
 
       {/* ── Top bar ── */}
       <View style={S.topBar}>
-        {/* Bell — left (end in RTL) */}
-        <TouchableOpacity style={S.iconBtn} onPress={openNotif}>
-          <Ionicons name="notifications-outline" size={22} color={COLORS.textSecondary} />
-          {unreadCount > 0 && (
-            <View style={S.badge}><Text style={S.badgeText}>{unreadCount}</Text></View>
-          )}
+        {/* Hamburger — left, matching the menu-button side used across Jobs/Community/Search/Learning Hub */}
+        <TouchableOpacity style={S.iconBtn} onPress={openDrawer}>
+          <Ionicons name="menu-outline" size={24} color={COLORS.textSecondary} />
         </TouchableOpacity>
 
         {/* Logo */}
@@ -325,9 +322,12 @@ export default function HomeScreen() {
           <Text style={S.logoText}>مهاراتي</Text>
         </View>
 
-        {/* Hamburger — right (start in RTL) */}
-        <TouchableOpacity style={S.iconBtn} onPress={openDrawer}>
-          <Ionicons name="menu-outline" size={24} color={COLORS.textSecondary} />
+        {/* Bell — right */}
+        <TouchableOpacity style={S.iconBtn} onPress={openNotif}>
+          <Ionicons name="notifications-outline" size={22} color={COLORS.textSecondary} />
+          {unreadCount > 0 && (
+            <View style={S.badge}><Text style={S.badgeText}>{unreadCount}</Text></View>
+          )}
         </TouchableOpacity>
       </View>
 
