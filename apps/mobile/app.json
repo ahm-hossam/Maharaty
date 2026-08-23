@@ -57,7 +57,7 @@
     },
     "owner": "ah-ho",
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "sdkVersion"
     },
     "updates": {
       "url": "https://u.expo.dev/ca0d1d73-f41e-441d-887d-c171e9ffbdbc"
