@@ -400,6 +400,9 @@ export default function JobPortalsScreen() {
 
       {/* ── Header ── */}
       <View style={S.header}>
+        <TouchableOpacity style={S.backBtn} onPress={() => router.back()}>
+          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
+        </TouchableOpacity>
         <View style={S.totalBadge}>
           <Text style={S.totalNum}>+1.5M</Text>
           <Text style={S.totalLabel}>وظيفة</Text>
@@ -408,9 +411,6 @@ export default function JobPortalsScreen() {
           <Text style={S.headerTitle}>بوابات التوظيف</Text>
           <Text style={S.headerSub}>اختر المنصة الأنسب لك</Text>
         </View>
-        <TouchableOpacity style={S.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
-        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.content}>

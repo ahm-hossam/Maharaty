@@ -112,13 +112,13 @@ export default function SearchScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.menuBtn} onPress={openDrawer}>
-            <Ionicons name="menu-outline" size={24} color={COLORS.textSecondary} />
-          </TouchableOpacity>
           <View>
             <Text style={styles.headerTitle}>اكتشف وتعلم</Text>
             <Text style={styles.headerSubtitle}>ابحث عن المهارات والدورات</Text>
           </View>
+          <TouchableOpacity style={styles.menuBtn} onPress={openDrawer}>
+            <Ionicons name="menu-outline" size={24} color={COLORS.textSecondary} />
+          </TouchableOpacity>
         </View>
         <View style={styles.searchBox}>
           <Ionicons name="search" size={20} color={COLORS.textMuted} />
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40, gap: 16 },
   sectionTitle: { fontSize: FS.sm, fontWeight: '800', fontFamily: FONT.extrabold, color: COLORS.textMuted, textAlign: 'right' },
 
-  categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  categoriesGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 10, justifyContent: 'flex-end' },
   categoryCard: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, borderRadius: RADIUS.xl, padding: 12, paddingHorizontal: 16, borderWidth: 1 },
   categoryIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   categoryLabel: { fontSize: FS.sm, fontWeight: '700', fontFamily: FONT.bold },

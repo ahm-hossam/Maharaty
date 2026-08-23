@@ -621,7 +621,7 @@ function LanguagesStep() {
             borderColor: 'rgba(0,245,212,0.28)',
           }]}>
             <Text style={S.tagText}>{lang.name}</Text>
-            <Text style={[S.tagLevel, { borderLeftColor: 'rgba(0,245,212,0.25)', color: COLORS.teal }]}>{lang.level}</Text>
+            <Text style={[S.tagLevel, { borderRightColor: 'rgba(0,245,212,0.25)', color: COLORS.teal }]}>{lang.level}</Text>
             <TouchableOpacity onPress={() => removeLanguage(lang.id)}>
               <Ionicons name="close-circle" size={15} color="rgba(15,18,33,0.35)" />
             </TouchableOpacity>
@@ -795,12 +795,12 @@ function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSele
     <View style={[S.root, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={S.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={S.headerTitle}>منشئ السيرة الذاتية</Text>
-        </View>
         <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
           <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={S.headerTitle}>منشئ السيرة الذاتية</Text>
+        </View>
       </View>
 
       <ScrollView
@@ -958,6 +958,9 @@ export default function CvBuilderScreen() {
     <View style={[S.root, { paddingTop: insets.top }]}>
       {/* ── Header ── */}
       <View style={S.header}>
+        <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
+          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => setPreviewVisible(true)} style={S.previewBtn}>
           <Ionicons name="eye-outline" size={18} color={COLORS.primary} />
           <Text style={S.previewBtnText}>معاينة</Text>
@@ -965,9 +968,6 @@ export default function CvBuilderScreen() {
         <View style={{ flex: 1 }}>
           <Text style={S.headerTitle}>منشئ السيرة الذاتية</Text>
         </View>
-        <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
-          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
-        </TouchableOpacity>
       </View>
 
       {/* ── Neon progress line ── */}
@@ -1189,7 +1189,7 @@ const S = StyleSheet.create({
 
   stepContent: { padding: 24, paddingBottom: 48 },
 
-  levelRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 20 },
+  levelRow: { flexDirection: 'row-reverse', gap: 8, flexWrap: 'wrap', marginBottom: 20, justifyContent: 'flex-end' },
   levelChip: {
     paddingHorizontal: 16, paddingVertical: 9, borderRadius: RADIUS.full,
     borderWidth: 1, borderColor: 'rgba(15,18,33,0.12)',
@@ -1207,9 +1207,9 @@ const S = StyleSheet.create({
   },
   addItemText: { fontSize: FS.md, color: '#fff', fontWeight: '800', fontFamily: FONT.extrabold },
 
-  tagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 },
+  tagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4, justifyContent: 'flex-end' },
   tag: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 8,
     backgroundColor: 'rgba(47,108,255,0.14)',
     borderWidth: 1, borderColor: 'rgba(47,108,255,0.3)',
     borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 8,
@@ -1217,7 +1217,7 @@ const S = StyleSheet.create({
   tagText: { fontSize: FS.sm, color: COLORS.text, fontWeight: '600', fontFamily: FONT.semibold },
   tagLevel: {
     fontSize: FS.xs, color: COLORS.textMuted,
-    borderLeftWidth: 1, borderLeftColor: 'rgba(15,18,33,0.15)', paddingLeft: 8, fontFamily: FONT.regular,
+    borderRightWidth: 1, borderRightColor: 'rgba(15,18,33,0.15)', paddingRight: 8, fontFamily: FONT.regular,
   },
   emptyHint: { fontSize: FS.sm, color: COLORS.textMuted, textAlign: 'center', flex: 1, paddingVertical: 12, fontFamily: FONT.regular },
 

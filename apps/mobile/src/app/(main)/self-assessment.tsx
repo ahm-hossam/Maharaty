@@ -611,7 +611,7 @@ export default function SelfAssessmentScreen() {
 const SC = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.canvas },
   header: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row-reverse', alignItems: 'center',
     paddingHorizontal: 24, paddingVertical: 18, gap: 14,
     borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.07)',
   },

@@ -850,7 +850,7 @@ const S = StyleSheet.create({
 
   // Header ribbon
   header: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row-reverse', alignItems: 'center',
     paddingHorizontal: 20, paddingVertical: 14, gap: 12,
     borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.07)',
   },

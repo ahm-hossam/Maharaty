@@ -162,10 +162,10 @@ export default function CareerQuizScreen() {
     return (
       <View style={[styles.root, { paddingTop: insets.top }]}>
         <LinearGradient colors={['#1E1B4B', '#312E81']} style={styles.introHeader}>
-          <Text style={styles.introHeaderTitle}>اكتشف مسارك المهني</Text>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-forward" size={24} color="#fff" />
           </TouchableOpacity>
+          <Text style={styles.introHeaderTitle}>اكتشف مسارك المهني</Text>
         </LinearGradient>
 
         <ScrollView contentContainerStyle={styles.introContent} showsVerticalScrollIndicator={false}>
