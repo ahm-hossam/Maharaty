@@ -214,7 +214,7 @@ export default function OnboardingScreen() {
                 style={styles.ctaGradient}
               >
                 <Text style={styles.ctaText}>ابدأ رحلتك المهنية</Text>
-                <Ionicons name="arrow-back" size={20} color="#fff" />
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>

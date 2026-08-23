@@ -57,7 +57,7 @@ export default function LoginScreen() {
         style={[styles.gradientBg, { paddingTop: insets.top }]}
       >
         <TouchableOpacity style={[styles.backBtn, { top: insets.top + 10 }]} onPress={() => router.back()}>
-          <Ionicons name="chevron-forward" size={22} color="#fff" />
+          <Ionicons name="chevron-back" size={22} color="#fff" />
         </TouchableOpacity>
         <View style={styles.logoSection}>
           <View style={styles.logoCircle}>
@@ -138,7 +138,7 @@ export default function LoginScreen() {
             ) : (
               <>
                 <Text style={styles.loginBtnText}>تسجيل الدخول</Text>
-                <Ionicons name="chevron-back" size={20} color="#fff" />
+                <Ionicons name="chevron-forward" size={20} color="#fff" />
               </>
             )}
           </LinearGradient>

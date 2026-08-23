@@ -128,7 +128,7 @@ export default function JobsScreen() {
               <Text style={styles.portalsEntrySub}>شغلني · iCareer — كلها في مكان واحد</Text>
             </View>
             <View style={styles.portalsEntryArrow}>
-              <Ionicons name="arrow-back" size={20} color="#fff" />
+              <Ionicons name="arrow-forward" size={20} color="#fff" />
             </View>
           </LinearGradient>
         </TouchableOpacity> */}
@@ -163,7 +163,7 @@ export default function JobsScreen() {
                   onPress={() => handleBrowse(portal.url)}
                 >
                   <Text style={styles.browseBtnText}>تصفح الوظائف</Text>
-                  <Ionicons name="arrow-back" size={16} color="#fff" />
+                  <Ionicons name="arrow-forward" size={16} color="#fff" />
                 </TouchableOpacity>
                 <View style={styles.countBadge}>
                   <Text style={styles.countText}>{portal.count}</Text>

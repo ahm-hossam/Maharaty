@@ -61,7 +61,7 @@ export default function InternalBrowserScreen() {
         <View style={S.headerRow}>
           {/* RIGHT: back button */}
           <TouchableOpacity style={S.backBtn} onPress={() => router.back()} activeOpacity={0.8}>
-            <Ionicons name="arrow-forward" size={20} color={COLORS.text} />
+            <Ionicons name="arrow-back" size={20} color={COLORS.text} />
           </TouchableOpacity>
 
           {/* CENTER: portal name */}

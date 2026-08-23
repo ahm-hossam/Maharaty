@@ -407,7 +407,7 @@ function FeedbackSheet({ visible, onClose, evaluation, question }: {
               style={FBS.nextGrad}
             >
               <Text style={FBS.nextText}>السؤال التالي</Text>
-              <Ionicons name="chevron-back" size={18} color="#fff" />
+              <Ionicons name="chevron-forward" size={18} color="#fff" />
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -694,7 +694,7 @@ export default function InterviewSimulatorScreen() {
         <CockpitBackdrop timerRatio={0} />
         <View style={S.header}>
           <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
-            <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
+            <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
           </TouchableOpacity>
           <Text style={S.headerTitle}>ملخص الجلسة</Text>
           <View style={{ width: 42 }} />
@@ -712,7 +712,7 @@ export default function InterviewSimulatorScreen() {
       <View style={S.header}>
         {/* Far RIGHT in RTL: back button */}
         <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
-          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
 
         {/* CENTER: specialty badge + title stacked */}

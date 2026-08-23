@@ -80,24 +80,32 @@ export default function SearchScreen() {
   const { trackActivity } = useActivity()
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
-  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [activeCategory, setActiveCategory] = useState('الكل')
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 350)
     return () => clearTimeout(timer)
   }, [query])
 
-  const { data: categories = [] } = useQuery<string[]>({
+  const { data: apiCategories = [] } = useQuery<string[]>({
     queryKey: ['content', 'categories'],
     queryFn: () => api.get('/content/categories').then((r) => r.data.data),
     staleTime: 60_000,
   })
 
+  // "الكل" always first, matching the Learning Hub's category pills
+  const categories = [
+    { label: 'الكل', icon: 'apps', color: COLORS.primary },
+    ...apiCategories.map((label, i) => ({ label, ...getCategoryMeta(label, i) })),
+  ]
+
+  const categoryFilter = activeCategory === 'الكل' ? undefined : activeCategory
+
   const { data: results = [], isFetching } = useQuery<ContentItem[]>({
-    queryKey: ['content', 'search', debouncedQuery, activeCategory],
+    queryKey: ['content', 'search', debouncedQuery, categoryFilter],
     queryFn: () =>
       api
-        .get('/content', { params: { search: debouncedQuery || undefined, category: activeCategory || undefined } })
+        .get('/content', { params: { search: debouncedQuery || undefined, category: categoryFilter } })
         .then((r) => r.data.data?.content ?? []),
   })
 
@@ -106,7 +114,7 @@ export default function SearchScreen() {
     router.push(`/(main)/learning/${item.id}`)
   }
 
-  const isBrowsing = debouncedQuery.length === 0 && !activeCategory
+  const isBrowsing = debouncedQuery.length === 0 && activeCategory === 'الكل'
 
   return (
     <View style={styles.container}>
@@ -140,34 +148,34 @@ export default function SearchScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {categories.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>تصفح حسب المجال</Text>
-            <View style={styles.categoriesGrid}>
-              {categories.map((label, i) => {
-                const meta = getCategoryMeta(label, i)
-                const active = activeCategory === label
-                return (
-                  <TouchableOpacity
-                    key={label}
-                    style={[
-                      styles.categoryCard,
-                      { borderColor: meta.color + '35', backgroundColor: active ? meta.color + '25' : meta.color + '10' },
-                    ]}
-                    onPress={() => setActiveCategory(active ? null : label)}
-                  >
-                    <View style={[styles.categoryIcon, { backgroundColor: meta.color + '20' }]}>
-                      <Ionicons name={meta.icon as any} size={20} color={meta.color} />
-                    </View>
-                    <Text style={[styles.categoryLabel, { color: meta.color }]}>{label}</Text>
-                  </TouchableOpacity>
-                )
-              })}
-            </View>
-          </>
-        )}
+        <View style={styles.categoriesGrid}>
+          {categories.map((cat) => {
+            const active = activeCategory === cat.label
+            return (
+              <TouchableOpacity
+                key={cat.label}
+                style={[
+                  styles.categoryPill,
+                  active
+                    ? { backgroundColor: cat.color, borderColor: cat.color }
+                    : { backgroundColor: COLORS.surface, borderColor: COLORS.surfaceBorder },
+                ]}
+                onPress={() => setActiveCategory(cat.label)}
+                activeOpacity={0.75}
+              >
+                <Ionicons name={cat.icon as any} size={14} color={active ? '#fff' : COLORS.textMuted} />
+                <Text style={[styles.categoryPillText, { color: active ? '#fff' : COLORS.textMuted }]}>
+                  {cat.label}
+                </Text>
+              </TouchableOpacity>
+            )
+          })}
+        </View>
 
-        <Text style={styles.sectionTitle}>{isBrowsing ? 'الأحدث' : 'نتائج البحث'}</Text>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionLine} />
+          <Text style={styles.sectionTitle}>{isBrowsing ? 'الأحدث' : 'نتائج البحث'}</Text>
+        </View>
 
         {isFetching ? (
           <ActivityIndicator color={COLORS.primary} style={{ marginTop: 12 }} />
@@ -204,12 +212,16 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.text },
 
   content: { padding: 20, paddingBottom: 40, gap: 16 },
+  sectionHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
+  sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(15,18,33,0.08)' },
   sectionTitle: { fontSize: FS.sm, fontWeight: '800', fontFamily: FONT.extrabold, color: COLORS.textMuted, textAlign: 'right' },
 
   categoriesGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 10, justifyContent: 'flex-end' },
-  categoryCard: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, borderRadius: RADIUS.xl, padding: 12, paddingHorizontal: 16, borderWidth: 1 },
-  categoryIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  categoryLabel: { fontSize: FS.sm, fontWeight: '700', fontFamily: FONT.bold },
+  categoryPill: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.full, borderWidth: 1,
+  },
+  categoryPillText: { fontSize: FS.sm, fontFamily: FONT.semibold, textAlign: 'right' },
 
   resultsList: { gap: 10 },
   resultCard: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, borderRadius: RADIUS.xl, padding: 14, flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },

@@ -295,7 +295,7 @@ function BentoPortalCard({
 
         {/* Arrow */}
         <View style={[BPC.arrowBtn, { borderColor: portal.accentColor + '40', backgroundColor: portal.accentColor + '10' }]}>
-          <Ionicons name="arrow-back" size={14} color={portal.accentColor} />
+          <Ionicons name="arrow-forward" size={14} color={portal.accentColor} />
         </View>
       </View>
     </Animated.View>
@@ -401,7 +401,7 @@ export default function JobPortalsScreen() {
       {/* ── Header ── */}
       <View style={S.header}>
         <TouchableOpacity style={S.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
         <View style={S.totalBadge}>
           <Text style={S.totalNum}>+1.5M</Text>

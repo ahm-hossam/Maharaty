@@ -177,7 +177,7 @@ function IntroScreen({ onStart, questionCount }: { onStart: () => void; question
       <TouchableOpacity onPress={onStart} activeOpacity={0.9} style={IS.startBtnWrap}>
         <LinearGradient colors={[COLORS.primary, COLORS.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={IS.startBtn}>
           <Text style={IS.startBtnText}>ابدأ التقييم</Text>
-          <Ionicons name="chevron-back" size={20} color="#fff" />
+          <Ionicons name="chevron-forward" size={20} color="#fff" />
         </LinearGradient>
       </TouchableOpacity>
     </ScrollView>
@@ -566,7 +566,7 @@ export default function SelfAssessmentScreen() {
       {/* Header */}
       <View style={SC.header}>
         <TouchableOpacity style={SC.backBtn} onPress={() => (phase === 'quiz' ? goPrev() : router.back())}>
-          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
         <Text style={SC.headerTitle}>
           {phase === 'intro' ? 'اختبار الشخصية المهنية' : phase === 'quiz' ? 'التقييم' : 'نتيجتك'}
@@ -596,7 +596,7 @@ export default function SelfAssessmentScreen() {
                 : 'اختر إجابتك للمتابعة'}
             </Text>
             <TouchableOpacity style={SC.prevBtn} onPress={goPrev} activeOpacity={0.75}>
-              <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+              <Ionicons name="chevron-back" size={16} color={COLORS.textSecondary} />
               <Text style={SC.prevBtnText}>السابق</Text>
             </TouchableOpacity>
           </View>

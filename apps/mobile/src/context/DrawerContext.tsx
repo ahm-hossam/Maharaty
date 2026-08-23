@@ -112,7 +112,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
                   <Ionicons name={item.icon as any} size={18} color={COLORS.primary} />
                 </View>
                 <Text style={S.menuLabel}>{item.label}</Text>
-                <Ionicons name="chevron-back" size={14} color={COLORS.textMuted} />
+                <Ionicons name="chevron-forward" size={14} color={COLORS.textMuted} />
               </TouchableOpacity>
             ))}
           </ScrollView>

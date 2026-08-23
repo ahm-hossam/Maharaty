@@ -796,7 +796,7 @@ function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSele
       {/* Header */}
       <View style={S.header}>
         <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
-          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={S.headerTitle}>منشئ السيرة الذاتية</Text>
@@ -959,7 +959,7 @@ export default function CvBuilderScreen() {
       {/* ── Header ── */}
       <View style={S.header}>
         <TouchableOpacity onPress={() => router.back()} style={S.backBtn}>
-          <Ionicons name="arrow-forward" size={22} color={COLORS.textSecondary} />
+          <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setPreviewVisible(true)} style={S.previewBtn}>
           <Ionicons name="eye-outline" size={18} color={COLORS.primary} />
@@ -989,7 +989,7 @@ export default function CvBuilderScreen() {
           onPress={goPrev}
           disabled={currentStep === 0}
         >
-          <Ionicons name="arrow-forward" size={18} color={COLORS.primary} />
+          <Ionicons name="arrow-back" size={18} color={COLORS.primary} />
           <Text style={S.navBtnText}>السابق</Text>
         </TouchableOpacity>
 
@@ -1005,7 +1005,7 @@ export default function CvBuilderScreen() {
               activeOpacity={1}
             >
               <Text style={S.navBtnPrimaryText}>التالي</Text>
-              <Ionicons name="arrow-back" size={18} color="#fff" />
+              <Ionicons name="arrow-forward" size={18} color="#fff" />
             </TouchableOpacity>
           </Animated.View>
         ) : (

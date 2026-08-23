@@ -121,7 +121,7 @@ function FeatureCard({ feature, onPress }: { feature: typeof FEATURES[0]; onPres
 
         {/* Arrow chip */}
         <View style={[S.cardArrow, { borderColor: feature.accent + '40', backgroundColor: feature.accent + '12' }]}>
-          <Ionicons name="arrow-back" size={12} color={feature.accent} />
+          <Ionicons name="arrow-forward" size={12} color={feature.accent} />
         </View>
       </TouchableOpacity>
     </Animated.View>
@@ -447,7 +447,7 @@ export default function HomeScreen() {
                     <Text style={[S.pathStepTitle, done && { color: COLORS.textSecondary }]}>{p.title}</Text>
                   </View>
 
-                  {!done && <Ionicons name="chevron-back" size={16} color={COLORS.textMuted} />}
+                  {!done && <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />}
                 </TouchableOpacity>
               )
             })}
