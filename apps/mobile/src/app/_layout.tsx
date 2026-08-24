@@ -7,12 +7,35 @@ import * as SplashScreen from 'expo-splash-screen'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useFonts } from 'expo-font'
 import { useAuthStore } from '../store/authStore'
+import { LanguageProvider, useLanguage } from '../i18n/LanguageContext'
 
 SplashScreen.preventAutoHideAsync()
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 60_000, retry: 1 } },
 })
+
+function RootStack() {
+  const { isRTL, ready } = useLanguage()
+  const { initialize, isLoading: authLoading } = useAuthStore()
+
+  useEffect(() => {
+    if (ready) initialize()
+  }, [ready])
+
+  useEffect(() => {
+    if (ready && !authLoading) SplashScreen.hideAsync()
+  }, [ready, authLoading])
+
+  if (!ready || authLoading) return null
+
+  return (
+    <Stack
+      key={isRTL ? 'rtl' : 'ltr'}
+      screenOptions={{ headerShown: false, animation: isRTL ? 'slide_from_right' : 'slide_from_left' }}
+    />
+  )
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -24,28 +47,16 @@ export default function RootLayout() {
     Cairo_900Black:     require('../../assets/fonts/Cairo_900Black.ttf'),
   })
 
-  const { initialize, isLoading: authLoading } = useAuthStore()
-
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      initialize()
-    }
-  }, [fontsLoaded, fontError])
-
-  useEffect(() => {
-    if ((fontsLoaded || fontError) && !authLoading) {
-      SplashScreen.hideAsync()
-    }
-  }, [fontsLoaded, fontError, authLoading])
-
-  if ((!fontsLoaded && !fontError) || authLoading) return null
+  if (!fontsLoaded && !fontError) return null
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }} />
+          <LanguageProvider>
+            <StatusBar style="dark" />
+            <RootStack />
+          </LanguageProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -14,7 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'expo-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { COLORS, FONT, RADIUS, SHADOW, FS } from '../../constants/theme'
@@ -23,70 +23,26 @@ import { useAuthStore } from '../../store/authStore'
 import { useActivity } from '../../hooks/useActivity'
 import { api } from '../../services/api'
 import { useDrawer } from '../../context/DrawerContext'
+import { useLanguage } from '../../i18n/LanguageContext'
 
 const { width } = Dimensions.get('window')
 const CARD_SIZE = (width - 60) / 2
 
 const FEATURES = [
-  {
-    id: 'cv',
-    title: 'السيرة الذاتية',
-    subtitle: 'إرشادات AI وخطاب التقديم',
-    icon: 'document-text',
-    accent: '#2F6CFF',
-    accentAlt: '#00B4D8',
-    route: '/(main)/cv/builder',
-  },
-  {
-    id: 'skills',
-    title: 'تقييم الذات',
-    subtitle: 'اكتشف شخصيتك المهنية',
-    icon: 'bulb',
-    accent: '#9D4EDD',
-    accentAlt: '#7B5EA7',
-    route: '/(main)/self-assessment',
-  },
-  {
-    id: 'interview',
-    title: 'محاكاة المقابلة',
-    subtitle: 'تحضير AI تفاعلي',
-    icon: 'mic',
-    accent: '#FF3B6B',
-    accentAlt: '#C1121F',
-    route: '/(main)/interview/simulator',
-  },
-  {
-    id: 'jobs',
-    title: 'بوابات التوظيف',
-    subtitle: 'فرص عمل موصى بها',
-    icon: 'briefcase',
-    accent: '#F59E0B',
-    accentAlt: '#E76F51',
-    route: '/(main)/jobs',
-  },
-  {
-    id: 'community',
-    title: 'المجتمع',
-    subtitle: 'تواصل مع المهنيين',
-    icon: 'people',
-    accent: '#00F5D4',
-    accentAlt: '#0096C7',
-    route: '/(main)/community',
-  },
-  {
-    id: 'resources',
-    title: 'موارد التطوير',
-    subtitle: 'مسارات وظيفية متقدمة',
-    icon: 'trending-up',
-    accent: '#10B981',
-    accentAlt: '#0D9488',
-    route: '/(main)/learning/hub',
-  },
-]
+  { id: 'cv', titleKey: 'featureCv', subtitleKey: 'featureCvSub', icon: 'document-text', accent: '#2F6CFF', accentAlt: '#00B4D8', route: '/(main)/cv/builder' },
+  { id: 'skills', titleKey: 'featureSkills', subtitleKey: 'featureSkillsSub', icon: 'bulb', accent: '#9D4EDD', accentAlt: '#7B5EA7', route: '/(main)/self-assessment' },
+  { id: 'interview', titleKey: 'featureInterview', subtitleKey: 'featureInterviewSub', icon: 'mic', accent: '#FF3B6B', accentAlt: '#C1121F', route: '/(main)/interview/simulator' },
+  { id: 'jobs', titleKey: 'featureJobs', subtitleKey: 'featureJobsSub', icon: 'briefcase', accent: '#F59E0B', accentAlt: '#E76F51', route: '/(main)/jobs' },
+  { id: 'community', titleKey: 'featureCommunity', subtitleKey: 'featureCommunitySub', icon: 'people', accent: '#00F5D4', accentAlt: '#0096C7', route: '/(main)/community' },
+  { id: 'resources', titleKey: 'featureResources', subtitleKey: 'featureResourcesSub', icon: 'trending-up', accent: '#10B981', accentAlt: '#0D9488', route: '/(main)/learning/hub' },
+] as const
 
 // ─── Feature Card ─────────────────────────────────────────────
 
-function FeatureCard({ feature, onPress }: { feature: typeof FEATURES[0]; onPress: () => void }) {
+function FeatureCard({ feature, title, subtitle, isRTL, S, onPress }: {
+  feature: typeof FEATURES[number]; title: string; subtitle: string; isRTL: boolean
+  S: ReturnType<typeof createStyles>; onPress: () => void
+}) {
   const scaleAnim = useRef(new Animated.Value(1)).current
 
   const press   = () => Animated.spring(scaleAnim, { toValue: 0.96, useNativeDriver: true, speed: 80 }).start()
@@ -115,8 +71,8 @@ function FeatureCard({ feature, onPress }: { feature: typeof FEATURES[0]; onPres
 
         {/* Text */}
         <View style={S.cardText}>
-          <Text style={S.cardTitle}>{feature.title}</Text>
-          <Text style={S.cardSub} numberOfLines={2}>{feature.subtitle}</Text>
+          <Text style={S.cardTitle}>{title}</Text>
+          <Text style={S.cardSub} numberOfLines={2}>{subtitle}</Text>
         </View>
 
         {/* Arrow chip */}
@@ -128,43 +84,20 @@ function FeatureCard({ feature, onPress }: { feature: typeof FEATURES[0]; onPres
   )
 }
 
-// ─── Pulsing Neon Dot ─────────────────────────────────────────
-
-function LiveDot() {
-  const pulse = useRef(new Animated.Value(1)).current
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.5, duration: 900, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
-      ])
-    ).start()
-  }, [])
-
-  return (
-    <View style={{ width: 12, height: 12, justifyContent: 'center', alignItems: 'center' }}>
-      <Animated.View style={{
-        position: 'absolute', width: 12, height: 12, borderRadius: 6,
-        backgroundColor: COLORS.teal + '40', transform: [{ scale: pulse }],
-      }} />
-      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.teal }} />
-    </View>
-  )
-}
-
 // ─── Main Screen ──────────────────────────────────────────────
 
 const PATHS = [
-  { step: 1, title: 'تقييم المهارات واكتشاف الذات', icon: 'bulb',          color: '#9D4EDD', route: '/(main)/self-assessment' },
-  { step: 2, title: 'بناء السيرة الذاتية',           icon: 'document-text', color: '#2F6CFF', route: '/(main)/cv/builder' },
-  { step: 3, title: 'تدريب المقابلات',                icon: 'mic',           color: '#FF3B6B', route: '/(main)/interview/simulator' },
-  { step: 4, title: 'البحث عن الدورات',               icon: 'school',        color: '#00A896', route: '/(main)/jobs' },
-  { step: 5, title: 'التقديم للوظائف',                icon: 'briefcase',     color: '#F59E0B', route: '/(main)/jobs/portals' },
-  { step: 6, title: 'التفاعل مع المجتمع',             icon: 'people',        color: '#2F6CFF', route: '/(main)/community' },
-]
+  { step: 1, titleKey: 'pathStep1', icon: 'bulb',          color: '#9D4EDD', route: '/(main)/self-assessment' },
+  { step: 2, titleKey: 'pathStep2', icon: 'document-text', color: '#2F6CFF', route: '/(main)/cv/builder' },
+  { step: 3, titleKey: 'pathStep3', icon: 'mic',           color: '#FF3B6B', route: '/(main)/interview/simulator' },
+  { step: 4, titleKey: 'pathStep4', icon: 'school',        color: '#00A896', route: '/(main)/jobs' },
+  { step: 5, titleKey: 'pathStep5', icon: 'briefcase',     color: '#F59E0B', route: '/(main)/jobs/portals' },
+  { step: 6, titleKey: 'pathStep6', icon: 'people',        color: '#2F6CFF', route: '/(main)/community' },
+] as const
 
-// Fallback notifications shown when API hasn't loaded yet
+// Fallback notifications shown when API hasn't loaded yet — matched against
+// backend-generated Arabic notification titles, which stay Arabic regardless
+// of UI language (dynamic content is out of this feature's scope).
 function notifIcon(title: string): string {
   if (title.includes('وظيف')) return 'briefcase'
   if (title.includes('تقييم') || title.includes('اختبار')) return 'star'
@@ -183,21 +116,23 @@ function notifColor(title: string): string {
   return '#2F6CFF'
 }
 
-function notifTime(createdAt: string): string {
+function notifTime(createdAt: string, t: (key: string, params?: Record<string, string | number>) => string): string {
   const diff = Date.now() - new Date(createdAt).getTime()
   const m = Math.floor(diff / 60000)
-  if (m < 1) return 'الآن'
-  if (m < 60) return `منذ ${m} دقيقة`
+  if (m < 1) return t('home.timeNow')
+  if (m < 60) return t('home.timeMinutesAgo', { m })
   const h = Math.floor(m / 60)
-  if (h < 24) return `منذ ${h} ساعة`
+  if (h < 24) return t('home.timeHoursAgo', { h })
   const d = Math.floor(h / 24)
-  if (d < 7) return `منذ ${d} يوم`
-  return new Date(createdAt).toLocaleDateString('ar-SA')
+  if (d < 7) return t('home.timeDaysAgo', { d })
+  return new Date(createdAt).toLocaleDateString()
 }
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { t, isRTL } = useLanguage()
+  const S = useMemo(() => createStyles(isRTL), [isRTL])
   const { completed, completeStep } = usePathStore()
   const { user } = useAuthStore()
   const { trackActivity } = useActivity()
@@ -229,7 +164,7 @@ export default function HomeScreen() {
     ...n,
     icon:  notifIcon(n.title ?? ''),
     color: notifColor(n.title ?? ''),
-    time:  notifTime(n.createdAt ?? new Date().toISOString()),
+    time:  notifTime(n.createdAt ?? new Date().toISOString(), t),
   }))
   const unreadCount = notifs.filter((n) => !n.isRead).length
 
@@ -300,14 +235,14 @@ export default function HomeScreen() {
   }
 
   // First name from user store (fall back gracefully)
-  const firstName = user?.name?.split(' ')[0] ?? 'أهلاً'
+  const firstName = user?.name?.split(' ')[0] ?? t('home.defaultGreetingName')
 
   return (
     <View style={[S.root, { paddingTop: insets.top }]}>
 
       {/* ── Top bar ── */}
       <View style={S.topBar}>
-        {/* Hamburger — left, matching the menu-button side used across Jobs/Community/Search/Learning Hub */}
+        {/* Hamburger — matches the menu-button side used across Jobs/Community/Search/Learning Hub */}
         <TouchableOpacity style={S.iconBtn} onPress={openDrawer}>
           <Ionicons name="menu-outline" size={24} color={COLORS.textSecondary} />
         </TouchableOpacity>
@@ -319,10 +254,10 @@ export default function HomeScreen() {
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={S.logoDot}
           />
-          <Text style={S.logoText}>مهاراتي</Text>
+          <Text style={S.logoText}>{t('common.appName')}</Text>
         </View>
 
-        {/* Bell — right */}
+        {/* Bell */}
         <TouchableOpacity style={S.iconBtn} onPress={openNotif}>
           <Ionicons name="notifications-outline" size={22} color={COLORS.textSecondary} />
           {unreadCount > 0 && (
@@ -342,13 +277,13 @@ export default function HomeScreen() {
           {/* Ambient glow */}
           <View style={S.heroGlow} />
 
-          <Text style={S.heroGreeting}>مرحباً، {firstName}!</Text>
-          <Text style={S.heroSub}>استمر في رحلة تطوير مهاراتك</Text>
+          <Text style={S.heroGreeting}>{t('home.greeting', { name: firstName })}</Text>
+          <Text style={S.heroSub}>{t('home.subtitle')}</Text>
 
           {/* Progress card */}
           <TouchableOpacity style={S.progressCard} onPress={openPath} activeOpacity={0.78}>
             <View style={S.progressRow}>
-              <Text style={S.progressLabel}>{doneCount} / {PATHS.length} مسارات مكتملة</Text>
+              <Text style={S.progressLabel}>{t('home.pathsCompleted', { done: doneCount, total: PATHS.length })}</Text>
               <Text style={S.progressPct}>{pct}%</Text>
             </View>
             <View style={S.progressTrack}>
@@ -356,10 +291,10 @@ export default function HomeScreen() {
             </View>
             <Text style={S.progressHint}>
               {doneCount === 0
-                ? 'أكمل مسارك الأول للبدء!'
+                ? t('home.pathStartHint')
                 : doneCount === PATHS.length
-                ? '🎉 أتممت جميع المسارات!'
-                : `تبقّى ${PATHS.length - doneCount} خطوات`}
+                ? t('home.pathAllDoneHint')
+                : t('home.pathRemainingHint', { n: PATHS.length - doneCount })}
             </Text>
           </TouchableOpacity>
         </View>
@@ -367,9 +302,9 @@ export default function HomeScreen() {
         {/* ── Quick stats strip ── */}
         <View style={S.statsRow}>
           {[
-            { icon: 'flame', label: 'أيام متتالية', value: '0', color: '#F59E0B' },
-            { icon: 'trophy', label: 'إنجازات',     value: '0', color: COLORS.teal },
-            { icon: 'star',  label: 'نقاطك',        value: '0', color: COLORS.primary },
+            { icon: 'flame', label: t('home.streakDays'), value: '0', color: '#F59E0B' },
+            { icon: 'trophy', label: t('home.achievements'), value: '0', color: COLORS.teal },
+            { icon: 'star',  label: t('home.points'), value: '0', color: COLORS.primary },
           ].map((stat, i) => (
             <View key={i} style={[S.statCard, { borderColor: stat.color + '28' }]}>
               <Ionicons name={stat.icon as any} size={20} color={stat.color} />
@@ -382,12 +317,20 @@ export default function HomeScreen() {
         {/* ── Feature grid ── */}
         <View style={S.sectionHeader}>
           <View style={S.sectionLine} />
-          <Text style={S.sectionTitle}>استكشف الخدمات</Text>
+          <Text style={S.sectionTitle}>{t('home.exploreServices')}</Text>
         </View>
 
         <View style={S.grid}>
           {FEATURES.map((f) => (
-            <FeatureCard key={f.id} feature={f} onPress={() => router.push(f.route as any)} />
+            <FeatureCard
+              key={f.id}
+              feature={f}
+              title={t(`home.${f.titleKey}`)}
+              subtitle={t(`home.${f.subtitleKey}`)}
+              isRTL={isRTL}
+              S={S}
+              onPress={() => router.push(f.route as any)}
+            />
           ))}
         </View>
 
@@ -406,9 +349,9 @@ export default function HomeScreen() {
             <TouchableOpacity onPress={closePath} style={S.notifCloseBtn}>
               <Ionicons name="close" size={18} color={COLORS.textMuted} />
             </TouchableOpacity>
-            <View style={{ flex: 1, alignItems: 'flex-end' }}>
-              <Text style={S.pathTitle}>مسار التطوير المهني</Text>
-              <Text style={S.pathSub}>6 خطوات نحو وظيفة أحلامك</Text>
+            <View style={S.pathHeaderText}>
+              <Text style={S.pathTitle}>{t('home.careerPathTitle')}</Text>
+              <Text style={S.pathSub}>{t('home.careerPathSub')}</Text>
             </View>
           </View>
 
@@ -443,8 +386,8 @@ export default function HomeScreen() {
 
                   {/* Text */}
                   <View style={S.pathBody}>
-                    <Text style={S.pathStep}>{done ? 'مكتملة ✓' : `الخطوة ${p.step}`}</Text>
-                    <Text style={[S.pathStepTitle, done && { color: COLORS.textSecondary }]}>{p.title}</Text>
+                    <Text style={S.pathStep}>{done ? t('home.stepDone') : t('home.stepN', { n: p.step })}</Text>
+                    <Text style={[S.pathStepTitle, done && { color: COLORS.textSecondary }]}>{t(`home.${p.titleKey}`)}</Text>
                   </View>
 
                   {!done && <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />}
@@ -469,10 +412,10 @@ export default function HomeScreen() {
             <TouchableOpacity onPress={closeNotif} style={S.notifCloseBtn}>
               <Ionicons name="close" size={18} color={COLORS.textMuted} />
             </TouchableOpacity>
-            <Text style={S.notifTitle}>الإشعارات</Text>
+            <Text style={S.notifTitle}>{t('home.notifications')}</Text>
             {unreadCount > 0 && (
               <TouchableOpacity onPress={handleMarkAllRead} style={S.notifBadgePill}>
-                <Text style={S.notifBadgePillText}>قراءة الكل</Text>
+                <Text style={S.notifBadgePillText}>{t('home.markAllRead')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -484,7 +427,7 @@ export default function HomeScreen() {
             {notifs.length === 0 && (
               <View style={{ alignItems: 'center', paddingVertical: 40 }}>
                 <Ionicons name="notifications-off-outline" size={40} color={COLORS.textMuted} />
-                <Text style={{ color: COLORS.textMuted, marginTop: 12, fontFamily: FONT.regular }}>لا توجد إشعارات</Text>
+                <Text style={{ color: COLORS.textMuted, marginTop: 12, fontFamily: FONT.regular }}>{t('home.noNotifications')}</Text>
               </View>
             )}
             {notifs.map((n: any) => (
@@ -517,276 +460,231 @@ export default function HomeScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────
 
-const S = StyleSheet.create({
-  root: { flex: 1, backgroundColor: COLORS.canvas },
+const createStyles = (isRTL: boolean) => {
+  const start: 'left' | 'right' = isRTL ? 'right' : 'left'
+  const end: 'left' | 'right' = isRTL ? 'left' : 'right'
+  const row = isRTL ? 'row-reverse' : 'row'
 
-  // Top bar
-  topBar: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.07)',
-  },
-  iconBtn: {
-    width: 42, height: 42, borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1, borderColor: COLORS.surfaceBorder,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  badge: {
-    position: 'absolute', top: 6, right: 6,
-    width: 15, height: 15, borderRadius: 8,
-    backgroundColor: COLORS.error,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  badgeText: { fontSize: FS.micro, color: '#fff', fontFamily: FONT.extrabold, fontWeight: '800' },
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: COLORS.canvas },
 
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoDot: { width: 8, height: 8, borderRadius: 4 },
-  logoText: { fontSize: FS.xl, fontFamily: FONT.black, fontWeight: '900', color: COLORS.text },
+    // Top bar
+    topBar: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: 24, paddingVertical: 14,
+      borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.07)',
+    },
+    iconBtn: {
+      width: 42, height: 42, borderRadius: RADIUS.lg,
+      backgroundColor: COLORS.surface,
+      borderWidth: 1, borderColor: COLORS.surfaceBorder,
+      justifyContent: 'center', alignItems: 'center',
+    },
+    badge: {
+      position: 'absolute', top: 6, right: 6,
+      width: 15, height: 15, borderRadius: 8,
+      backgroundColor: COLORS.error,
+      justifyContent: 'center', alignItems: 'center',
+    },
+    badgeText: { fontSize: FS.micro, color: '#fff', fontFamily: FONT.extrabold, fontWeight: '800' },
 
-  scrollContent: { paddingBottom: 48 },
+    logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    logoDot: { width: 8, height: 8, borderRadius: 4 },
+    logoText: { fontSize: FS.xl, fontFamily: FONT.black, fontWeight: '900', color: COLORS.text },
 
-  // Hero
-  hero: {
-    marginHorizontal: 24, marginTop: 24, marginBottom: 20,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1, borderColor: COLORS.surfaceBorder,
-    borderRadius: RADIUS.xxl, padding: 24, overflow: 'hidden',
-  },
-  heroGlow: {
-    position: 'absolute', top: -60, left: -60,
-    width: 200, height: 200, borderRadius: 100,
-    backgroundColor: COLORS.primary,
-    opacity: 0.08,
-  },
-  heroLiveRow: { flexDirection: 'row', alignItems: 'center', gap: 7, justifyContent: 'flex-end', marginBottom: 16 },
-  heroLiveText: { fontSize: FS.xs, color: COLORS.teal, fontFamily: FONT.bold, fontWeight: '700', letterSpacing: 0.8 },
+    scrollContent: { paddingBottom: 48 },
 
-  heroGreeting: { fontSize: FS.h2, fontFamily: FONT.black, fontWeight: '900', color: COLORS.text, textAlign: 'right', marginBottom: 6 },
-  heroSub: { fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textMuted, textAlign: 'right', marginBottom: 22 },
+    // Hero
+    hero: {
+      marginHorizontal: 24, marginTop: 24, marginBottom: 20,
+      backgroundColor: COLORS.surface,
+      borderWidth: 1, borderColor: COLORS.surfaceBorder,
+      borderRadius: RADIUS.xxl, padding: 24, overflow: 'hidden',
+    },
+    heroGlow: {
+      position: 'absolute', top: -60, left: -60,
+      width: 200, height: 200, borderRadius: 100,
+      backgroundColor: COLORS.primary,
+      opacity: 0.08,
+    },
 
-  progressCard: {
-    backgroundColor: 'rgba(15,18,33,0.04)',
-    borderRadius: RADIUS.xl, padding: 16,
-    borderWidth: 1, borderColor: 'rgba(15,18,33,0.06)',
-  },
-  progressRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  progressLabel: { fontSize: FS.sm, color: COLORS.textSecondary, fontFamily: FONT.semibold, fontWeight: '600' },
-  progressPct: { fontSize: FS.sm, color: COLORS.primary, fontFamily: FONT.black, fontWeight: '900' },
-  progressTrack: { height: 4, backgroundColor: 'rgba(15,18,33,0.08)', borderRadius: 2, marginBottom: 10, flexDirection: 'row-reverse' },
-  progressFill: {
-    height: '100%', width: '0%', borderRadius: 2,
-    backgroundColor: COLORS.primary,
-    shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 6,
-  },
-  progressHint: { fontSize: FS.xs, color: COLORS.textMuted, textAlign: 'right', fontFamily: FONT.medium, fontWeight: '500' },
+    heroGreeting: { fontSize: FS.h2, fontFamily: FONT.black, fontWeight: '900', color: COLORS.text, textAlign: start, marginBottom: 6 },
+    heroSub: { fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textMuted, textAlign: start, marginBottom: 22 },
 
-  // Stats
-  statsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 24, marginBottom: 28 },
-  statCard: {
-    flex: 1, alignItems: 'center', gap: 5, paddingVertical: 14,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1, borderRadius: RADIUS.xl,
-  },
-  statVal: { fontSize: FS.xl, fontFamily: FONT.black, fontWeight: '900' },
-  statLabel: { fontSize: FS.micro, color: COLORS.textMuted, fontFamily: FONT.semibold, fontWeight: '600', textAlign: 'center' },
+    progressCard: {
+      backgroundColor: 'rgba(15,18,33,0.04)',
+      borderRadius: RADIUS.xl, padding: 16,
+      borderWidth: 1, borderColor: 'rgba(15,18,33,0.06)',
+    },
+    progressRow: { flexDirection: row, justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+    progressLabel: { fontSize: FS.sm, color: COLORS.textSecondary, fontFamily: FONT.semibold, fontWeight: '600' },
+    progressPct: { fontSize: FS.sm, color: COLORS.primary, fontFamily: FONT.black, fontWeight: '900' },
+    progressTrack: { height: 4, backgroundColor: 'rgba(15,18,33,0.08)', borderRadius: 2, marginBottom: 10, flexDirection: row },
+    progressFill: {
+      height: '100%', width: '0%', borderRadius: 2,
+      backgroundColor: COLORS.primary,
+      shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 6,
+    },
+    progressHint: { fontSize: FS.xs, color: COLORS.textMuted, textAlign: start, fontFamily: FONT.medium, fontWeight: '500' },
 
-  // Section header
-  sectionHeader: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 12,
-    paddingHorizontal: 24, marginBottom: 16,
-  },
-  sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(15,18,33,0.08)' },
-  sectionTitle: { fontSize: FS.sm, fontFamily: FONT.extrabold, fontWeight: '800', color: COLORS.textMuted },
+    // Stats
+    statsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 24, marginBottom: 28 },
+    statCard: {
+      flex: 1, alignItems: 'center', gap: 5, paddingVertical: 14,
+      backgroundColor: COLORS.surface,
+      borderWidth: 1, borderRadius: RADIUS.xl,
+    },
+    statVal: { fontSize: FS.xl, fontFamily: FONT.black, fontWeight: '900' },
+    statLabel: { fontSize: FS.micro, color: COLORS.textMuted, fontFamily: FONT.semibold, fontWeight: '600', textAlign: 'center' },
 
-  // Feature grid
-  grid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 12,
-    paddingHorizontal: 24, marginBottom: 28,
-  },
-  card: { width: CARD_SIZE, borderRadius: RADIUS.xxl, overflow: 'hidden' },
-  cardInner: {
-    height: 160, borderWidth: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: RADIUS.xxl, padding: 18, overflow: 'hidden',
-    justifyContent: 'space-between',
-  },
-  cardOrb: {
-    position: 'absolute', top: -28, left: -28,
-    width: 80, height: 80, borderRadius: 40, opacity: 0.12,
-  },
-  cardIconWrap: {
-    width: 48, height: 48, borderRadius: 15,
-    borderWidth: 1, justifyContent: 'center', alignItems: 'center',
-    shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 6,
-    alignSelf: 'flex-end',
-  },
-  cardText: { gap: 4 },
-  cardTitle: { fontSize: FS.md, fontFamily: FONT.extrabold, fontWeight: '800', color: COLORS.text, textAlign: 'right' },
-  cardSub: { fontSize: FS.xs, fontFamily: FONT.regular, color: COLORS.textMuted, textAlign: 'right', lineHeight: 16 },
-  cardArrow: {
-    position: 'absolute', bottom: 14, left: 14,
-    width: 28, height: 28, borderRadius: 9,
-    borderWidth: 1, justifyContent: 'center', alignItems: 'center',
-  },
+    // Section header
+    sectionHeader: {
+      flexDirection: row, alignItems: 'center', gap: 12,
+      paddingHorizontal: 24, marginBottom: 16,
+    },
+    sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(15,18,33,0.08)' },
+    sectionTitle: { fontSize: FS.sm, fontFamily: FONT.extrabold, fontWeight: '800', color: COLORS.textMuted },
 
-  // Tip banner
-  tipBanner: { marginHorizontal: 24, borderRadius: RADIUS.xxl, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(47,108,255,0.2)' },
-  tipGrad: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 14, padding: 18 },
-  tipIconWrap: {
-    width: 40, height: 40, borderRadius: 13,
-    backgroundColor: 'rgba(47,108,255,0.18)',
-    justifyContent: 'center', alignItems: 'center', flexShrink: 0,
-  },
-  tipText: { flex: 1, gap: 5 },
-  tipTitle: { fontSize: FS.sm, fontFamily: FONT.extrabold, fontWeight: '800', color: COLORS.primary, textAlign: 'right' },
-  tipBody: { fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textMuted, textAlign: 'right', lineHeight: 19 },
+    // Feature grid
+    grid: {
+      flexDirection: 'row', flexWrap: 'wrap', gap: 12,
+      paddingHorizontal: 24, marginBottom: 28,
+    },
+    card: { width: CARD_SIZE, borderRadius: RADIUS.xxl, overflow: 'hidden' },
+    cardInner: {
+      height: 160, borderWidth: 1,
+      backgroundColor: '#FFFFFF',
+      borderRadius: RADIUS.xxl, padding: 18, overflow: 'hidden',
+      justifyContent: 'space-between',
+    },
+    cardOrb: {
+      position: 'absolute', top: -28, left: -28,
+      width: 80, height: 80, borderRadius: 40, opacity: 0.12,
+    },
+    cardIconWrap: {
+      width: 48, height: 48, borderRadius: 15,
+      borderWidth: 1, justifyContent: 'center', alignItems: 'center',
+      shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 6,
+      alignSelf: isRTL ? 'flex-end' : 'flex-start',
+    },
+    cardText: { gap: 4 },
+    cardTitle: { fontSize: FS.md, fontFamily: FONT.extrabold, fontWeight: '800', color: COLORS.text, textAlign: start },
+    cardSub: { fontSize: FS.xs, fontFamily: FONT.regular, color: COLORS.textMuted, textAlign: start, lineHeight: 16 },
+    cardArrow: {
+      position: 'absolute', bottom: 14, [end]: 14,
+      width: 28, height: 28, borderRadius: 9,
+      borderWidth: 1, justifyContent: 'center', alignItems: 'center',
+    } as any,
 
-  // Drawer
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.72)' },
-  drawer: {
-    position: 'absolute', top: 0, right: 0, bottom: 0,
-    width: width * 0.82,
-    backgroundColor: '#FFFFFF',
-    borderLeftWidth: 1, borderLeftColor: 'rgba(15,18,33,0.08)',
-  },
-  drawerHeader: { paddingHorizontal: 24, paddingBottom: 24, alignItems: 'flex-end', position: 'relative' },
-  drawerCloseBtn: {
-    position: 'absolute', top: 24, left: 20,
-    width: 36, height: 36, borderRadius: RADIUS.md,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1, borderColor: COLORS.surfaceBorder,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  drawerLogoWrap: { marginBottom: 14 },
-  drawerLogo: { width: 60, height: 60, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-  drawerTitle: { fontSize: FS.h3, fontFamily: FONT.black, fontWeight: '900', color: COLORS.text, marginBottom: 4 },
-  drawerSub: { fontSize: FS.sm, color: COLORS.textMuted, fontFamily: FONT.medium, fontWeight: '500' },
-  drawerDivider: { height: 1, backgroundColor: 'rgba(15,18,33,0.07)', marginHorizontal: 0 },
+    // Sheets shared
+    overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.72)' },
 
-  drawerMenuScroll: { flex: 1 },
-  menuRow: {
-    flexDirection: 'row-reverse', alignItems: 'center',
-    paddingVertical: 16, paddingHorizontal: 20,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.05)',
-    gap: 12,
-  },
-  menuIconCircle: {
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: 'rgba(47,108,255,0.12)',
-    borderWidth: 1, borderColor: 'rgba(47,108,255,0.2)',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  menuLabel: { flex: 1, fontSize: FS.md, fontFamily: FONT.semibold, fontWeight: '600', color: COLORS.textSecondary, textAlign: 'right' },
+    // ── Career path sheet ────────────────────────────────────────
+    pathSheet: {
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      backgroundColor: '#FFFFFF',
+      borderTopLeftRadius: RADIUS.xxxl, borderTopRightRadius: RADIUS.xxxl,
+      maxHeight: '80%',
+      shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
+      shadowOpacity: 0.08, shadowRadius: 16, elevation: 24,
+    },
+    pathHeader: {
+      flexDirection: 'row', alignItems: 'center',
+      paddingHorizontal: 20, paddingVertical: 16, gap: 12,
+    },
+    pathHeaderText: { flex: 1, alignItems: isRTL ? 'flex-end' : 'flex-start' },
+    pathTitle: {
+      fontSize: FS.lg, fontFamily: FONT.black, fontWeight: '900', color: COLORS.text,
+    },
+    pathSub: {
+      fontSize: FS.xs, fontFamily: FONT.medium, color: COLORS.textMuted, marginTop: 2,
+    },
+    pathRow: {
+      flexDirection: row, alignItems: 'center',
+      paddingHorizontal: 20, paddingVertical: 16, gap: 14, position: 'relative',
+    },
+    pathRowDone: {
+      backgroundColor: 'rgba(15,18,33,0.025)',
+    },
+    pathConnector: {
+      position: 'absolute', [start]: 47, top: 62, bottom: -16,
+      width: 2, borderLeftWidth: 2, borderStyle: 'dashed',
+    } as any,
+    pathCircle: {
+      width: 48, height: 48, borderRadius: 24,
+      borderWidth: 1.5, justifyContent: 'center', alignItems: 'center', flexShrink: 0,
+    },
+    pathBody: { flex: 1, gap: 2 },
+    pathStep: {
+      fontSize: FS.xs, fontFamily: FONT.semibold, color: COLORS.textMuted,
+      textAlign: start,
+    },
+    pathStepTitle: {
+      fontSize: FS.md, fontFamily: FONT.bold, fontWeight: '700',
+      color: COLORS.text, textAlign: start,
+    },
 
-  drawerFooter: { borderTopWidth: 1, borderTopColor: 'rgba(15,18,33,0.07)', padding: 24 },
-  logoutRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 10 },
-  logoutText: { fontSize: FS.md, fontFamily: FONT.bold, fontWeight: '700', color: COLORS.error },
-
-  // ── Career path sheet ────────────────────────────────────────
-  pathSheet: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: RADIUS.xxxl, borderTopRightRadius: RADIUS.xxxl,
-    maxHeight: '80%',
-    shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08, shadowRadius: 16, elevation: 24,
-  },
-  pathHeader: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 16, gap: 12,
-  },
-  pathTitle: {
-    fontSize: FS.lg, fontFamily: FONT.black, fontWeight: '900', color: COLORS.text,
-  },
-  pathSub: {
-    fontSize: FS.xs, fontFamily: FONT.medium, color: COLORS.textMuted, marginTop: 2,
-  },
-  pathRow: {
-    flexDirection: 'row-reverse', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 16, gap: 14, position: 'relative',
-  },
-  pathRowDone: {
-    backgroundColor: 'rgba(15,18,33,0.025)',
-  },
-  pathConnector: {
-    position: 'absolute', right: 47, top: 62, bottom: -16,
-    width: 2, borderLeftWidth: 2, borderStyle: 'dashed',
-  },
-  pathCircle: {
-    width: 48, height: 48, borderRadius: 24,
-    borderWidth: 1.5, justifyContent: 'center', alignItems: 'center', flexShrink: 0,
-  },
-  pathBody: { flex: 1, gap: 2 },
-  pathStep: {
-    fontSize: FS.xs, fontFamily: FONT.semibold, color: COLORS.textMuted,
-    textAlign: 'right',
-  },
-  pathStepTitle: {
-    fontSize: FS.md, fontFamily: FONT.bold, fontWeight: '700',
-    color: COLORS.text, textAlign: 'right',
-  },
-
-  // ── Notifications sheet ──────────────────────────────────────
-  notifSheet: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: RADIUS.xxxl, borderTopRightRadius: RADIUS.xxxl,
-    maxHeight: '75%',
-    shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08, shadowRadius: 16, elevation: 24,
-  },
-  notifHandle: {
-    width: 38, height: 4, borderRadius: 2,
-    backgroundColor: 'rgba(15,18,33,0.15)',
-    alignSelf: 'center', marginTop: 14, marginBottom: 4,
-  },
-  notifHeader: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end',
-    paddingHorizontal: 20, paddingVertical: 14, gap: 10,
-  },
-  notifCloseBtn: {
-    width: 34, height: 34, borderRadius: RADIUS.md,
-    backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder,
-    justifyContent: 'center', alignItems: 'center', marginLeft: 'auto' as any,
-  },
-  notifTitle: {
-    flex: 1, fontSize: FS.lg, fontFamily: FONT.black, fontWeight: '900',
-    color: COLORS.text, textAlign: 'right',
-  },
-  notifBadgePill: {
-    backgroundColor: 'rgba(47,108,255,0.12)', borderRadius: RADIUS.full,
-    paddingHorizontal: 10, paddingVertical: 4, alignItems: 'center',
-  },
-  notifBadgePillText: {
-    fontSize: FS.xs, fontFamily: FONT.bold, fontWeight: '700', color: COLORS.primary,
-  },
-  notifDivider: { height: 1, backgroundColor: 'rgba(15,18,33,0.07)' },
-  notifRow: {
-    flexDirection: 'row-reverse', alignItems: 'flex-start',
-    paddingHorizontal: 20, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.05)', gap: 14,
-  },
-  notifRowUnread: { backgroundColor: 'rgba(47,108,255,0.04)' },
-  notifIcon: {
-    width: 44, height: 44, borderRadius: 14,
-    justifyContent: 'center', alignItems: 'center', flexShrink: 0,
-  },
-  notifBody: { flex: 1, gap: 3 },
-  notifRowTitle: {
-    fontSize: FS.md, fontFamily: FONT.bold, fontWeight: '700',
-    color: COLORS.text, textAlign: 'right',
-  },
-  notifRowBody: {
-    fontSize: FS.sm, fontFamily: FONT.regular,
-    color: COLORS.textSecondary, textAlign: 'right', lineHeight: 19,
-  },
-  notifTime: {
-    fontSize: FS.xs, fontFamily: FONT.medium,
-    color: COLORS.textMuted, textAlign: 'right',
-  },
-  unreadDot: {
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: COLORS.primary, marginTop: 4, flexShrink: 0,
-  },
-})
+    // ── Notifications sheet ──────────────────────────────────────
+    notifSheet: {
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      backgroundColor: '#FFFFFF',
+      borderTopLeftRadius: RADIUS.xxxl, borderTopRightRadius: RADIUS.xxxl,
+      maxHeight: '75%',
+      shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
+      shadowOpacity: 0.08, shadowRadius: 16, elevation: 24,
+    },
+    notifHandle: {
+      width: 38, height: 4, borderRadius: 2,
+      backgroundColor: 'rgba(15,18,33,0.15)',
+      alignSelf: 'center', marginTop: 14, marginBottom: 4,
+    },
+    notifHeader: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start',
+      paddingHorizontal: 20, paddingVertical: 14, gap: 10,
+    },
+    notifCloseBtn: {
+      width: 34, height: 34, borderRadius: RADIUS.md,
+      backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder,
+      justifyContent: 'center', alignItems: 'center',
+    },
+    notifTitle: {
+      flex: 1, fontSize: FS.lg, fontFamily: FONT.black, fontWeight: '900',
+      color: COLORS.text, textAlign: start,
+    },
+    notifBadgePill: {
+      backgroundColor: 'rgba(47,108,255,0.12)', borderRadius: RADIUS.full,
+      paddingHorizontal: 10, paddingVertical: 4, alignItems: 'center',
+    },
+    notifBadgePillText: {
+      fontSize: FS.xs, fontFamily: FONT.bold, fontWeight: '700', color: COLORS.primary,
+    },
+    notifDivider: { height: 1, backgroundColor: 'rgba(15,18,33,0.07)' },
+    notifRow: {
+      flexDirection: row, alignItems: 'flex-start',
+      paddingHorizontal: 20, paddingVertical: 14,
+      borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.05)', gap: 14,
+    },
+    notifRowUnread: { backgroundColor: 'rgba(47,108,255,0.04)' },
+    notifIcon: {
+      width: 44, height: 44, borderRadius: 14,
+      justifyContent: 'center', alignItems: 'center', flexShrink: 0,
+    },
+    notifBody: { flex: 1, gap: 3 },
+    notifRowTitle: {
+      fontSize: FS.md, fontFamily: FONT.bold, fontWeight: '700',
+      color: COLORS.text, textAlign: start,
+    },
+    notifRowBody: {
+      fontSize: FS.sm, fontFamily: FONT.regular,
+      color: COLORS.textSecondary, textAlign: start, lineHeight: 19,
+    },
+    notifTime: {
+      fontSize: FS.xs, fontFamily: FONT.medium,
+      color: COLORS.textMuted, textAlign: start,
+    },
+    unreadDot: {
+      width: 8, height: 8, borderRadius: 4,
+      backgroundColor: COLORS.primary, marginTop: 4, flexShrink: 0,
+    },
+  })
+}

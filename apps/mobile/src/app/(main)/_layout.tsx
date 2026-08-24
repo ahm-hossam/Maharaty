@@ -1,10 +1,12 @@
 import { Tabs } from 'expo-router'
 import { View, Text, StyleSheet, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useMemo } from 'react'
 import { COLORS, FONT, RADIUS } from '@/constants/theme'
 import { DrawerProvider } from '../../context/DrawerContext'
+import { useLanguage } from '../../i18n/LanguageContext'
 
-function TabIcon({ name, focused, label }: { name: any; focused: boolean; label: string }) {
+function TabIcon({ name, focused, label, S }: { name: any; focused: boolean; label: string; S: ReturnType<typeof createStyles> }) {
   return (
     <View style={S.item}>
       <View style={[S.iconPill, focused && S.iconPillActive]}>
@@ -24,9 +26,23 @@ function TabIcon({ name, focused, label }: { name: any; focused: boolean; label:
   )
 }
 
-export default function MainLayout() {
+const TAB_DEFS = [
+  { name: 'search', iconOn: 'search', iconOff: 'search-outline', labelKey: 'search' },
+  { name: 'community', iconOn: 'people', iconOff: 'people-outline', labelKey: 'community' },
+  { name: 'jobs', iconOn: 'briefcase', iconOff: 'briefcase-outline', labelKey: 'jobs' },
+  { name: 'home', iconOn: 'home', iconOff: 'home-outline', labelKey: 'home' },
+] as const
+
+function MainTabs() {
+  const { t, isRTL } = useLanguage()
+  const S = useMemo(() => createStyles(), [])
+
+  // Tab order is RTL-authored (Home rightmost, Search leftmost). Native tab
+  // bars don't auto-mirror since this app never enables I18nManager RTL, so
+  // reverse the physical order ourselves for LTR.
+  const tabs = isRTL ? TAB_DEFS : [...TAB_DEFS].reverse()
+
   return (
-    <DrawerProvider>
     <Tabs
       initialRouteName="home"
       screenOptions={{
@@ -35,38 +51,22 @@ export default function MainLayout() {
         tabBarStyle: S.tabBar,
       }}
     >
-      <Tabs.Screen
-        name="search"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'search' : 'search-outline'} focused={focused} label="بحث" />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="community"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'people' : 'people-outline'} focused={focused} label="المجتمع" />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="jobs"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'briefcase' : 'briefcase-outline'} focused={focused} label="وظائف" />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="home"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} label="الرئيسية" />
-          ),
-        }}
-      />
+      {tabs.map((tab) => (
+        <Tabs.Screen
+          key={tab.name}
+          name={tab.name}
+          options={{
+            tabBarIcon: ({ focused }) => (
+              <TabIcon
+                name={focused ? tab.iconOn : tab.iconOff}
+                focused={focused}
+                label={t(`tabs.${tab.labelKey}`)}
+                S={S}
+              />
+            ),
+          }}
+        />
+      ))}
       {/* Hidden screens — not in tab bar */}
       <Tabs.Screen name="cv/builder"            options={{ href: null }} />
       <Tabs.Screen name="interview/simulator"   options={{ href: null }} />
@@ -76,11 +76,18 @@ export default function MainLayout() {
       <Tabs.Screen name="jobs/InternalBrowser"  options={{ href: null }} />
       <Tabs.Screen name="learning"              options={{ href: null }} />
     </Tabs>
+  )
+}
+
+export default function MainLayout() {
+  return (
+    <DrawerProvider>
+      <MainTabs />
     </DrawerProvider>
   )
 }
 
-const S = StyleSheet.create({
+const createStyles = () => StyleSheet.create({
   tabBar: {
     height: Platform.OS === 'ios' ? 90 : 72,
     backgroundColor: '#FFFFFF',
