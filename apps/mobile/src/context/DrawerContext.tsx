@@ -49,7 +49,7 @@ export function useDrawer() {
 export function DrawerProvider({ children }: { children: ReactNode }) {
   const insets    = useSafeAreaInsets()
   const router    = useRouter()
-  const { t, isRTL } = useLanguage()
+  const { t, isRTL, language, setLanguage } = useLanguage()
   const S = useMemo(() => createStyles(isRTL), [isRTL])
   const [open, setOpen] = useState(false)
   const closedX = isRTL ? DRAWER_WIDTH : -DRAWER_WIDTH
@@ -125,6 +125,18 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
 
           <View style={[S.drawerFooter, { paddingBottom: insets.bottom + 20 }]}>
             <TouchableOpacity
+              style={S.langRow}
+              onPress={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
+              activeOpacity={0.75}
+            >
+              <Ionicons name="language-outline" size={18} color={COLORS.primary} />
+              <Text style={S.langText}>{t('common.language')}</Text>
+              <View style={S.langBadge}>
+                <Text style={S.langBadgeText}>{language === 'ar' ? 'EN' : 'AR'}</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={S.logoutRow}
               onPress={async () => {
                 closeDrawer()
@@ -186,7 +198,14 @@ const createStyles = (isRTL: boolean) => {
       justifyContent: 'center', alignItems: 'center',
     },
     menuLabel: { flex: 1, fontSize: FS.md, fontFamily: FONT.semibold, fontWeight: '600', color: COLORS.textSecondary, textAlign: start },
-    drawerFooter: { borderTopWidth: 1, borderTopColor: 'rgba(15,18,33,0.07)', padding: 24 },
+    drawerFooter: { borderTopWidth: 1, borderTopColor: 'rgba(15,18,33,0.07)', padding: 24, gap: 18 },
+    langRow: { flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 10 },
+    langText: { flex: 1, fontSize: FS.md, fontFamily: FONT.semibold, fontWeight: '600', color: COLORS.textSecondary, textAlign: start },
+    langBadge: {
+      borderWidth: 1, borderColor: COLORS.primary + '40', backgroundColor: COLORS.primary + '12',
+      borderRadius: RADIUS.full, paddingHorizontal: 10, paddingVertical: 4,
+    },
+    langBadgeText: { fontSize: FS.xs, fontFamily: FONT.bold, fontWeight: '700', color: COLORS.primary },
     logoutRow: { flexDirection: 'row', alignItems: 'center', justifyContent: isRTL ? 'flex-end' : 'flex-start', gap: 10 },
     logoutText: { fontSize: FS.md, fontFamily: FONT.bold, fontWeight: '700', color: COLORS.error },
   })

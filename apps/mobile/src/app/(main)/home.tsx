@@ -558,16 +558,16 @@ const createStyles = (isRTL: boolean) => {
       justifyContent: 'space-between',
     },
     cardOrb: {
-      position: 'absolute', top: -28, left: -28,
+      position: 'absolute', top: -28, [end]: -28,
       width: 80, height: 80, borderRadius: 40, opacity: 0.12,
-    },
+    } as any,
     cardIconWrap: {
       width: 48, height: 48, borderRadius: 15,
       borderWidth: 1, justifyContent: 'center', alignItems: 'center',
       shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 6,
       alignSelf: isRTL ? 'flex-end' : 'flex-start',
     },
-    cardText: { gap: 4 },
+    cardText: { gap: 4, [end === 'right' ? 'paddingRight' : 'paddingLeft']: 34 } as any,
     cardTitle: { fontSize: FS.md, fontFamily: FONT.extrabold, fontWeight: '800', color: COLORS.text, textAlign: start },
     cardSub: { fontSize: FS.xs, fontFamily: FONT.regular, color: COLORS.textMuted, textAlign: start, lineHeight: 16 },
     cardArrow: {
