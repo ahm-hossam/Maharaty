@@ -134,21 +134,23 @@ export default function HomeScreen() {
   const { t, isRTL } = useLanguage()
   const S = useMemo(() => createStyles(isRTL), [isRTL])
   const { completed, completeStep } = usePathStore()
-  const { user } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
   const { trackActivity } = useActivity()
   const doneCount = completed.length
   const pct = Math.round((doneCount / PATHS.length) * 100)
 
   // Track LOGIN activity once on mount
   useEffect(() => {
-    trackActivity('LOGIN')
-  }, [])
+    if (isAuthenticated) trackActivity('LOGIN')
+  }, [isAuthenticated])
 
-  // Fetch notifications from API — poll every 30s, refetch on foreground
+  // Fetch notifications from API — poll every 30s, refetch on foreground.
+  // Guests have no notifications endpoint to call — skip it entirely.
   const { data: notifData, refetch: refetchNotifs } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => api.get('/notifications').then((r) => r.data.data),
     refetchInterval: 30_000,
+    enabled: isAuthenticated,
   })
 
   useEffect(() => {
@@ -277,42 +279,62 @@ export default function HomeScreen() {
           {/* Ambient glow */}
           <View style={S.heroGlow} />
 
-          <Text style={S.heroGreeting}>{t('home.greeting', { name: firstName })}</Text>
-          <Text style={S.heroSub}>{t('home.subtitle')}</Text>
+          <Text style={S.heroGreeting}>{isAuthenticated ? t('home.greeting', { name: firstName }) : t('home.guestGreeting')}</Text>
+          <Text style={S.heroSub}>{isAuthenticated ? t('home.subtitle') : t('home.guestSubtitle')}</Text>
 
-          {/* Progress card */}
-          <TouchableOpacity style={S.progressCard} onPress={openPath} activeOpacity={0.78}>
-            <View style={S.progressRow}>
-              <Text style={S.progressLabel}>{t('home.pathsCompleted', { done: doneCount, total: PATHS.length })}</Text>
-              <Text style={S.progressPct}>{pct}%</Text>
+          {isAuthenticated ? (
+            /* Progress card */
+            <TouchableOpacity style={S.progressCard} onPress={openPath} activeOpacity={0.78}>
+              <View style={S.progressRow}>
+                <Text style={S.progressLabel}>{t('home.pathsCompleted', { done: doneCount, total: PATHS.length })}</Text>
+                <Text style={S.progressPct}>{pct}%</Text>
+              </View>
+              <View style={S.progressTrack}>
+                <View style={[S.progressFill, { width: `${pct}%` as any }]} />
+              </View>
+              <Text style={S.progressHint}>
+                {doneCount === 0
+                  ? t('home.pathStartHint')
+                  : doneCount === PATHS.length
+                  ? t('home.pathAllDoneHint')
+                  : t('home.pathRemainingHint', { n: PATHS.length - doneCount })}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            /* Guest CTA */
+            <View style={S.guestCtaRow}>
+              <TouchableOpacity onPress={() => router.push('/(auth)/login')} activeOpacity={0.85} style={S.guestLoginWrap}>
+                <LinearGradient
+                  colors={[COLORS.primary, COLORS.teal]}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={S.guestLoginBtn}
+                >
+                  <Text style={S.guestLoginText}>{t('home.guestLogin')}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push('/(auth)/register')} activeOpacity={0.85} style={S.guestRegisterBtn}>
+                <Text style={S.guestRegisterText}>{t('home.guestCreateAccount')}</Text>
+              </TouchableOpacity>
             </View>
-            <View style={S.progressTrack}>
-              <View style={[S.progressFill, { width: `${pct}%` as any }]} />
-            </View>
-            <Text style={S.progressHint}>
-              {doneCount === 0
-                ? t('home.pathStartHint')
-                : doneCount === PATHS.length
-                ? t('home.pathAllDoneHint')
-                : t('home.pathRemainingHint', { n: PATHS.length - doneCount })}
-            </Text>
-          </TouchableOpacity>
+          )}
         </View>
 
         {/* ── Quick stats strip ── */}
-        <View style={S.statsRow}>
-          {[
-            { icon: 'flame', label: t('home.streakDays'), value: '0', color: '#F59E0B' },
-            { icon: 'trophy', label: t('home.achievements'), value: '0', color: COLORS.teal },
-            { icon: 'star',  label: t('home.points'), value: '0', color: COLORS.primary },
-          ].map((stat, i) => (
-            <View key={i} style={[S.statCard, { borderColor: stat.color + '28' }]}>
-              <Ionicons name={stat.icon as any} size={20} color={stat.color} />
-              <Text style={[S.statVal, { color: stat.color }]}>{stat.value}</Text>
-              <Text style={S.statLabel}>{stat.label}</Text>
-            </View>
-          ))}
-        </View>
+        {isAuthenticated && (
+          <View style={S.statsRow}>
+            {[
+              { icon: 'flame', label: t('home.streakDays'), value: '0', color: '#F59E0B' },
+              { icon: 'trophy', label: t('home.achievements'), value: '0', color: COLORS.teal },
+              { icon: 'star',  label: t('home.points'), value: '0', color: COLORS.primary },
+            ].map((stat, i) => (
+              <View key={i} style={[S.statCard, { borderColor: stat.color + '28' }]}>
+                <Ionicons name={stat.icon as any} size={20} color={stat.color} />
+                <Text style={[S.statVal, { color: stat.color }]}>{stat.value}</Text>
+                <Text style={S.statLabel}>{stat.label}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* ── Feature grid ── */}
         <View style={S.sectionHeader}>
@@ -427,7 +449,9 @@ export default function HomeScreen() {
             {notifs.length === 0 && (
               <View style={{ alignItems: 'center', paddingVertical: 40 }}>
                 <Ionicons name="notifications-off-outline" size={40} color={COLORS.textMuted} />
-                <Text style={{ color: COLORS.textMuted, marginTop: 12, fontFamily: FONT.regular }}>{t('home.noNotifications')}</Text>
+                <Text style={{ color: COLORS.textMuted, marginTop: 12, fontFamily: FONT.regular }}>
+                  {isAuthenticated ? t('home.noNotifications') : t('home.guestNoNotifications')}
+                </Text>
               </View>
             )}
             {notifs.map((n: any) => (
@@ -526,6 +550,16 @@ const createStyles = (isRTL: boolean) => {
       shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 6,
     },
     progressHint: { fontSize: FS.xs, color: COLORS.textMuted, textAlign: start, fontFamily: FONT.medium, fontWeight: '500' },
+
+    guestCtaRow: { gap: 10 },
+    guestLoginWrap: { borderRadius: RADIUS.xl, overflow: 'hidden' },
+    guestLoginBtn: { height: 50, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.xl },
+    guestLoginText: { fontSize: FS.md, fontFamily: FONT.bold, fontWeight: '700', color: '#fff' },
+    guestRegisterBtn: {
+      height: 50, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.xl,
+      borderWidth: 1.5, borderColor: COLORS.primary + '50', backgroundColor: COLORS.primary + '0A',
+    },
+    guestRegisterText: { fontSize: FS.md, fontFamily: FONT.bold, fontWeight: '700', color: COLORS.primary },
 
     // Stats
     statsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 24, marginBottom: 28 },

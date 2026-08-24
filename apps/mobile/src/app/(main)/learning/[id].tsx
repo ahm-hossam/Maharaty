@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { api } from '../../../services/api'
 import { FONT, FS, COLORS, RADIUS, SHADOW } from '../../../constants/theme'
 import { useLanguage } from '../../../i18n/LanguageContext'
+import { useAuthStore } from '../../../store/authStore'
 
 const { width: W } = Dimensions.get('window')
 const PLAYER_H = Math.round((W * 9) / 16)
@@ -266,6 +267,7 @@ export default function LearningScreen() {
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
   const { t, isRTL } = useLanguage()
+  const { isAuthenticated } = useAuthStore()
   const S = useMemo(() => createStyles(isRTL), [isRTL])
   const [activeLecture, setActiveLecture] = useState<Lecture | null>(null)
   const [localCompleted, setLocalCompleted] = useState<Set<string>>(new Set())
@@ -277,10 +279,11 @@ export default function LearningScreen() {
     enabled: !!id,
   })
 
+  // Guests can watch and browse freely — saved progress needs an account.
   const { data: progressData } = useQuery({
     queryKey: ['lms-progress', id],
     queryFn: () => api.get(`/lms/${id}/my-progress`).then((r) => r.data.data),
-    enabled: !!id,
+    enabled: !!id && isAuthenticated,
   })
 
   const updateProgress = useMutation({

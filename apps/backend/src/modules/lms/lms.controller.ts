@@ -4,6 +4,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger'
 import { LmsService } from './lms.service'
 import { JwtAuthGuard } from '../auth/guards/jwt.guard'
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt.guard'
 import { AdminGuard } from '../auth/guards/admin.guard'
 import { CreateSectionDto } from './dto/create-section.dto'
 import { CreateLectureDto } from './dto/create-lecture.dto'
@@ -12,20 +13,21 @@ import { ReorderDto } from './dto/reorder.dto'
 
 @ApiTags('LMS')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(OptionalJwtAuthGuard)
 @Controller('lms')
 export class LmsController {
   constructor(private readonly lmsService: LmsService) {}
 
-  // ─── Curriculum (read — any authenticated user) ───────────────────────────
+  // ─── Curriculum (read — public, guests included) ──────────────────────────
 
   @Get(':contentId/curriculum')
-  @ApiOperation({ summary: 'Get full curriculum for a content item' })
+  @ApiOperation({ summary: 'Get full curriculum for a content item (public)' })
   async getCurriculum(@Param('contentId') contentId: string, @Request() req: any) {
-    return { success: true, data: await this.lmsService.getCurriculum(contentId, req.user.role) }
+    return { success: true, data: await this.lmsService.getCurriculum(contentId, req.user?.role) }
   }
 
   @Get(':contentId/my-progress')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current user progress for a content item' })
   async getMyProgress(@Param('contentId') contentId: string, @Request() req: any) {
     return { success: true, data: await this.lmsService.getUserProgress(req.user.id, contentId) }
@@ -94,6 +96,7 @@ export class LmsController {
   // ─── Progress (any authenticated user) ────────────────────────────────────
 
   @Post('lectures/:lectureId/progress')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update user progress for a lecture' })
   async updateProgress(
     @Param('lectureId') lectureId: string,

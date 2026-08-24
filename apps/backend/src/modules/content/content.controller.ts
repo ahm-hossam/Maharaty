@@ -16,6 +16,7 @@ import { CreateContentDto } from './dto/create-content.dto'
 import { UpdateContentDto } from './dto/update-content.dto'
 import { UpdateProgressDto } from './dto/update-progress.dto'
 import { JwtAuthGuard } from '../auth/guards/jwt.guard'
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt.guard'
 import { AdminGuard } from '../auth/guards/admin.guard'
 import { ContentType } from '../../common/enums'
 
@@ -26,8 +27,7 @@ export class ContentController {
   constructor(private readonly contentService: ContentService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'List published content (user)' })
+  @ApiOperation({ summary: 'List published content (public)' })
   @ApiQuery({ name: 'type', required: false, enum: ContentType })
   @ApiQuery({ name: 'category', required: false })
   @ApiQuery({ name: 'search', required: false })
@@ -45,8 +45,7 @@ export class ContentController {
   }
 
   @Get('categories')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get distinct categories' })
+  @ApiOperation({ summary: 'Get distinct categories (public)' })
   async getCategories() {
     const data = await this.contentService.findCategories()
     return { success: true, data }
@@ -70,10 +69,10 @@ export class ContentController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get single content item with full meta' })
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiOperation({ summary: 'Get single content item with full meta (public, more detail if authenticated admin)' })
   async findOne(@Param('id') id: string, @Request() req: any) {
-    const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)
+    const isAdmin = !!req.user && ['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)
     const data = await this.contentService.findOne(id, isAdmin)
     return { success: true, data }
   }

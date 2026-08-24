@@ -348,6 +348,10 @@ export default function RegisterScreen() {
             </>
           )}
         </View>
+
+        <TouchableOpacity onPress={() => router.replace('/(main)/home')} style={styles.guestBtn} activeOpacity={0.7}>
+          <Text style={styles.guestBtnText}>{t('register.continueAsGuest')}</Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   )
@@ -406,6 +410,9 @@ const createStyles = (isRTL: boolean) => {
     loginRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
     loginText: { fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.textMuted },
     loginLink: { fontSize: FS.md, fontFamily: FONT.bold, color: COLORS.primary },
+
+    guestBtn: { alignSelf: 'center', marginTop: 20, padding: 8 },
+    guestBtnText: { fontSize: FS.md, fontFamily: FONT.semibold, color: COLORS.textMuted, textDecorationLine: 'underline' },
   })
 }
 

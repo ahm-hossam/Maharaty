@@ -53,14 +53,6 @@ interface Comment {
   author: PostAuthor
 }
 
-// ─── Mock preview data (unauthenticated) — sample content, stays Arabic ──────
-
-const MOCK_POSTS = [
-  { id: '1', author: 'سارة إبراهيم', time: 'منذ ساعتين', content: 'نصيحة ذهبية: خصص 30 دقيقة يومياً لتطوير مهارة جديدة. الاتساق هو المفتاح!', likes: 48, comments: 12, avatar: 'SI', avatarColor: '#8B5CF6' },
-  { id: '2', author: 'محمد علي', time: 'منذ 4 ساعات', content: 'شاركت للتو في مقابلة عمل وانتهيت بنجاح 🎉 شكراً لمجتمع مهاراتي على الدعم!', likes: 124, comments: 31, avatar: 'MA', avatarColor: '#06B6D4' },
-  { id: '3', author: 'نور الحسن', time: 'أمس', content: 'هل هناك من يبحث عن شريك لتطوير مهارات البرمجة معاً؟', likes: 67, comments: 28, avatar: 'NH', avatarColor: '#F43F5E' },
-]
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getInitials(name: string) {
@@ -199,8 +191,8 @@ export default function CommunityScreen() {
 
   useEffect(() => {
     trackActivity('VIEW_COMMUNITY')
-    if (isLoggedIn) fetchPosts()
-  }, [isLoggedIn])
+    fetchPosts()
+  }, [])
 
   const fetchPosts = useCallback(async () => {
     setLoading(true)
@@ -220,7 +212,17 @@ export default function CommunityScreen() {
     setRefreshing(false)
   }, [fetchPosts])
 
+  // Browsing (feed, comments) is open to everyone — only writing needs an
+  // account. Guests hitting a write action get a prompt instead of a 401.
+  const promptLogin = () => {
+    Alert.alert(t('community.joinCommunity'), t('community.joinDesc'), [
+      { text: t('community.cancel'), style: 'cancel' },
+      { text: t('community.login'), onPress: () => router.push('/(auth)/login') },
+    ])
+  }
+
   const toggleReaction = async (postId: string) => {
+    if (!isLoggedIn) return promptLogin()
     setPosts((prev) =>
       prev.map((p) =>
         p.id === postId
@@ -270,6 +272,7 @@ export default function CommunityScreen() {
 
   const submitComment = async () => {
     if (!newComment.trim() || !selectedPost) return
+    if (!isLoggedIn) return promptLogin()
     setSubmittingComment(true)
     try {
       const res = await api.post(`/community/posts/${selectedPost.id}/comments`, {
@@ -344,75 +347,7 @@ export default function CommunityScreen() {
     ])
   }
 
-  // ── Unauthenticated view ──────────────────────────────────────────────────
-
-  if (!isLoggedIn) {
-    return (
-      <View style={S.container}>
-        <View style={[S.header, { paddingTop: insets.top + 16 }]}>
-          <View style={S.headerRow}>
-            <View style={S.headerInfo}>
-              <View style={S.headerBadge}>
-                <Ionicons name="people" size={20} color={COLORS.teal} />
-              </View>
-              <View>
-                <Text style={S.headerTitle}>{t('community.title')}</Text>
-                <Text style={S.headerSubtitle}>{t('community.subtitle')}</Text>
-              </View>
-            </View>
-            <TouchableOpacity style={[S.menuBtn, { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder }]} onPress={openDrawer}>
-              <Ionicons name="menu-outline" size={24} color={COLORS.textSecondary} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <ScrollView contentContainerStyle={S.authContent}>
-          <View style={S.previewSection}>
-            <Text style={S.previewTitle}>{t('community.whatsHappening')}</Text>
-            {MOCK_POSTS.map((post) => (
-              <View key={post.id} style={[S.postCard, S.postCardRow, { opacity: 0.5 }]}>
-                <View style={[S.avatar, { backgroundColor: post.avatarColor }]}>
-                  <Text style={S.avatarText}>{post.avatar}</Text>
-                </View>
-                <View style={S.postBody}>
-                  <Text style={S.postAuthor}>{post.author}</Text>
-                  <Text style={S.postContent} numberOfLines={2}>
-                    {post.content}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
-
-          <View style={S.authCard}>
-            <View style={S.authIcon}>
-              <Ionicons name="lock-closed" size={32} color={COLORS.primary} />
-            </View>
-            <Text style={S.authTitle}>{t('community.joinCommunity')}</Text>
-            <Text style={S.authDesc}>{t('community.joinDesc')}</Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/login')} activeOpacity={0.88}>
-              <LinearGradient
-                colors={['#06B6D4', '#0284C7']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={S.authLoginBtn}
-              >
-                <Text style={S.authLoginText}>{t('community.login')}</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push('/(auth)/register')}
-              style={S.authRegisterBtn}
-            >
-              <Text style={S.authRegisterText}>{t('community.createFreeAccount')}</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </View>
-    )
-  }
-
-  // ── Authenticated view ────────────────────────────────────────────────────
+  // ── Feed view — open to everyone; only writing needs an account ──────────
 
   return (
     <View style={S.container}>
@@ -437,6 +372,15 @@ export default function CommunityScreen() {
           </TouchableOpacity>
         </View>
       </LinearGradient>
+
+      {!isLoggedIn && (
+        <View style={S.guestBanner}>
+          <Text style={S.guestBannerText}>{t('community.joinDesc')}</Text>
+          <TouchableOpacity onPress={() => router.push('/(auth)/login')} activeOpacity={0.8}>
+            <Text style={S.guestBannerLink}>{t('community.login')}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {loading && !refreshing ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -485,7 +429,7 @@ export default function CommunityScreen() {
       {/* FAB */}
       <TouchableOpacity
         style={[S.fab, { bottom: 20 }]}
-        onPress={() => setShowCreate(true)}
+        onPress={() => (isLoggedIn ? setShowCreate(true) : promptLogin())}
         activeOpacity={0.85}
       >
         <LinearGradient colors={['#06B6D4', '#0284C7']} style={S.fabInner}>
@@ -674,69 +618,19 @@ const createStyles = (isRTL: boolean) => {
       textAlign: start,
     },
 
-    authContent: { padding: 20, paddingBottom: 40, gap: 16 },
-    previewSection: { gap: 10 },
-    previewTitle: {
-      fontSize: FS.md,
-      fontWeight: '800',
-      fontFamily: FONT.extrabold,
-      color: COLORS.textSecondary,
-      textAlign: start,
-      marginBottom: 4,
-    },
-    authCard: {
-      backgroundColor: COLORS.surface,
-      borderWidth: 1,
-      borderColor: COLORS.surfaceBorder,
-      borderRadius: RADIUS.xxl,
-      padding: 28,
+    guestBanner: {
+      flexDirection: row,
       alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+      backgroundColor: 'rgba(6,182,212,0.08)',
+      borderBottomWidth: 1,
+      borderBottomColor: 'rgba(6,182,212,0.18)',
+      paddingHorizontal: 20,
+      paddingVertical: 12,
     },
-    authIcon: {
-      width: 72,
-      height: 72,
-      borderRadius: 22,
-      backgroundColor: 'rgba(47,108,255,0.14)',
-      borderWidth: 1,
-      borderColor: 'rgba(47,108,255,0.28)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: 16,
-    },
-    authTitle: {
-      fontSize: FS.xl,
-      fontWeight: '800',
-      fontFamily: FONT.extrabold,
-      color: COLORS.text,
-      marginBottom: 8,
-    },
-    authDesc: {
-      fontSize: FS.md,
-      fontFamily: FONT.regular,
-      color: COLORS.textMuted,
-      textAlign: 'center',
-      lineHeight: 22,
-      marginBottom: 24,
-    },
-    authLoginBtn: {
-      width: 280,
-      height: 52,
-      borderRadius: RADIUS.xl,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: 12,
-    },
-    authLoginText: { fontSize: FS.lg, fontWeight: '700', fontFamily: FONT.bold, color: '#fff' },
-    authRegisterBtn: {
-      height: 52,
-      width: 280,
-      borderRadius: RADIUS.xl,
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderWidth: 1.5,
-      borderColor: COLORS.teal,
-    },
-    authRegisterText: { fontSize: FS.lg, fontWeight: '700', fontFamily: FONT.bold, color: COLORS.teal },
+    guestBannerText: { flex: 1, fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textSecondary, textAlign: start },
+    guestBannerLink: { fontSize: FS.sm, fontFamily: FONT.bold, fontWeight: '700', color: COLORS.teal },
 
     feedContent: { padding: 20, paddingBottom: 120, gap: 14 },
 
@@ -752,7 +646,6 @@ const createStyles = (isRTL: boolean) => {
       borderWidth: 1.5,
       backgroundColor: '#FFFBEB',
     },
-    postCardRow: { flexDirection: row, alignItems: 'flex-start', gap: 12 },
 
     adminBadgeRow: { flexDirection: row, marginBottom: 10 },
     adminBadge: {
@@ -795,7 +688,6 @@ const createStyles = (isRTL: boolean) => {
       marginTop: 2,
       textAlign: start,
     },
-    postBody: { flex: 1 },
     avatar: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
     avatarText: { fontSize: FS.md, fontWeight: '700', fontFamily: FONT.bold, color: '#fff' },
     deleteBtn: { padding: 4 },

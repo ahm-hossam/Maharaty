@@ -50,6 +50,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
   const insets    = useSafeAreaInsets()
   const router    = useRouter()
   const { t, isRTL, language, setLanguage } = useLanguage()
+  const { isAuthenticated } = useAuthStore()
   const S = useMemo(() => createStyles(isRTL), [isRTL])
   const [open, setOpen] = useState(false)
   const closedX = isRTL ? DRAWER_WIDTH : -DRAWER_WIDTH
@@ -147,20 +148,34 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           </ScrollView>
 
           <View style={[S.drawerFooter, { paddingBottom: insets.bottom + 20 }]}>
-            <TouchableOpacity
-              style={S.logoutRow}
-              onPress={async () => {
-                closeDrawer()
-                setTimeout(async () => {
-                  await useAuthStore.getState().logout()
-                  router.replace('/(auth)/login')
-                }, 260)
-              }}
-              activeOpacity={0.75}
-            >
-              <Ionicons name="log-out-outline" size={18} color={COLORS.error} />
-              <Text style={S.logoutText}>{t('drawer.logout')}</Text>
-            </TouchableOpacity>
+            {isAuthenticated ? (
+              <TouchableOpacity
+                style={S.logoutRow}
+                onPress={async () => {
+                  closeDrawer()
+                  setTimeout(async () => {
+                    await useAuthStore.getState().logout()
+                    router.replace('/(main)/home')
+                  }, 260)
+                }}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="log-out-outline" size={18} color={COLORS.error} />
+                <Text style={S.logoutText}>{t('drawer.logout')}</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={S.logoutRow}
+                onPress={() => {
+                  closeDrawer()
+                  router.push('/(auth)/login')
+                }}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="log-in-outline" size={18} color={COLORS.primary} />
+                <Text style={[S.logoutText, { color: COLORS.primary }]}>{t('drawer.login')}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </Animated.View>
       </Modal>

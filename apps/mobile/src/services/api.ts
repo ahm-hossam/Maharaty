@@ -52,6 +52,15 @@ api.interceptors.response.use(
     }
 
     if (status === 401 && !original._retry) {
+      const hadSession = !!(await SecureStore.getItemAsync('refresh_token'))
+      // No refresh token means this was a guest request hitting a protected
+      // endpoint by design — not a session that needs recovering. Reject
+      // quietly instead of trying to refresh/logout/redirect a session that
+      // never existed.
+      if (!hadSession) {
+        return Promise.reject(error)
+      }
+
       original._retry = true
       try {
         const { accessToken, refreshToken } = await refreshTokens()

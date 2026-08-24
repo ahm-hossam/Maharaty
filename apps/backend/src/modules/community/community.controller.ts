@@ -15,16 +15,17 @@ import { CommunityService } from './community.service'
 import { CreatePostDto } from './dto/create-post.dto'
 import { CreateCommentDto } from './dto/create-comment.dto'
 import { JwtAuthGuard } from '../auth/guards/jwt.guard'
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt.guard'
 
 @ApiTags('Community')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(OptionalJwtAuthGuard)
 @Controller('community')
 export class CommunityController {
   constructor(private readonly communityService: CommunityService) {}
 
   @Get('posts')
-  @ApiOperation({ summary: 'List community posts' })
+  @ApiOperation({ summary: 'List community posts (public)' })
   async getPosts(
     @Query('page') page = '1',
     @Query('limit') limit = '20',
@@ -33,12 +34,13 @@ export class CommunityController {
     const data = await this.communityService.getPosts(
       parseInt(page),
       parseInt(limit),
-      req.user.id,
+      req.user?.id,
     )
     return { success: true, data }
   }
 
   @Post('posts')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a community post' })
   async createPost(@Body() dto: CreatePostDto, @Request() req: any) {
     const data = await this.communityService.createPost(dto, req.user.id, req.user.role)
@@ -46,6 +48,7 @@ export class CommunityController {
   }
 
   @Patch('posts/:id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Edit a post (own or admin)' })
   async updatePost(
     @Param('id') id: string,
@@ -57,6 +60,7 @@ export class CommunityController {
   }
 
   @Delete('posts/:id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete a post (own or admin)' })
   async deletePost(@Param('id') id: string, @Request() req: any) {
     await this.communityService.deletePost(id, req.user.id, req.user.role)
@@ -64,7 +68,7 @@ export class CommunityController {
   }
 
   @Get('posts/:id/comments')
-  @ApiOperation({ summary: 'Get comments for a post' })
+  @ApiOperation({ summary: 'Get comments for a post (public)' })
   async getComments(
     @Param('id') postId: string,
     @Query('page') page = '1',
@@ -79,6 +83,7 @@ export class CommunityController {
   }
 
   @Post('posts/:id/comments')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Add a comment to a post' })
   async addComment(
     @Param('id') postId: string,
@@ -90,6 +95,7 @@ export class CommunityController {
   }
 
   @Delete('posts/:postId/comments/:commentId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete a comment (own or admin)' })
   async deleteComment(
     @Param('postId') postId: string,
@@ -101,6 +107,7 @@ export class CommunityController {
   }
 
   @Post('posts/:id/reactions')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Toggle like reaction on a post' })
   async toggleReaction(@Param('id') postId: string, @Request() req: any) {
     const data = await this.communityService.toggleReaction(postId, req.user.id)

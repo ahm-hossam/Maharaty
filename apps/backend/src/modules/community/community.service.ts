@@ -18,7 +18,7 @@ const POST_SELECT = {
 export class CommunityService {
   constructor(private prisma: PrismaService) {}
 
-  async getPosts(page: number, limit: number, userId: string) {
+  async getPosts(page: number, limit: number, userId?: string) {
     const skip = (page - 1) * limit
     const [posts, total] = await Promise.all([
       this.prisma.post.findMany({
@@ -27,16 +27,16 @@ export class CommunityService {
         orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
         select: {
           ...POST_SELECT,
-          reactions: { where: { userId }, select: { id: true } },
+          ...(userId ? { reactions: { where: { userId }, select: { id: true } } } : {}),
         },
       }),
       this.prisma.post.count(),
     ])
     return {
-      posts: posts.map(({ reactions, ...p }) => ({
-        ...p,
-        hasReacted: reactions.length > 0,
-      })),
+      posts: posts.map((post: any) => {
+        const { reactions, ...p } = post
+        return { ...p, hasReacted: userId ? reactions.length > 0 : false }
+      }),
       total,
       page,
       totalPages: Math.ceil(total / limit),
