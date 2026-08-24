@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { api } from '../../../services/api'
 import { FONT, FS, COLORS, RADIUS, SHADOW } from '../../../constants/theme'
+import { useLanguage } from '../../../i18n/LanguageContext'
 
 const { width: W } = Dimensions.get('window')
 const PLAYER_H = Math.round((W * 9) / 16)
@@ -58,9 +59,11 @@ interface Content {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmt(min?: number | null) {
+function fmt(min: number | null | undefined, t: (key: string, params?: Record<string, string | number>) => string) {
   if (!min) return null
-  return min < 60 ? `${min} د` : `${Math.floor(min / 60)}س${min % 60 ? ` ${min % 60}د` : ''}`
+  const mUnit = t('learningDetail.minutesShort')
+  const hUnit = t('learningDetail.hoursShort')
+  return min < 60 ? `${min} ${mUnit}` : `${Math.floor(min / 60)}${hUnit}${min % 60 ? ` ${min % 60}${mUnit}` : ''}`
 }
 
 function buildVideoHtml(url: string) {
@@ -83,7 +86,7 @@ function extractYouTubeId(url: string): string | null {
 
 // ─── Video Player ──────────────────────────────────────────────────────────────
 
-function VideoPlayer({ lecture }: { lecture: Lecture }) {
+function VideoPlayer({ lecture, t, S }: { lecture: Lecture; t: (key: string) => string; S: ReturnType<typeof createStyles> }) {
   const [playing, setPlaying] = useState(false)
 
   // Resolve YouTube ID — handles plain IDs, full URLs in youtubeId, or videoUrl
@@ -132,7 +135,7 @@ function VideoPlayer({ lecture }: { lecture: Lecture }) {
   return (
     <View style={S.noVideoPlaceholder}>
       <Ionicons name="videocam-off-outline" size={36} color="rgba(255,255,255,0.25)" />
-      <Text style={S.noVideoText}>لا يوجد رابط لهذه المحاضرة</Text>
+      <Text style={S.noVideoText}>{t('learningDetail.noVideoLink')}</Text>
     </View>
   )
 }
@@ -145,12 +148,16 @@ function SectionAccordion({
   activeLecture,
   onSelectLecture,
   mergedProgress,
+  t,
+  S,
 }: {
   section: Section
   sectionIdx: number
   activeLecture: Lecture | null
   onSelectLecture: (lec: Lecture) => void
   mergedProgress: Record<string, { isCompleted: boolean }>
+  t: (key: string, params?: Record<string, string | number>) => string
+  S: ReturnType<typeof createStyles>
 }) {
   const [expanded, setExpanded] = useState(sectionIdx === 0)
   const doneCount = section.lectures.filter((l) => mergedProgress[l.id]?.isCompleted).length
@@ -164,7 +171,7 @@ function SectionAccordion({
         onPress={() => setExpanded((v) => !v)}
         activeOpacity={0.75}
       >
-        {/* Chevron — LEFT on screen (trailing in RTL) */}
+        {/* Chevron — trailing edge */}
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={16}
@@ -185,11 +192,11 @@ function SectionAccordion({
                 {doneCount}/{section.lectures.length}
               </Text>
             </View>
-            {sectionDur > 0 && <Text style={S.sDurText}>{fmt(sectionDur)}</Text>}
+            {sectionDur > 0 && <Text style={S.sDurText}>{fmt(sectionDur, t)}</Text>}
           </View>
         </View>
 
-        {/* Number badge — RIGHT on screen (leading in RTL) */}
+        {/* Number badge — leading edge */}
         <View style={[S.sNumBadge, allDone && S.sNumBadgeDone]}>
           {allDone
             ? <Ionicons name="checkmark" size={14} color="#fff" />
@@ -210,15 +217,15 @@ function SectionAccordion({
             onPress={() => onSelectLecture(lec)}
             activeOpacity={0.7}
           >
-            {/* Active indicator bar on RIGHT (RTL leading edge) */}
+            {/* Active indicator bar on leading edge */}
             {isActive && <View style={S.lActiveMark} />}
 
-            {/* Lecture info — flex RIGHT (RTL natural) */}
+            {/* Lecture info */}
             <View style={S.lInfo}>
               <View style={S.lTitleRow}>
                 {lec.isFree && !isDone && (
                   <View style={S.freePill}>
-                    <Text style={S.freePillText}>مجاني</Text>
+                    <Text style={S.freePillText}>{t('learningDetail.free')}</Text>
                   </View>
                 )}
                 <Text
@@ -228,10 +235,10 @@ function SectionAccordion({
                   {lec.title}
                 </Text>
               </View>
-              {lec.duration ? <Text style={S.lDur}>{fmt(lec.duration)}</Text> : null}
+              {lec.duration ? <Text style={S.lDur}>{fmt(lec.duration, t)}</Text> : null}
             </View>
 
-            {/* Status icon — LEFT on screen (trailing in RTL) */}
+            {/* Status icon — trailing edge */}
             <View style={[S.lIcon, isDone && S.lIconDone, isActive && !isDone && S.lIconActive]}>
               {isDone ? (
                 <Ionicons name="checkmark" size={12} color="#fff" />
@@ -258,6 +265,8 @@ export default function LearningScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
+  const { t, isRTL } = useLanguage()
+  const S = useMemo(() => createStyles(isRTL), [isRTL])
   const [activeLecture, setActiveLecture] = useState<Lecture | null>(null)
   const [localCompleted, setLocalCompleted] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<'curriculum' | 'about'>('curriculum')
@@ -298,11 +307,11 @@ export default function LearningScreen() {
   const sections: Section[] = (() => {
     if (data?.sections?.length) return data.sections
     if (data?.meta?.lectures?.length) {
-      return [{ id: '__meta', title: 'المحاضرات', order: 0, lectures: data.meta.lectures }]
+      return [{ id: '__meta', title: t('learningDetail.lecturesFallbackTitle'), order: 0, lectures: data.meta.lectures }]
     }
     if (data?.meta?.videos?.length) {
       return [{
-        id: '__meta', title: 'الحلقات', order: 0,
+        id: '__meta', title: t('learningDetail.episodesFallbackTitle'), order: 0,
         lectures: data.meta.videos.map((v: any) => ({ ...v, isFree: true, isPublished: true })),
       }]
     }
@@ -353,9 +362,9 @@ export default function LearningScreen() {
   if (isError || !data) return (
     <View style={S.center}>
       <Ionicons name="alert-circle-outline" size={48} color={COLORS.textMuted} />
-      <Text style={S.errText}>تعذّر تحميل المحتوى</Text>
+      <Text style={S.errText}>{t('learningDetail.loadError')}</Text>
       <TouchableOpacity onPress={() => router.navigate('/(main)/learning/hub')} style={S.errBtn}>
-        <Text style={S.errBtnText}>العودة</Text>
+        <Text style={S.errBtnText}>{t('learningDetail.back')}</Text>
       </TouchableOpacity>
     </View>
   )
@@ -370,7 +379,7 @@ export default function LearningScreen() {
         {/* ── Top: Player or Hero ─────────────────────────────────── */}
         {activeLecture ? (
           <View style={[S.playerWrap, { paddingTop: insets.top }]}>
-            <VideoPlayer lecture={activeLecture} />
+            <VideoPlayer lecture={activeLecture} t={t} S={S} />
             <TouchableOpacity style={[S.playerBackBtn, { top: insets.top + 8 }]} onPress={() => setActiveLecture(null)}>
               <Ionicons name="chevron-back" size={18} color="#fff" />
             </TouchableOpacity>
@@ -380,7 +389,7 @@ export default function LearningScreen() {
                 {isCurrentDone && (
                   <View style={S.doneBadge}>
                     <Ionicons name="checkmark-circle" size={14} color={COLORS.teal} />
-                    <Text style={S.doneBadgeText}>مكتملة</Text>
+                    <Text style={S.doneBadgeText}>{t('learningDetail.completed')}</Text>
                   </View>
                 )}
                 <Text style={S.lecInfoTitle}>{activeLecture.title}</Text>
@@ -391,15 +400,15 @@ export default function LearningScreen() {
                 ) : null}
               </View>
               <View style={S.lecInfoMeta}>
-                {fmt(activeLecture.duration) && (
+                {fmt(activeLecture.duration, t) && (
                   <View style={S.metaChip}>
                     <Ionicons name="time-outline" size={12} color={COLORS.textMuted} />
-                    <Text style={S.metaChipText}>{fmt(activeLecture.duration)}</Text>
+                    <Text style={S.metaChipText}>{fmt(activeLecture.duration, t)}</Text>
                   </View>
                 )}
                 {activeLecture.isFree && (
                   <View style={[S.metaChip, S.metaChipFree]}>
-                    <Text style={S.metaChipFreeText}>مجاني</Text>
+                    <Text style={S.metaChipFreeText}>{t('learningDetail.free')}</Text>
                   </View>
                 )}
                 <Text style={S.lecCounter}>{activeLectureIdx + 1} / {totalLectures}</Text>
@@ -419,7 +428,7 @@ export default function LearningScreen() {
             <View style={S.heroBody}>
               <View style={S.heroPills}>
                 <View style={S.heroPill}>
-                  <Text style={S.heroPillText}>{data.type === 'COURSE' ? 'دورة' : 'سلسلة فيديو'}</Text>
+                  <Text style={S.heroPillText}>{data.type === 'COURSE' ? t('learningDetail.course') : t('learningDetail.videoSeries')}</Text>
                 </View>
                 {data.category && (
                   <View style={[S.heroPill, { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
@@ -432,19 +441,19 @@ export default function LearningScreen() {
                 {totalLectures > 0 && (
                   <View style={S.heroStat}>
                     <Ionicons name="play-circle-outline" size={13} color="rgba(255,255,255,0.75)" />
-                    <Text style={S.heroStatTxt}>{totalLectures} محاضرة</Text>
+                    <Text style={S.heroStatTxt}>{t('learningDetail.lecturesCount', { n: totalLectures })}</Text>
                   </View>
                 )}
                 {totalMinutes > 0 && (
                   <View style={S.heroStat}>
                     <Ionicons name="time-outline" size={13} color="rgba(255,255,255,0.75)" />
-                    <Text style={S.heroStatTxt}>{fmt(totalMinutes)}</Text>
+                    <Text style={S.heroStatTxt}>{fmt(totalMinutes, t)}</Text>
                   </View>
                 )}
                 {sections.length > 1 && (
                   <View style={S.heroStat}>
                     <Ionicons name="layers-outline" size={13} color="rgba(255,255,255,0.75)" />
-                    <Text style={S.heroStatTxt}>{sections.length} أقسام</Text>
+                    <Text style={S.heroStatTxt}>{t('learningDetail.sectionsCount', { n: sections.length })}</Text>
                   </View>
                 )}
               </View>
@@ -456,7 +465,7 @@ export default function LearningScreen() {
         {totalLectures > 0 && (
           <View style={S.progressStrip}>
             <View style={S.progressRow}>
-              <Text style={S.progressLabel}>{completedCount}/{totalLectures} مكتملة</Text>
+              <Text style={S.progressLabel}>{t('learningDetail.completedOf', { done: completedCount, total: totalLectures })}</Text>
               <Text style={S.progressPct}>{progressPct}%</Text>
             </View>
             <View style={S.progressTrack}>
@@ -474,7 +483,7 @@ export default function LearningScreen() {
               onPress={() => setActiveTab(tab)}
             >
               <Text style={[S.tabLabel, activeTab === tab && S.tabLabelActive]}>
-                {tab === 'curriculum' ? 'المنهج الدراسي' : 'عن الدورة'}
+                {tab === 'curriculum' ? t('learningDetail.curriculum') : t('learningDetail.about')}
               </Text>
             </TouchableOpacity>
           ))}
@@ -486,7 +495,7 @@ export default function LearningScreen() {
             {sections.length === 0 ? (
               <View style={S.emptyBox}>
                 <Ionicons name="book-outline" size={40} color={COLORS.textMuted} />
-                <Text style={S.emptyText}>لا يوجد محتوى بعد</Text>
+                <Text style={S.emptyText}>{t('learningDetail.noContent')}</Text>
               </View>
             ) : (
               <View style={{ gap: 10 }}>
@@ -498,6 +507,8 @@ export default function LearningScreen() {
                     activeLecture={activeLecture}
                     onSelectLecture={handleSelectLecture}
                     mergedProgress={mergedProgress}
+                    t={t}
+                    S={S}
                   />
                 ))}
               </View>
@@ -510,13 +521,13 @@ export default function LearningScreen() {
           <View style={S.pad}>
             {data.description ? (
               <View style={S.aboutCard}>
-                <Text style={S.aboutHeading}>وصف الدورة</Text>
+                <Text style={S.aboutHeading}>{t('learningDetail.courseDescription')}</Text>
                 <Text style={S.aboutBody}>{data.description}</Text>
               </View>
             ) : null}
             {data.meta?.whatYouLearn?.length > 0 && (
               <View style={S.aboutCard}>
-                <Text style={S.aboutHeading}>ماذا ستتعلم</Text>
+                <Text style={S.aboutHeading}>{t('learningDetail.whatYouLearn')}</Text>
                 {data.meta.whatYouLearn.map((item: string, i: number) => (
                   <View key={i} style={S.bulletRow}>
                     <Text style={S.bulletCheck}>✓</Text>
@@ -527,7 +538,7 @@ export default function LearningScreen() {
             )}
             {data.meta?.requirements?.length > 0 && (
               <View style={S.aboutCard}>
-                <Text style={S.aboutHeading}>المتطلبات</Text>
+                <Text style={S.aboutHeading}>{t('learningDetail.requirements')}</Text>
                 {data.meta.requirements.map((item: string, i: number) => (
                   <View key={i} style={S.bulletRow}>
                     <Text style={[S.bulletCheck, { color: COLORS.textMuted }]}>•</Text>
@@ -541,9 +552,10 @@ export default function LearningScreen() {
       </ScrollView>
 
       {/* ── Bottom Action Bar ─────────────────────────────────────── */}
+      {/* Media-style prev/next controls — physically fixed (previous always
+          left, next always right) regardless of language, like a video player. */}
       {activeLecture && (
         <View style={S.actionBar}>
-          {/* السابق — LEFT */}
           <TouchableOpacity
             style={[S.actionBtn, S.actionBtnPrev, !hasPrev && S.actionBtnDisabled]}
             onPress={handlePrev}
@@ -552,11 +564,10 @@ export default function LearningScreen() {
           >
             <Ionicons name="chevron-back" size={16} color={hasPrev ? COLORS.primary : COLORS.textMuted} />
             <Text style={[S.actionBtnTxt, { color: hasPrev ? COLORS.primary : COLORS.textMuted }]}>
-              السابق
+              {t('learningDetail.previous')}
             </Text>
           </TouchableOpacity>
 
-          {/* اكتملت — CENTER */}
           <TouchableOpacity
             style={[S.actionBtn, S.actionBtnDone, isCurrentDone && S.actionBtnDoneFill]}
             onPress={isCurrentDone ? undefined : handleMarkDone}
@@ -568,18 +579,17 @@ export default function LearningScreen() {
               color={isCurrentDone ? '#fff' : COLORS.teal}
             />
             <Text style={[S.actionBtnTxt, { color: isCurrentDone ? '#fff' : COLORS.teal }]}>
-              {isCurrentDone ? 'مكتملة' : 'اكتملت'}
+              {isCurrentDone ? t('learningDetail.completed') : t('learningDetail.markComplete')}
             </Text>
           </TouchableOpacity>
 
-          {/* التالي — RIGHT */}
           <TouchableOpacity
             style={[S.actionBtn, S.actionBtnNext, !hasNext && S.actionBtnDisabled]}
             onPress={handleNext}
             disabled={!hasNext}
             activeOpacity={0.8}
           >
-            <Text style={[S.actionBtnTxt, !hasNext && { color: COLORS.textMuted }]}>التالي</Text>
+            <Text style={[S.actionBtnTxt, !hasNext && { color: COLORS.textMuted }]}>{t('learningDetail.next')}</Text>
             <Ionicons name="chevron-forward" size={16} color={hasNext ? '#fff' : COLORS.textMuted} />
           </TouchableOpacity>
         </View>
@@ -590,143 +600,154 @@ export default function LearningScreen() {
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
-const S = StyleSheet.create({
-  root: { flex: 1, backgroundColor: COLORS.canvas },
-  scroll: { flex: 1 },
-  pad: { paddingHorizontal: 16, paddingTop: 12 },
+const createStyles = (isRTL: boolean) => {
+  const start: 'left' | 'right' = isRTL ? 'right' : 'left'
+  // Mirrors the container's row layout for the opposite language, preserving
+  // the exact Arabic visual (each container kept its original flexDirection
+  // when isRTL) while flipping physical order for LTR.
+  const row = isRTL ? 'row' : 'row-reverse' as const
+  const rowRev = isRTL ? 'row-reverse' : 'row' as const
+  const alignStart = isRTL ? 'flex-end' : 'flex-start' as const
+  const justifyStart = isRTL ? 'flex-end' : 'flex-start' as const
 
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: COLORS.canvas },
-  errText: { fontSize: FS.md, color: COLORS.textMuted, fontFamily: FONT.semibold },
-  errBtn: { paddingHorizontal: 24, paddingVertical: 10, backgroundColor: COLORS.primary, borderRadius: RADIUS.md, marginTop: 8 },
-  errBtnText: { color: '#fff', fontFamily: FONT.bold, fontSize: FS.sm },
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: COLORS.canvas },
+    scroll: { flex: 1 },
+    pad: { paddingHorizontal: 16, paddingTop: 12 },
 
-  // Video placeholder
-  noVideoPlaceholder: { width: W, height: PLAYER_H, backgroundColor: '#1a1a2e', justifyContent: 'center', alignItems: 'center', gap: 10 },
-  noVideoText: { color: 'rgba(255,255,255,0.35)', fontFamily: FONT.regular, fontSize: FS.sm },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: COLORS.canvas },
+    errText: { fontSize: FS.md, color: COLORS.textMuted, fontFamily: FONT.semibold },
+    errBtn: { paddingHorizontal: 24, paddingVertical: 10, backgroundColor: COLORS.primary, borderRadius: RADIUS.md, marginTop: 8 },
+    errBtnText: { color: '#fff', fontFamily: FONT.bold, fontSize: FS.sm },
 
-  // Hero
-  hero: { height: 240, justifyContent: 'flex-end', paddingBottom: 28, paddingHorizontal: 20 },
-  heroBackBtn: {
-    position: 'absolute', right: 16,
-    width: 38, height: 38, borderRadius: RADIUS.sm,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  heroBody: { alignItems: 'flex-end' },
-  heroPills: { flexDirection: 'row', gap: 8, marginBottom: 10, justifyContent: 'flex-end' },
-  heroPill: { backgroundColor: 'rgba(255,255,255,0.22)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADIUS.full },
-  heroPillText: { color: '#fff', fontSize: FS.xs, fontFamily: FONT.bold },
-  heroTitle: { color: '#fff', fontSize: FS.h3, fontFamily: FONT.black, textAlign: 'right', lineHeight: 32 },
-  heroStats: { flexDirection: 'row', gap: 14, marginTop: 10, justifyContent: 'flex-end' },
-  heroStat: { flexDirection: 'row', gap: 4, alignItems: 'center' },
-  heroStatTxt: { color: 'rgba(255,255,255,0.78)', fontSize: FS.xs, fontFamily: FONT.medium },
+    // Video placeholder
+    noVideoPlaceholder: { width: W, height: PLAYER_H, backgroundColor: '#1a1a2e', justifyContent: 'center', alignItems: 'center', gap: 10 },
+    noVideoText: { color: 'rgba(255,255,255,0.35)', fontFamily: FONT.regular, fontSize: FS.sm },
 
-  // Player
-  playerWrap: { backgroundColor: '#000' },
-  playerBackBtn: {
-    position: 'absolute', right: 16, zIndex: 10,
-    width: 36, height: 36, borderRadius: RADIUS.sm,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'center', alignItems: 'center',
-  },
+    // Hero
+    hero: { height: 240, justifyContent: 'flex-end', paddingBottom: 28, paddingHorizontal: 20 },
+    heroBackBtn: {
+      position: 'absolute', [start]: 16,
+      width: 38, height: 38, borderRadius: RADIUS.sm,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      justifyContent: 'center', alignItems: 'center',
+    },
+    heroBody: { alignItems: alignStart },
+    heroPills: { flexDirection: row, gap: 8, marginBottom: 10, justifyContent: justifyStart },
+    heroPill: { backgroundColor: 'rgba(255,255,255,0.22)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADIUS.full },
+    heroPillText: { color: '#fff', fontSize: FS.xs, fontFamily: FONT.bold },
+    heroTitle: { color: '#fff', fontSize: FS.h3, fontFamily: FONT.black, textAlign: start, lineHeight: 32 },
+    heroStats: { flexDirection: row, gap: 14, marginTop: 10, justifyContent: justifyStart },
+    heroStat: { flexDirection: row, gap: 4, alignItems: 'center' },
+    heroStatTxt: { color: 'rgba(255,255,255,0.78)', fontSize: FS.xs, fontFamily: FONT.medium },
 
-  // Lecture info panel
-  lecInfoPanel: {
-    paddingHorizontal: 16, paddingVertical: 14,
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1, borderBottomColor: COLORS.surfaceBorder,
-  },
-  lecInfoTop: { alignItems: 'flex-end' },
-  doneBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 6, alignSelf: 'flex-end' },
-  doneBadgeText: { fontSize: FS.xs, fontFamily: FONT.bold, color: COLORS.teal },
-  lecInfoTitle: { fontSize: FS.md, fontFamily: FONT.bold, color: COLORS.text, textAlign: 'right', lineHeight: 22 },
-  lecInfoDesc: { fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textSecondary, textAlign: 'right', marginTop: 4, lineHeight: 20 },
-  lecInfoMeta: { flexDirection: 'row', gap: 8, marginTop: 10, justifyContent: 'flex-end', alignItems: 'center' },
-  metaChip: { flexDirection: 'row', gap: 4, alignItems: 'center', backgroundColor: COLORS.canvas, paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.full },
-  metaChipText: { fontSize: FS.xs, fontFamily: FONT.semibold, color: COLORS.textMuted },
-  metaChipFree: { backgroundColor: '#dcfce7' },
-  metaChipFreeText: { fontSize: FS.xs, fontFamily: FONT.bold, color: '#16a34a' },
-  lecCounter: { fontSize: FS.xs, fontFamily: FONT.bold, color: COLORS.textMuted },
+    // Player
+    playerWrap: { backgroundColor: '#000' },
+    playerBackBtn: {
+      position: 'absolute', [start]: 16, zIndex: 10,
+      width: 36, height: 36, borderRadius: RADIUS.sm,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      justifyContent: 'center', alignItems: 'center',
+    },
 
-  // Progress strip
-  progressStrip: { paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceBorder },
-  progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  progressLabel: { fontSize: FS.xs, fontFamily: FONT.semibold, color: COLORS.textSecondary },
-  progressPct: { fontSize: FS.xs, fontFamily: FONT.extrabold, color: COLORS.primary },
-  progressTrack: { height: 7, backgroundColor: COLORS.surfaceBorder, borderRadius: 4, overflow: 'hidden', flexDirection: 'row-reverse' },
-  progressFill: { height: 7, backgroundColor: COLORS.primary, borderRadius: 4 },
+    // Lecture info panel
+    lecInfoPanel: {
+      paddingHorizontal: 16, paddingVertical: 14,
+      backgroundColor: COLORS.surface,
+      borderBottomWidth: 1, borderBottomColor: COLORS.surfaceBorder,
+    },
+    lecInfoTop: { alignItems: alignStart },
+    doneBadge: { flexDirection: row, alignItems: 'center', gap: 4, marginBottom: 6, alignSelf: alignStart },
+    doneBadgeText: { fontSize: FS.xs, fontFamily: FONT.bold, color: COLORS.teal },
+    lecInfoTitle: { fontSize: FS.md, fontFamily: FONT.bold, color: COLORS.text, textAlign: start, lineHeight: 22 },
+    lecInfoDesc: { fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textSecondary, textAlign: start, marginTop: 4, lineHeight: 20 },
+    lecInfoMeta: { flexDirection: row, gap: 8, marginTop: 10, justifyContent: justifyStart, alignItems: 'center' },
+    metaChip: { flexDirection: row, gap: 4, alignItems: 'center', backgroundColor: COLORS.canvas, paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.full },
+    metaChipText: { fontSize: FS.xs, fontFamily: FONT.semibold, color: COLORS.textMuted },
+    metaChipFree: { backgroundColor: '#dcfce7' },
+    metaChipFreeText: { fontSize: FS.xs, fontFamily: FONT.bold, color: '#16a34a' },
+    lecCounter: { fontSize: FS.xs, fontFamily: FONT.bold, color: COLORS.textMuted },
 
-  // Tabs
-  tabBar: { flexDirection: 'row', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceBorder },
-  tabItem: { flex: 1, paddingVertical: 13, alignItems: 'center' },
-  tabItemActive: { borderBottomWidth: 2.5, borderBottomColor: COLORS.primary },
-  tabLabel: { fontSize: FS.sm, fontFamily: FONT.semibold, color: COLORS.textMuted },
-  tabLabelActive: { color: COLORS.primary, fontFamily: FONT.bold },
+    // Progress strip
+    progressStrip: { paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceBorder },
+    progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    progressLabel: { fontSize: FS.xs, fontFamily: FONT.semibold, color: COLORS.textSecondary },
+    progressPct: { fontSize: FS.xs, fontFamily: FONT.extrabold, color: COLORS.primary },
+    progressTrack: { height: 7, backgroundColor: COLORS.surfaceBorder, borderRadius: 4, overflow: 'hidden', flexDirection: rowRev },
+    progressFill: { height: 7, backgroundColor: COLORS.primary, borderRadius: 4 },
 
-  // Section card
-  sCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, borderWidth: 1.5, borderColor: COLORS.surfaceBorder, overflow: 'hidden' },
-  sHeader: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
-  sTitleArea: { flex: 1, alignItems: 'flex-end', gap: 4 },
-  sTitle: { fontSize: FS.sm, fontFamily: FONT.bold, color: COLORS.text, textAlign: 'right' },
-  sMeta: { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'flex-end' },
-  sProgressPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: COLORS.canvas, paddingHorizontal: 7, paddingVertical: 2,
-    borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.surfaceBorder,
-  },
-  sProgressPillDone: { backgroundColor: COLORS.teal, borderColor: COLORS.teal },
-  sProgressText: { fontSize: FS.micro, fontFamily: FONT.bold, color: COLORS.textMuted },
-  sDurText: { fontSize: FS.micro, fontFamily: FONT.regular, color: COLORS.textMuted },
-  sNumBadge: { width: 34, height: 34, borderRadius: RADIUS.sm, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
-  sNumBadgeDone: { backgroundColor: COLORS.teal },
-  sNumText: { color: '#fff', fontSize: FS.xs, fontFamily: FONT.extrabold },
+    // Tabs
+    tabBar: { flexDirection: 'row', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceBorder },
+    tabItem: { flex: 1, paddingVertical: 13, alignItems: 'center' },
+    tabItemActive: { borderBottomWidth: 2.5, borderBottomColor: COLORS.primary },
+    tabLabel: { fontSize: FS.sm, fontFamily: FONT.semibold, color: COLORS.textMuted },
+    tabLabelActive: { color: COLORS.primary, fontFamily: FONT.bold },
 
-  // Lecture row
-  lRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14, gap: 10, borderTopWidth: 1, borderTopColor: COLORS.surfaceBorder },
-  lRowActive: { backgroundColor: `${COLORS.primary}08` },
-  lRowDone: { backgroundColor: `${COLORS.teal}06` },
-  lActiveMark: { position: 'absolute', right: 0, top: 8, bottom: 8, width: 3, backgroundColor: COLORS.primary, borderRadius: 2 },
-  lInfo: { flex: 1 },
-  lTitleRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  lName: { fontSize: FS.sm, fontFamily: FONT.semibold, color: COLORS.text, textAlign: 'right' },
-  lNameActive: { color: COLORS.primary, fontFamily: FONT.bold },
-  lNameDone: { color: COLORS.textMuted },
-  lDur: { fontSize: FS.micro, color: COLORS.textMuted, textAlign: 'right', marginTop: 3, fontFamily: FONT.regular },
-  freePill: { backgroundColor: '#dcfce7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-  freePillText: { fontSize: FS.micro, fontFamily: FONT.bold, color: '#16a34a' },
-  lIcon: { width: 30, height: 30, borderRadius: RADIUS.sm, backgroundColor: COLORS.canvas, borderWidth: 1.5, borderColor: COLORS.surfaceBorder, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
-  lIconActive: { borderColor: COLORS.primary, backgroundColor: `${COLORS.primary}0F` },
-  lIconDone: { backgroundColor: COLORS.teal, borderColor: COLORS.teal },
-  lIconNum: { color: COLORS.textMuted, fontSize: FS.micro, fontFamily: FONT.bold },
+    // Section card
+    sCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, borderWidth: 1.5, borderColor: COLORS.surfaceBorder, overflow: 'hidden' },
+    sHeader: { flexDirection: row, alignItems: 'center', padding: 14, gap: 10 },
+    sTitleArea: { flex: 1, alignItems: alignStart, gap: 4 },
+    sTitle: { fontSize: FS.sm, fontFamily: FONT.bold, color: COLORS.text, textAlign: start },
+    sMeta: { flexDirection: row, gap: 6, alignItems: 'center', justifyContent: justifyStart },
+    sProgressPill: {
+      flexDirection: row, alignItems: 'center', gap: 3,
+      backgroundColor: COLORS.canvas, paddingHorizontal: 7, paddingVertical: 2,
+      borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.surfaceBorder,
+    },
+    sProgressPillDone: { backgroundColor: COLORS.teal, borderColor: COLORS.teal },
+    sProgressText: { fontSize: FS.micro, fontFamily: FONT.bold, color: COLORS.textMuted },
+    sDurText: { fontSize: FS.micro, fontFamily: FONT.regular, color: COLORS.textMuted },
+    sNumBadge: { width: 34, height: 34, borderRadius: RADIUS.sm, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+    sNumBadgeDone: { backgroundColor: COLORS.teal },
+    sNumText: { color: '#fff', fontSize: FS.xs, fontFamily: FONT.extrabold },
 
-  // About
-  aboutCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16, borderWidth: 1, borderColor: COLORS.surfaceBorder, marginBottom: 12 },
-  aboutHeading: { fontSize: FS.sm, fontFamily: FONT.extrabold, color: COLORS.text, textAlign: 'right', marginBottom: 10 },
-  aboutBody: { fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textSecondary, textAlign: 'right', lineHeight: 22 },
-  bulletRow: { flexDirection: 'row', gap: 10, marginBottom: 8, alignItems: 'flex-start' },
-  bulletCheck: { color: COLORS.primary, fontFamily: FONT.extrabold, fontSize: FS.sm, width: 18, textAlign: 'center' },
-  bulletText: { flex: 1, fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textSecondary, textAlign: 'right', lineHeight: 21 },
+    // Lecture row
+    lRow: { flexDirection: row, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14, gap: 10, borderTopWidth: 1, borderTopColor: COLORS.surfaceBorder },
+    lRowActive: { backgroundColor: `${COLORS.primary}08` },
+    lRowDone: { backgroundColor: `${COLORS.teal}06` },
+    lActiveMark: { position: 'absolute', [start]: 0, top: 8, bottom: 8, width: 3, backgroundColor: COLORS.primary, borderRadius: 2 },
+    lInfo: { flex: 1 },
+    lTitleRow: { flexDirection: row, justifyContent: justifyStart, alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+    lName: { fontSize: FS.sm, fontFamily: FONT.semibold, color: COLORS.text, textAlign: start },
+    lNameActive: { color: COLORS.primary, fontFamily: FONT.bold },
+    lNameDone: { color: COLORS.textMuted },
+    lDur: { fontSize: FS.micro, color: COLORS.textMuted, textAlign: start, marginTop: 3, fontFamily: FONT.regular },
+    freePill: { backgroundColor: '#dcfce7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+    freePillText: { fontSize: FS.micro, fontFamily: FONT.bold, color: '#16a34a' },
+    lIcon: { width: 30, height: 30, borderRadius: RADIUS.sm, backgroundColor: COLORS.canvas, borderWidth: 1.5, borderColor: COLORS.surfaceBorder, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+    lIconActive: { borderColor: COLORS.primary, backgroundColor: `${COLORS.primary}0F` },
+    lIconDone: { backgroundColor: COLORS.teal, borderColor: COLORS.teal },
+    lIconNum: { color: COLORS.textMuted, fontSize: FS.micro, fontFamily: FONT.bold },
 
-  // Empty
-  emptyBox: { alignItems: 'center', paddingVertical: 48, gap: 10 },
-  emptyText: { fontSize: FS.sm, color: COLORS.textMuted, fontFamily: FONT.semibold },
+    // About
+    aboutCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16, borderWidth: 1, borderColor: COLORS.surfaceBorder, marginBottom: 12 },
+    aboutHeading: { fontSize: FS.sm, fontFamily: FONT.extrabold, color: COLORS.text, textAlign: start, marginBottom: 10 },
+    aboutBody: { fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textSecondary, textAlign: start, lineHeight: 22 },
+    bulletRow: { flexDirection: 'row', gap: 10, marginBottom: 8, alignItems: 'flex-start' },
+    bulletCheck: { color: COLORS.primary, fontFamily: FONT.extrabold, fontSize: FS.sm, width: 18, textAlign: 'center' },
+    bulletText: { flex: 1, fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textSecondary, textAlign: start, lineHeight: 21 },
 
-  // Action bar
-  actionBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: Platform.OS === 'ios' ? 28 : 14,
-    backgroundColor: COLORS.surface,
-    borderTopWidth: 1, borderTopColor: COLORS.surfaceBorder,
-    ...SHADOW.sm,
-  },
-  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 11, borderRadius: RADIUS.md },
-  actionBtnTxt: { fontFamily: FONT.bold, fontSize: FS.sm, color: '#fff' },
-  actionBtnNext: { flex: 1.1, backgroundColor: COLORS.primary },
-  actionBtnDone: { flex: 1.4, borderWidth: 1.5, borderColor: COLORS.teal, backgroundColor: COLORS.surface },
-  actionBtnDoneFill: { backgroundColor: COLORS.teal, borderColor: COLORS.teal },
-  actionBtnPrev: { flex: 1, borderWidth: 1.5, borderColor: COLORS.surfaceBorder, backgroundColor: COLORS.surface },
-  actionBtnDisabled: { opacity: 0.32 },
-})
+    // Empty
+    emptyBox: { alignItems: 'center', paddingVertical: 48, gap: 10 },
+    emptyText: { fontSize: FS.sm, color: COLORS.textMuted, fontFamily: FONT.semibold },
+
+    // Action bar — physically fixed regardless of language (see comment above JSX)
+    actionBar: {
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      paddingHorizontal: 14,
+      paddingTop: 12,
+      paddingBottom: Platform.OS === 'ios' ? 28 : 14,
+      backgroundColor: COLORS.surface,
+      borderTopWidth: 1, borderTopColor: COLORS.surfaceBorder,
+      ...SHADOW.sm,
+    },
+    actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 11, borderRadius: RADIUS.md },
+    actionBtnTxt: { fontFamily: FONT.bold, fontSize: FS.sm, color: '#fff' },
+    actionBtnNext: { flex: 1.1, backgroundColor: COLORS.primary },
+    actionBtnDone: { flex: 1.4, borderWidth: 1.5, borderColor: COLORS.teal, backgroundColor: COLORS.surface },
+    actionBtnDoneFill: { backgroundColor: COLORS.teal, borderColor: COLORS.teal },
+    actionBtnPrev: { flex: 1, borderWidth: 1.5, borderColor: COLORS.surfaceBorder, backgroundColor: COLORS.surface },
+    actionBtnDisabled: { opacity: 0.32 },
+  })
+}
