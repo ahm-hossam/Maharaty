@@ -16,13 +16,14 @@ import {
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'expo-router'
 import { COLORS, FONT, RADIUS, FS } from '@/constants/theme'
 import { useActivity } from '../../hooks/useActivity'
 import { useAuthStore } from '../../store/authStore'
 import { api } from '../../services/api'
 import { useDrawer } from '../../context/DrawerContext'
+import { useLanguage } from '../../i18n/LanguageContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,7 +53,7 @@ interface Comment {
   author: PostAuthor
 }
 
-// ─── Mock preview data (unauthenticated) ─────────────────────────────────────
+// ─── Mock preview data (unauthenticated) — sample content, stays Arabic ──────
 
 const MOCK_POSTS = [
   { id: '1', author: 'سارة إبراهيم', time: 'منذ ساعتين', content: 'نصيحة ذهبية: خصص 30 دقيقة يومياً لتطوير مهارة جديدة. الاتساق هو المفتاح!', likes: 48, comments: 12, avatar: 'SI', avatarColor: '#8B5CF6' },
@@ -73,13 +74,15 @@ function getAvatarColor(name: string) {
   return colors[Math.abs(hash) % colors.length]
 }
 
-function formatTime(dateStr: string) {
+// Relative time for backend post/comment timestamps — the label itself is
+// UI copy so it follows the app language even though the post content stays Arabic.
+function formatTime(dateStr: string, t: (key: string, params?: Record<string, string | number>) => string) {
   const date = new Date(dateStr)
   const diff = Math.floor((Date.now() - date.getTime()) / 60000)
-  if (diff < 60) return `منذ ${diff} دقيقة`
+  if (diff < 60) return t('community.minutesAgo', { n: diff })
   const hours = Math.floor(diff / 60)
-  if (hours < 24) return `منذ ${hours} ساعة`
-  return `منذ ${Math.floor(hours / 24)} يوم`
+  if (hours < 24) return t('community.hoursAgo', { n: hours })
+  return t('community.daysAgo', { n: Math.floor(hours / 24) })
 }
 
 // ─── Post Card ────────────────────────────────────────────────────────────────
@@ -91,6 +94,8 @@ function PostCard({
   onOpenComments,
   onDelete,
   onEdit,
+  t,
+  S,
 }: {
   post: Post
   currentUserId?: string
@@ -98,37 +103,39 @@ function PostCard({
   onOpenComments: (post: Post) => void
   onDelete: (id: string) => void
   onEdit: (post: Post) => void
+  t: (key: string, params?: Record<string, string | number>) => string
+  S: ReturnType<typeof createStyles>
 }) {
   return (
-    <View style={[styles.postCard, post.isAdminPost && styles.adminPostCard]}>
+    <View style={[S.postCard, post.isAdminPost && S.adminPostCard]}>
       {post.isAdminPost && (
-        <View style={styles.adminBadgeRow}>
-          <View style={styles.adminBadge}>
+        <View style={S.adminBadgeRow}>
+          <View style={S.adminBadge}>
             <Ionicons name="shield-checkmark" size={11} color="#D97706" />
-            <Text style={styles.adminBadgeText}>إدارة مهاراتي</Text>
+            <Text style={S.adminBadgeText}>{t('community.adminBadge')}</Text>
           </View>
         </View>
       )}
 
-      <View style={styles.postHeader}>
-        <View style={styles.postMeta}>
-          <Text style={styles.postAuthor}>{post.author.name}</Text>
-          <Text style={styles.postTime}>{formatTime(post.createdAt)}</Text>
+      <View style={S.postHeader}>
+        <View style={S.postMeta}>
+          <Text style={S.postAuthor}>{post.author.name}</Text>
+          <Text style={S.postTime}>{formatTime(post.createdAt, t)}</Text>
         </View>
-        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
+        <View style={S.postHeaderActions}>
           {currentUserId === post.author.id && (
             <>
-              <TouchableOpacity onPress={() => onEdit(post)} style={styles.deleteBtn}>
+              <TouchableOpacity onPress={() => onEdit(post)} style={S.deleteBtn}>
                 <Ionicons name="pencil-outline" size={15} color={COLORS.textMuted} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => onDelete(post.id)} style={styles.deleteBtn}>
+              <TouchableOpacity onPress={() => onDelete(post.id)} style={S.deleteBtn}>
                 <Ionicons name="trash-outline" size={15} color={COLORS.textMuted} />
               </TouchableOpacity>
             </>
           )}
           <View
             style={[
-              styles.avatar,
+              S.avatar,
               {
                 backgroundColor: post.isAdminPost
                   ? '#F59E0B'
@@ -136,25 +143,25 @@ function PostCard({
               },
             ]}
           >
-            <Text style={styles.avatarText}>{getInitials(post.author.name)}</Text>
+            <Text style={S.avatarText}>{getInitials(post.author.name)}</Text>
           </View>
         </View>
       </View>
 
-      <Text style={styles.postContent}>{post.content}</Text>
+      <Text style={S.postContent}>{post.content}</Text>
 
-      <View style={styles.postActions}>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => onOpenComments(post)}>
+      <View style={S.postActions}>
+        <TouchableOpacity style={S.actionBtn} onPress={() => onOpenComments(post)}>
           <Ionicons name="chatbubble-outline" size={18} color="#64748B" />
-          <Text style={styles.actionCount}>{post._count.comments}</Text>
+          <Text style={S.actionCount}>{post._count.comments}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => onToggleReaction(post.id)}>
+        <TouchableOpacity style={S.actionBtn} onPress={() => onToggleReaction(post.id)}>
           <Ionicons
             name={post.hasReacted ? 'heart' : 'heart-outline'}
             size={18}
             color={post.hasReacted ? '#F43F5E' : '#64748B'}
           />
-          <Text style={[styles.actionCount, post.hasReacted && { color: '#F43F5E' }]}>
+          <Text style={[S.actionCount, post.hasReacted && { color: '#F43F5E' }]}>
             {post._count.reactions}
           </Text>
         </TouchableOpacity>
@@ -163,13 +170,15 @@ function PostCard({
   )
 }
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+// ─── Main Screen ────────────────────────────────────────────────────────────
 
 export default function CommunityScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { openDrawer } = useDrawer()
   const { trackActivity } = useActivity()
+  const { t, isRTL } = useLanguage()
+  const S = useMemo(() => createStyles(isRTL), [isRTL])
   const isLoggedIn = useAuthStore((s) => s.isAuthenticated)
   const currentUser = useAuthStore((s) => s.user)
 
@@ -276,7 +285,7 @@ export default function CommunityScreen() {
         ),
       )
     } catch (err: any) {
-      Alert.alert('خطأ', err?.response?.data?.message ?? 'فشل إرسال التعليق')
+      Alert.alert(t('community.error'), err?.response?.data?.message ?? t('community.failedToComment'))
     } finally {
       setSubmittingComment(false)
     }
@@ -291,8 +300,8 @@ export default function CommunityScreen() {
       setNewPostContent('')
       setShowCreate(false)
     } catch (err: any) {
-      const msg = err?.response?.data?.message ?? err?.message ?? 'فشل نشر المنشور'
-      Alert.alert('خطأ', msg)
+      const msg = err?.response?.data?.message ?? err?.message ?? t('community.failedToPost')
+      Alert.alert(t('community.error'), msg)
     } finally {
       setCreating(false)
     }
@@ -310,18 +319,18 @@ export default function CommunityScreen() {
       setNewPostContent('')
       setShowCreate(false)
     } catch (err: any) {
-      const msg = err?.response?.data?.message ?? err?.message ?? 'فشل تعديل المنشور'
-      Alert.alert('خطأ', msg)
+      const msg = err?.response?.data?.message ?? err?.message ?? t('community.failedToEdit')
+      Alert.alert(t('community.error'), msg)
     } finally {
       setCreating(false)
     }
   }
 
   const handleDeletePost = (postId: string) => {
-    Alert.alert('حذف المنشور', 'هل أنت متأكد من حذف هذا المنشور؟', [
-      { text: 'إلغاء', style: 'cancel' },
+    Alert.alert(t('community.deletePost'), t('community.deleteConfirm'), [
+      { text: t('community.cancel'), style: 'cancel' },
       {
-        text: 'حذف',
+        text: t('community.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -339,35 +348,35 @@ export default function CommunityScreen() {
 
   if (!isLoggedIn) {
     return (
-      <View style={styles.container}>
-        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-          <View style={styles.headerRow}>
-            <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 14 }}>
-              <View style={styles.headerBadge}>
+      <View style={S.container}>
+        <View style={[S.header, { paddingTop: insets.top + 16 }]}>
+          <View style={S.headerRow}>
+            <View style={S.headerInfo}>
+              <View style={S.headerBadge}>
                 <Ionicons name="people" size={20} color={COLORS.teal} />
               </View>
               <View>
-                <Text style={styles.headerTitle}>مجتمع مهاراتي</Text>
-                <Text style={styles.headerSubtitle}>تواصل، شارك، تعلم</Text>
+                <Text style={S.headerTitle}>{t('community.title')}</Text>
+                <Text style={S.headerSubtitle}>{t('community.subtitle')}</Text>
               </View>
             </View>
-            <TouchableOpacity style={[styles.menuBtn, { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder }]} onPress={openDrawer}>
+            <TouchableOpacity style={[S.menuBtn, { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder }]} onPress={openDrawer}>
               <Ionicons name="menu-outline" size={24} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.authContent}>
-          <View style={styles.previewSection}>
-            <Text style={styles.previewTitle}>ماذا يحدث في المجتمع؟</Text>
+        <ScrollView contentContainerStyle={S.authContent}>
+          <View style={S.previewSection}>
+            <Text style={S.previewTitle}>{t('community.whatsHappening')}</Text>
             {MOCK_POSTS.map((post) => (
-              <View key={post.id} style={[styles.postCard, styles.postCardRow, { opacity: 0.5 }]}>
-                <View style={[styles.avatar, { backgroundColor: post.avatarColor }]}>
-                  <Text style={styles.avatarText}>{post.avatar}</Text>
+              <View key={post.id} style={[S.postCard, S.postCardRow, { opacity: 0.5 }]}>
+                <View style={[S.avatar, { backgroundColor: post.avatarColor }]}>
+                  <Text style={S.avatarText}>{post.avatar}</Text>
                 </View>
-                <View style={styles.postBody}>
-                  <Text style={styles.postAuthor}>{post.author}</Text>
-                  <Text style={styles.postContent} numberOfLines={2}>
+                <View style={S.postBody}>
+                  <Text style={S.postAuthor}>{post.author}</Text>
+                  <Text style={S.postContent} numberOfLines={2}>
                     {post.content}
                   </Text>
                 </View>
@@ -375,29 +384,27 @@ export default function CommunityScreen() {
             ))}
           </View>
 
-          <View style={styles.authCard}>
-            <View style={styles.authIcon}>
+          <View style={S.authCard}>
+            <View style={S.authIcon}>
               <Ionicons name="lock-closed" size={32} color={COLORS.primary} />
             </View>
-            <Text style={styles.authTitle}>انضم إلى المجتمع</Text>
-            <Text style={styles.authDesc}>
-              سجّل الدخول للوصول إلى كل المحتوى والتفاعل مع أعضاء المجتمع
-            </Text>
+            <Text style={S.authTitle}>{t('community.joinCommunity')}</Text>
+            <Text style={S.authDesc}>{t('community.joinDesc')}</Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/login')} activeOpacity={0.88}>
               <LinearGradient
                 colors={['#06B6D4', '#0284C7']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={styles.authLoginBtn}
+                style={S.authLoginBtn}
               >
-                <Text style={styles.authLoginText}>تسجيل الدخول</Text>
+                <Text style={S.authLoginText}>{t('community.login')}</Text>
               </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push('/(auth)/register')}
-              style={styles.authRegisterBtn}
+              style={S.authRegisterBtn}
             >
-              <Text style={styles.authRegisterText}>إنشاء حساب مجاني</Text>
+              <Text style={S.authRegisterText}>{t('community.createFreeAccount')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -408,24 +415,24 @@ export default function CommunityScreen() {
   // ── Authenticated view ────────────────────────────────────────────────────
 
   return (
-    <View style={styles.container}>
+    <View style={S.container}>
       <LinearGradient
         colors={['#06B6D4', '#0284C7']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + 12 }]}
+        style={[S.header, { paddingTop: insets.top + 12 }]}
       >
-        <View style={styles.headerRow}>
-          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 14 }}>
-            <View style={styles.headerBadge}>
+        <View style={S.headerRow}>
+          <View style={S.headerInfo}>
+            <View style={S.headerBadge}>
               <Ionicons name="people" size={20} color="#fff" />
             </View>
             <View>
-              <Text style={[styles.headerTitle, { color: '#fff' }]}>مجتمع مهاراتي</Text>
-              <Text style={styles.headerSubtitle}>تواصل، شارك، تعلم</Text>
+              <Text style={[S.headerTitle, { color: '#fff' }]}>{t('community.title')}</Text>
+              <Text style={S.headerSubtitle}>{t('community.subtitle')}</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.menuBtn} onPress={openDrawer}>
+          <TouchableOpacity style={S.menuBtn} onPress={openDrawer}>
             <Ionicons name="menu-outline" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -437,7 +444,7 @@ export default function CommunityScreen() {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={styles.feedContent}
+          contentContainerStyle={S.feedContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.teal} />
           }
@@ -446,12 +453,12 @@ export default function CommunityScreen() {
             <View style={{ alignItems: 'center', paddingTop: 60 }}>
               <Text style={{ fontSize: 40, marginBottom: 12 }}>💬</Text>
               <Text style={{ fontSize: FS.lg, color: COLORS.textMuted, fontFamily: FONT.regular }}>
-                لا توجد منشورات بعد
+                {t('community.noPostsYet')}
               </Text>
               <Text
                 style={{ fontSize: FS.sm, color: COLORS.textMuted, marginTop: 6, fontFamily: FONT.regular }}
               >
-                كن أول من ينشر!
+                {t('community.beFirstToPost')}
               </Text>
             </View>
           )}
@@ -468,6 +475,8 @@ export default function CommunityScreen() {
                 setNewPostContent(p.content)
                 setShowCreate(true)
               }}
+              t={t}
+              S={S}
             />
           ))}
         </ScrollView>
@@ -475,22 +484,22 @@ export default function CommunityScreen() {
 
       {/* FAB */}
       <TouchableOpacity
-        style={[styles.fab, { bottom: 20 }]}
+        style={[S.fab, { bottom: 20 }]}
         onPress={() => setShowCreate(true)}
         activeOpacity={0.85}
       >
-        <LinearGradient colors={['#06B6D4', '#0284C7']} style={styles.fabInner}>
+        <LinearGradient colors={['#06B6D4', '#0284C7']} style={S.fabInner}>
           <Ionicons name="add" size={28} color="#fff" />
         </LinearGradient>
       </TouchableOpacity>
 
       {/* Create Post Modal */}
       <Modal visible={showCreate} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <View style={S.modalOverlay}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-            <View style={styles.createModal}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{editingPost ? 'تعديل المنشور' : 'منشور جديد'}</Text>
+            <View style={S.createModal}>
+              <View style={S.modalHeader}>
+                <Text style={S.modalTitle}>{editingPost ? t('community.editPost') : t('community.newPost')}</Text>
                 <TouchableOpacity
                   onPress={() => {
                     setShowCreate(false)
@@ -502,13 +511,13 @@ export default function CommunityScreen() {
                 </TouchableOpacity>
               </View>
               <TextInput
-                style={styles.createInput}
+                style={S.createInput}
                 value={newPostContent}
                 onChangeText={setNewPostContent}
-                placeholder="شاركنا ما في ذهنك..."
+                placeholder={t('community.newPostPlaceholder')}
                 placeholderTextColor={COLORS.textMuted}
                 multiline
-                textAlign="right"
+                textAlign={isRTL ? 'right' : 'left'}
                 textAlignVertical="top"
                 autoFocus
               />
@@ -523,12 +532,12 @@ export default function CommunityScreen() {
                       ? ['#94A3B8', '#94A3B8']
                       : ['#06B6D4', '#0284C7']
                   }
-                  style={styles.submitBtn}
+                  style={S.submitBtn}
                 >
                   {creating ? (
                     <ActivityIndicator color="#fff" size="small" />
                   ) : (
-                    <Text style={styles.submitBtnText}>{editingPost ? 'حفظ' : 'نشر'}</Text>
+                    <Text style={S.submitBtnText}>{editingPost ? t('community.save') : t('community.publish')}</Text>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
@@ -539,10 +548,10 @@ export default function CommunityScreen() {
 
       {/* Comments Modal */}
       <Modal visible={!!selectedPost} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.commentsModal, { paddingBottom: insets.bottom + 16 }]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>التعليقات</Text>
+        <View style={S.modalOverlay}>
+          <View style={[S.commentsModal, { paddingBottom: insets.bottom + 16 }]}>
+            <View style={S.modalHeader}>
+              <Text style={S.modalTitle}>{t('community.comments')}</Text>
               <TouchableOpacity
                 onPress={() => {
                   setSelectedPost(null)
@@ -566,24 +575,24 @@ export default function CommunityScreen() {
                 ListEmptyComponent={
                   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 40 }}>
                     <Text style={{ color: COLORS.textMuted, fontFamily: FONT.regular, fontSize: FS.md }}>
-                      لا توجد تعليقات بعد
+                      {t('community.noCommentsYet')}
                     </Text>
                   </View>
                 }
                 renderItem={({ item }) => (
-                  <View style={styles.commentCard}>
+                  <View style={S.commentCard}>
                     <View
                       style={[
-                        styles.smallAvatar,
+                        S.smallAvatar,
                         { backgroundColor: getAvatarColor(item.author.name) },
                       ]}
                     >
-                      <Text style={styles.smallAvatarText}>{getInitials(item.author.name)}</Text>
+                      <Text style={S.smallAvatarText}>{getInitials(item.author.name)}</Text>
                     </View>
-                    <View style={styles.commentBody}>
-                      <Text style={styles.commentAuthor}>{item.author.name}</Text>
-                      <Text style={styles.commentText}>{item.content}</Text>
-                      <Text style={styles.commentTime}>{formatTime(item.createdAt)}</Text>
+                    <View style={S.commentBody}>
+                      <Text style={S.commentAuthor}>{item.author.name}</Text>
+                      <Text style={S.commentText}>{item.content}</Text>
+                      <Text style={S.commentTime}>{formatTime(item.createdAt, t)}</Text>
                     </View>
                   </View>
                 )}
@@ -591,11 +600,11 @@ export default function CommunityScreen() {
             )}
 
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-              <View style={styles.commentInputRow}>
+              <View style={S.commentInputRow}>
                 <TouchableOpacity
                   onPress={submitComment}
                   disabled={!newComment.trim() || submittingComment}
-                  style={[styles.sendBtn, { opacity: newComment.trim() ? 1 : 0.4 }]}
+                  style={[S.sendBtn, { opacity: newComment.trim() ? 1 : 0.4 }]}
                 >
                   {submittingComment ? (
                     <ActivityIndicator size="small" color="#fff" />
@@ -604,12 +613,12 @@ export default function CommunityScreen() {
                   )}
                 </TouchableOpacity>
                 <TextInput
-                  style={styles.commentInput}
+                  style={S.commentInput}
                   value={newComment}
                   onChangeText={setNewComment}
-                  placeholder="اكتب تعليقاً..."
+                  placeholder={t('community.commentPlaceholder')}
                   placeholderTextColor={COLORS.textMuted}
-                  textAlign="right"
+                  textAlign={isRTL ? 'right' : 'left'}
                   onSubmitEditing={submitComment}
                   returnKeyType="send"
                 />
@@ -624,310 +633,317 @@ export default function CommunityScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.canvas },
+const createStyles = (isRTL: boolean) => {
+  const start: 'left' | 'right' = isRTL ? 'right' : 'left'
+  const row = isRTL ? 'row-reverse' : 'row'
 
-  header: {
-    paddingHorizontal: 24,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(15,18,33,0.07)',
-  },
-  headerRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 14, justifyContent: 'space-between' },
-  menuBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
-  headerBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0,245,212,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(0,245,212,0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: FS.h3,
-    fontWeight: '900',
-    fontFamily: FONT.black,
-    color: COLORS.text,
-    textAlign: 'right',
-  },
-  headerSubtitle: {
-    fontSize: FS.sm,
-    fontFamily: FONT.regular,
-    color: COLORS.textMuted,
-    marginTop: 2,
-    textAlign: 'right',
-  },
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.canvas },
 
-  authContent: { padding: 20, paddingBottom: 40, gap: 16 },
-  previewSection: { gap: 10 },
-  previewTitle: {
-    fontSize: FS.md,
-    fontWeight: '800',
-    fontFamily: FONT.extrabold,
-    color: COLORS.textSecondary,
-    textAlign: 'right',
-    marginBottom: 4,
-  },
-  authCard: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
-    borderRadius: RADIUS.xxl,
-    padding: 28,
-    alignItems: 'center',
-  },
-  authIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 22,
-    backgroundColor: 'rgba(47,108,255,0.14)',
-    borderWidth: 1,
-    borderColor: 'rgba(47,108,255,0.28)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  authTitle: {
-    fontSize: FS.xl,
-    fontWeight: '800',
-    fontFamily: FONT.extrabold,
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  authDesc: {
-    fontSize: FS.md,
-    fontFamily: FONT.regular,
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  authLoginBtn: {
-    width: 280,
-    height: 52,
-    borderRadius: RADIUS.xl,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  authLoginText: { fontSize: FS.lg, fontWeight: '700', fontFamily: FONT.bold, color: '#fff' },
-  authRegisterBtn: {
-    height: 52,
-    width: 280,
-    borderRadius: RADIUS.xl,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: COLORS.teal,
-  },
-  authRegisterText: { fontSize: FS.lg, fontWeight: '700', fontFamily: FONT.bold, color: COLORS.teal },
+    header: {
+      paddingHorizontal: 24,
+      paddingBottom: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: 'rgba(15,18,33,0.07)',
+    },
+    headerRow: { flexDirection: row, alignItems: 'center', gap: 14, justifyContent: 'space-between' },
+    headerInfo: { flexDirection: row, alignItems: 'center', gap: 14 },
+    menuBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+    headerBadge: {
+      width: 48,
+      height: 48,
+      borderRadius: 14,
+      backgroundColor: 'rgba(0,245,212,0.12)',
+      borderWidth: 1,
+      borderColor: 'rgba(0,245,212,0.25)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerTitle: {
+      fontSize: FS.h3,
+      fontWeight: '900',
+      fontFamily: FONT.black,
+      color: COLORS.text,
+      textAlign: start,
+    },
+    headerSubtitle: {
+      fontSize: FS.sm,
+      fontFamily: FONT.regular,
+      color: COLORS.textMuted,
+      marginTop: 2,
+      textAlign: start,
+    },
 
-  feedContent: { padding: 20, paddingBottom: 120, gap: 14 },
+    authContent: { padding: 20, paddingBottom: 40, gap: 16 },
+    previewSection: { gap: 10 },
+    previewTitle: {
+      fontSize: FS.md,
+      fontWeight: '800',
+      fontFamily: FONT.extrabold,
+      color: COLORS.textSecondary,
+      textAlign: start,
+      marginBottom: 4,
+    },
+    authCard: {
+      backgroundColor: COLORS.surface,
+      borderWidth: 1,
+      borderColor: COLORS.surfaceBorder,
+      borderRadius: RADIUS.xxl,
+      padding: 28,
+      alignItems: 'center',
+    },
+    authIcon: {
+      width: 72,
+      height: 72,
+      borderRadius: 22,
+      backgroundColor: 'rgba(47,108,255,0.14)',
+      borderWidth: 1,
+      borderColor: 'rgba(47,108,255,0.28)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    authTitle: {
+      fontSize: FS.xl,
+      fontWeight: '800',
+      fontFamily: FONT.extrabold,
+      color: COLORS.text,
+      marginBottom: 8,
+    },
+    authDesc: {
+      fontSize: FS.md,
+      fontFamily: FONT.regular,
+      color: COLORS.textMuted,
+      textAlign: 'center',
+      lineHeight: 22,
+      marginBottom: 24,
+    },
+    authLoginBtn: {
+      width: 280,
+      height: 52,
+      borderRadius: RADIUS.xl,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    authLoginText: { fontSize: FS.lg, fontWeight: '700', fontFamily: FONT.bold, color: '#fff' },
+    authRegisterBtn: {
+      height: 52,
+      width: 280,
+      borderRadius: RADIUS.xl,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1.5,
+      borderColor: COLORS.teal,
+    },
+    authRegisterText: { fontSize: FS.lg, fontWeight: '700', fontFamily: FONT.bold, color: COLORS.teal },
 
-  postCard: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
-    borderRadius: RADIUS.xl,
-    padding: 18,
-  },
-  adminPostCard: {
-    borderColor: '#FCD34D',
-    borderWidth: 1.5,
-    backgroundColor: '#FFFBEB',
-  },
-  postCardRow: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 12 },
+    feedContent: { padding: 20, paddingBottom: 120, gap: 14 },
 
-  adminBadgeRow: { flexDirection: 'row-reverse', marginBottom: 10 },
-  adminBadge: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  adminBadgeText: {
-    fontSize: 11,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
-    color: '#D97706',
-  },
+    postCard: {
+      backgroundColor: COLORS.surface,
+      borderWidth: 1,
+      borderColor: COLORS.surfaceBorder,
+      borderRadius: RADIUS.xl,
+      padding: 18,
+    },
+    adminPostCard: {
+      borderColor: '#FCD34D',
+      borderWidth: 1.5,
+      backgroundColor: '#FFFBEB',
+    },
+    postCardRow: { flexDirection: row, alignItems: 'flex-start', gap: 12 },
 
-  postHeader: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  postMeta: { alignItems: 'flex-end' },
-  postAuthor: {
-    fontSize: FS.md,
-    fontWeight: '700',
-    fontFamily: FONT.bold,
-    color: COLORS.text,
-    textAlign: 'right',
-  },
-  postTime: {
-    fontSize: FS.sm,
-    fontFamily: FONT.regular,
-    color: COLORS.textMuted,
-    marginTop: 2,
-    textAlign: 'right',
-  },
-  postBody: { flex: 1 },
-  avatar: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  avatarText: { fontSize: FS.md, fontWeight: '700', fontFamily: FONT.bold, color: '#fff' },
-  deleteBtn: { padding: 4 },
-  postContent: {
-    fontSize: FS.md,
-    fontFamily: FONT.regular,
-    color: COLORS.textSecondary,
-    textAlign: 'right',
-    lineHeight: 22,
-  },
-  postActions: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'flex-start',
-    gap: 16,
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(15,18,33,0.06)',
-  },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  actionCount: { fontSize: FS.sm, color: COLORS.textMuted, fontWeight: '600', fontFamily: FONT.semibold },
+    adminBadgeRow: { flexDirection: row, marginBottom: 10 },
+    adminBadge: {
+      flexDirection: row,
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: '#FEF3C7',
+      borderWidth: 1,
+      borderColor: '#FDE68A',
+      borderRadius: 20,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+    },
+    adminBadgeText: {
+      fontSize: 11,
+      fontFamily: FONT.bold,
+      fontWeight: '700',
+      color: '#D97706',
+    },
 
-  fab: { position: 'absolute', right: 20, zIndex: 10 },
-  fabInner: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#0284C7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 8,
-  },
+    postHeader: {
+      flexDirection: row,
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    postMeta: { alignItems: isRTL ? 'flex-end' : 'flex-start' },
+    postHeaderActions: { flexDirection: row, alignItems: 'center', gap: 8 },
+    postAuthor: {
+      fontSize: FS.md,
+      fontWeight: '700',
+      fontFamily: FONT.bold,
+      color: COLORS.text,
+      textAlign: start,
+    },
+    postTime: {
+      fontSize: FS.sm,
+      fontFamily: FONT.regular,
+      color: COLORS.textMuted,
+      marginTop: 2,
+      textAlign: start,
+    },
+    postBody: { flex: 1 },
+    avatar: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+    avatarText: { fontSize: FS.md, fontWeight: '700', fontFamily: FONT.bold, color: '#fff' },
+    deleteBtn: { padding: 4 },
+    postContent: {
+      fontSize: FS.md,
+      fontFamily: FONT.regular,
+      color: COLORS.textSecondary,
+      textAlign: start,
+      lineHeight: 22,
+    },
+    postActions: {
+      flexDirection: row,
+      justifyContent: 'flex-start',
+      gap: 16,
+      marginTop: 14,
+      paddingTop: 14,
+      borderTopWidth: 1,
+      borderTopColor: 'rgba(15,18,33,0.06)',
+    },
+    actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    actionCount: { fontSize: FS.sm, color: COLORS.textMuted, fontWeight: '600', fontFamily: FONT.semibold },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
-  },
-  createModal: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    gap: 14,
-  },
-  commentsModal: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    height: '75%',
-    flex: 0,
-  },
-  modalHeader: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(15,18,33,0.07)',
-  },
-  modalTitle: { fontSize: FS.lg, fontWeight: '700', fontFamily: FONT.bold, color: COLORS.text },
+    fab: { position: 'absolute', right: 20, zIndex: 10 },
+    fabInner: {
+      width: 56,
+      height: 56,
+      borderRadius: 18,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: '#0284C7',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.35,
+      shadowRadius: 8,
+      elevation: 8,
+    },
 
-  createInput: {
-    borderWidth: 2,
-    borderColor: 'rgba(15,18,33,0.1)',
-    borderRadius: RADIUS.xl,
-    padding: 14,
-    minHeight: 120,
-    fontFamily: FONT.regular,
-    fontSize: FS.md,
-    color: COLORS.text,
-    backgroundColor: '#F8FAFC',
-  },
-  submitBtn: {
-    height: 52,
-    borderRadius: RADIUS.xl,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  submitBtnText: { fontSize: FS.lg, fontWeight: '700', fontFamily: FONT.bold, color: '#fff' },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.45)',
+      justifyContent: 'flex-end',
+    },
+    createModal: {
+      backgroundColor: '#fff',
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 20,
+      gap: 14,
+    },
+    commentsModal: {
+      backgroundColor: '#fff',
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      height: '75%',
+      flex: 0,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: 'rgba(15,18,33,0.07)',
+    },
+    modalTitle: { fontSize: FS.lg, fontWeight: '700', fontFamily: FONT.bold, color: COLORS.text },
 
-  commentCard: { flexDirection: 'row-reverse', gap: 10, alignItems: 'flex-start' },
-  smallAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0,
-  },
-  smallAvatarText: { fontSize: FS.sm, fontWeight: '700', fontFamily: FONT.bold, color: '#fff' },
-  commentBody: { flex: 1 },
-  commentAuthor: {
-    fontSize: FS.sm,
-    fontWeight: '700',
-    fontFamily: FONT.bold,
-    color: COLORS.text,
-    textAlign: 'right',
-  },
-  commentText: {
-    fontSize: FS.sm,
-    fontFamily: FONT.regular,
-    color: COLORS.textSecondary,
-    textAlign: 'right',
-    marginTop: 2,
-    lineHeight: 18,
-  },
-  commentTime: {
-    fontSize: 11,
-    fontFamily: FONT.regular,
-    color: COLORS.textMuted,
-    textAlign: 'right',
-    marginTop: 4,
-  },
+    createInput: {
+      borderWidth: 2,
+      borderColor: 'rgba(15,18,33,0.1)',
+      borderRadius: RADIUS.xl,
+      padding: 14,
+      minHeight: 120,
+      fontFamily: FONT.regular,
+      fontSize: FS.md,
+      color: COLORS.text,
+      backgroundColor: '#F8FAFC',
+    },
+    submitBtn: {
+      height: 52,
+      borderRadius: RADIUS.xl,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    submitBtnText: { fontSize: FS.lg, fontWeight: '700', fontFamily: FONT.bold, color: '#fff' },
 
-  commentInputRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(15,18,33,0.07)',
-  },
-  commentInput: {
-    flex: 1,
-    height: 42,
-    borderWidth: 1.5,
-    borderColor: 'rgba(15,18,33,0.1)',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    fontFamily: FONT.regular,
-    fontSize: FS.sm,
-    color: COLORS.text,
-    backgroundColor: '#F8FAFC',
-  },
-  sendBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    backgroundColor: COLORS.teal,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0,
-  },
-})
+    commentCard: { flexDirection: row, gap: 10, alignItems: 'flex-start' },
+    smallAvatar: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+      flexShrink: 0,
+    },
+    smallAvatarText: { fontSize: FS.sm, fontWeight: '700', fontFamily: FONT.bold, color: '#fff' },
+    commentBody: { flex: 1 },
+    commentAuthor: {
+      fontSize: FS.sm,
+      fontWeight: '700',
+      fontFamily: FONT.bold,
+      color: COLORS.text,
+      textAlign: start,
+    },
+    commentText: {
+      fontSize: FS.sm,
+      fontFamily: FONT.regular,
+      color: COLORS.textSecondary,
+      textAlign: start,
+      marginTop: 2,
+      lineHeight: 18,
+    },
+    commentTime: {
+      fontSize: 11,
+      fontFamily: FONT.regular,
+      color: COLORS.textMuted,
+      textAlign: start,
+      marginTop: 4,
+    },
+
+    commentInputRow: {
+      flexDirection: row,
+      alignItems: 'center',
+      gap: 10,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderTopWidth: 1,
+      borderTopColor: 'rgba(15,18,33,0.07)',
+    },
+    commentInput: {
+      flex: 1,
+      height: 42,
+      borderWidth: 1.5,
+      borderColor: 'rgba(15,18,33,0.1)',
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      fontFamily: FONT.regular,
+      fontSize: FS.sm,
+      color: COLORS.text,
+      backgroundColor: '#F8FAFC',
+    },
+    sendBtn: {
+      width: 42,
+      height: 42,
+      borderRadius: 13,
+      backgroundColor: COLORS.teal,
+      justifyContent: 'center',
+      alignItems: 'center',
+      flexShrink: 0,
+    },
+  })
+}
