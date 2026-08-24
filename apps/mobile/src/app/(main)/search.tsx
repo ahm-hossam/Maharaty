@@ -11,13 +11,18 @@ import {
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'expo-router'
 import { useQuery } from '@tanstack/react-query'
 import { COLORS, FONT, RADIUS, SHADOW, FS } from '@/constants/theme'
 import { api } from '../../services/api'
 import { useActivity } from '../../hooks/useActivity'
 import { useDrawer } from '../../context/DrawerContext'
+import { useLanguage } from '../../i18n/LanguageContext'
+
+// Sentinel for the "all categories" pill — stays Arabic since it's compared
+// against backend category values, not displayed directly (label is translated).
+const ALL_CATEGORY = 'الكل'
 
 const CATEGORY_META: Record<string, { icon: string; color: string }> = {
   'تسويق رقمي': { icon: 'megaphone', color: '#F97316' },
@@ -44,28 +49,38 @@ interface ContentItem {
   type?: string
 }
 
-function ResultCard({ item, index, onPress }: { item: ContentItem; index: number; onPress: () => void }) {
+function ResultCard({
+  item,
+  index,
+  onPress,
+  S,
+}: {
+  item: ContentItem
+  index: number
+  onPress: () => void
+  S: ReturnType<typeof createStyles>
+}) {
   const meta = getCategoryMeta(item.category ?? '', index)
 
   return (
-    <TouchableOpacity style={styles.resultCard} onPress={onPress} activeOpacity={0.78}>
+    <TouchableOpacity style={S.resultCard} onPress={onPress} activeOpacity={0.78}>
       {item.thumbnail ? (
-        <Image source={{ uri: item.thumbnail }} style={styles.resultThumb} resizeMode="cover" />
+        <Image source={{ uri: item.thumbnail }} style={S.resultThumb} resizeMode="cover" />
       ) : (
         <LinearGradient
           colors={[meta.color, meta.color + 'AA']}
-          style={styles.resultIconCircle}
+          style={S.resultIconCircle}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
           <Ionicons name={meta.icon as any} size={20} color="#fff" />
         </LinearGradient>
       )}
-      <View style={styles.resultTextBlock}>
-        <Text style={styles.resultTitle} numberOfLines={2}>{item.titleAr}</Text>
+      <View style={S.resultTextBlock}>
+        <Text style={S.resultTitle} numberOfLines={2}>{item.titleAr}</Text>
         {item.category && (
-          <View style={[styles.resultBadge, { backgroundColor: meta.color + '22', borderColor: meta.color + '55' }]}>
-            <Text style={[styles.resultBadgeText, { color: meta.color }]}>{item.category}</Text>
+          <View style={[S.resultBadge, { backgroundColor: meta.color + '22', borderColor: meta.color + '55' }]}>
+            <Text style={[S.resultBadgeText, { color: meta.color }]}>{item.category}</Text>
           </View>
         )}
       </View>
@@ -78,9 +93,11 @@ export default function SearchScreen() {
   const router = useRouter()
   const { openDrawer } = useDrawer()
   const { trackActivity } = useActivity()
+  const { t, isRTL } = useLanguage()
+  const S = useMemo(() => createStyles(isRTL), [isRTL])
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
-  const [activeCategory, setActiveCategory] = useState('الكل')
+  const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY)
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 350)
@@ -93,13 +110,13 @@ export default function SearchScreen() {
     staleTime: 60_000,
   })
 
-  // "الكل" always first, matching the Learning Hub's category pills
+  // "All" pill always first, matching the Learning Hub's category pills
   const categories = [
-    { label: 'الكل', icon: 'apps', color: COLORS.primary },
+    { label: ALL_CATEGORY, icon: 'apps', color: COLORS.primary },
     ...apiCategories.map((label, i) => ({ label, ...getCategoryMeta(label, i) })),
   ]
 
-  const categoryFilter = activeCategory === 'الكل' ? undefined : activeCategory
+  const categoryFilter = activeCategory === ALL_CATEGORY ? undefined : activeCategory
 
   const { data: results = [], isFetching } = useQuery<ContentItem[]>({
     queryKey: ['content', 'search', debouncedQuery, categoryFilter],
@@ -114,29 +131,29 @@ export default function SearchScreen() {
     router.push(`/(main)/learning/${item.id}`)
   }
 
-  const isBrowsing = debouncedQuery.length === 0 && activeCategory === 'الكل'
+  const isBrowsing = debouncedQuery.length === 0 && activeCategory === ALL_CATEGORY
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <View style={styles.headerRow}>
+    <View style={S.container}>
+      <View style={[S.header, { paddingTop: insets.top + 16 }]}>
+        <View style={S.headerRow}>
           <View>
-            <Text style={styles.headerTitle}>اكتشف وتعلم</Text>
-            <Text style={styles.headerSubtitle}>ابحث عن المهارات والدورات</Text>
+            <Text style={S.headerTitle}>{t('search.title')}</Text>
+            <Text style={S.headerSubtitle}>{t('search.subtitle')}</Text>
           </View>
-          <TouchableOpacity style={styles.menuBtn} onPress={openDrawer}>
+          <TouchableOpacity style={S.menuBtn} onPress={openDrawer}>
             <Ionicons name="menu-outline" size={24} color={COLORS.textSecondary} />
           </TouchableOpacity>
         </View>
-        <View style={styles.searchBox}>
+        <View style={S.searchBox}>
           <Ionicons name="search" size={20} color={COLORS.textMuted} />
           <TextInput
-            style={styles.searchInput}
+            style={S.searchInput}
             value={query}
             onChangeText={setQuery}
-            placeholder="ابحث عن مهارة، دورة، أو مجال..."
+            placeholder={t('search.searchPlaceholder')}
             placeholderTextColor={COLORS.textMuted}
-            textAlign="right"
+            textAlign={isRTL ? 'right' : 'left'}
             selectionColor={COLORS.primary}
           />
           {query.length > 0 && (
@@ -147,15 +164,15 @@ export default function SearchScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <View style={styles.categoriesGrid}>
+      <ScrollView contentContainerStyle={S.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <View style={S.categoriesGrid}>
           {categories.map((cat) => {
             const active = activeCategory === cat.label
             return (
               <TouchableOpacity
                 key={cat.label}
                 style={[
-                  styles.categoryPill,
+                  S.categoryPill,
                   active
                     ? { backgroundColor: cat.color, borderColor: cat.color }
                     : { backgroundColor: COLORS.surface, borderColor: COLORS.surfaceBorder },
@@ -164,35 +181,33 @@ export default function SearchScreen() {
                 activeOpacity={0.75}
               >
                 <Ionicons name={cat.icon as any} size={14} color={active ? '#fff' : COLORS.textMuted} />
-                <Text style={[styles.categoryPillText, { color: active ? '#fff' : COLORS.textMuted }]}>
-                  {cat.label}
+                <Text style={[S.categoryPillText, { color: active ? '#fff' : COLORS.textMuted }]}>
+                  {cat.label === ALL_CATEGORY ? t('search.all') : cat.label}
                 </Text>
               </TouchableOpacity>
             )
           })}
         </View>
 
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionLine} />
-          <Text style={styles.sectionTitle}>{isBrowsing ? 'الأحدث' : 'نتائج البحث'}</Text>
+        <View style={S.sectionHeader}>
+          <View style={S.sectionLine} />
+          <Text style={S.sectionTitle}>{isBrowsing ? t('search.latest') : t('search.searchResults')}</Text>
         </View>
 
         {isFetching ? (
           <ActivityIndicator color={COLORS.primary} style={{ marginTop: 12 }} />
         ) : results.length === 0 ? (
-          <View style={styles.emptyCard}>
+          <View style={S.emptyCard}>
             <Ionicons name={isBrowsing ? 'construct-outline' : 'search-outline'} size={32} color={COLORS.primary} />
-            <Text style={styles.emptyTitle}>{isBrowsing ? 'المحتوى قيد الإضافة' : 'لا توجد نتائج'}</Text>
-            <Text style={styles.emptyText}>
-              {isBrowsing
-                ? 'نعمل على إضافة المزيد من الدورات والمهارات. ترقّب التحديثات!'
-                : 'جرّب كلمة بحث أخرى أو اختر مجالاً مختلفاً.'}
+            <Text style={S.emptyTitle}>{isBrowsing ? t('search.emptyBrowsingTitle') : t('search.emptyResultsTitle')}</Text>
+            <Text style={S.emptyText}>
+              {isBrowsing ? t('search.emptyBrowsingText') : t('search.emptyResultsText')}
             </Text>
           </View>
         ) : (
-          <View style={styles.resultsList}>
+          <View style={S.resultsList}>
             {results.map((item, i) => (
-              <ResultCard key={item.id} item={item} index={i} onPress={() => handlePress(item)} />
+              <ResultCard key={item.id} item={item} index={i} onPress={() => handlePress(item)} S={S} />
             ))}
           </View>
         )}
@@ -201,38 +216,43 @@ export default function SearchScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.canvas },
-  header: { paddingHorizontal: 24, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.07)' },
-  headerRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  menuBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: FS.h3, fontWeight: '900', fontFamily: FONT.black, color: COLORS.text, textAlign: 'right' },
-  headerSubtitle: { fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.textMuted, textAlign: 'right' },
-  searchBox: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, borderRadius: RADIUS.xl, paddingHorizontal: 16, height: 52, gap: 10 },
-  searchInput: { flex: 1, fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.text },
+const createStyles = (isRTL: boolean) => {
+  const start: 'left' | 'right' = isRTL ? 'right' : 'left'
+  const row = isRTL ? 'row-reverse' : 'row'
 
-  content: { padding: 20, paddingBottom: 40, gap: 16 },
-  sectionHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
-  sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(15,18,33,0.08)' },
-  sectionTitle: { fontSize: FS.sm, fontWeight: '800', fontFamily: FONT.extrabold, color: COLORS.textMuted, textAlign: 'right' },
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.canvas },
+    header: { paddingHorizontal: 24, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.07)' },
+    headerRow: { flexDirection: row, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+    menuBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, justifyContent: 'center', alignItems: 'center' },
+    headerTitle: { fontSize: FS.h3, fontWeight: '900', fontFamily: FONT.black, color: COLORS.text, textAlign: start },
+    headerSubtitle: { fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.textMuted, textAlign: start },
+    searchBox: { flexDirection: row, alignItems: 'center', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, borderRadius: RADIUS.xl, paddingHorizontal: 16, height: 52, gap: 10 },
+    searchInput: { flex: 1, fontSize: FS.md, fontFamily: FONT.regular, color: COLORS.text },
 
-  categoriesGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 10, justifyContent: 'flex-end' },
-  categoryPill: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.full, borderWidth: 1,
-  },
-  categoryPillText: { fontSize: FS.sm, fontFamily: FONT.semibold, textAlign: 'right' },
+    content: { padding: 20, paddingBottom: 40, gap: 16 },
+    sectionHeader: { flexDirection: row, alignItems: 'center', gap: 12 },
+    sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(15,18,33,0.08)' },
+    sectionTitle: { fontSize: FS.sm, fontWeight: '800', fontFamily: FONT.extrabold, color: COLORS.textMuted, textAlign: start },
 
-  resultsList: { gap: 10 },
-  resultCard: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, borderRadius: RADIUS.xl, padding: 14, flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
-  resultThumb: { width: 44, height: 44, borderRadius: 12 },
-  resultIconCircle: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  resultTextBlock: { flex: 1, gap: 6, alignItems: 'flex-end' },
-  resultTitle: { fontSize: FS.md, fontWeight: '700', fontFamily: FONT.semibold, color: COLORS.text, textAlign: 'right' },
-  resultBadge: { borderRadius: RADIUS.md, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
-  resultBadgeText: { fontSize: FS.xs, fontWeight: '700', fontFamily: FONT.bold },
+    categoriesGrid: { flexDirection: row, flexWrap: 'wrap', gap: 10, justifyContent: isRTL ? 'flex-end' : 'flex-start' },
+    categoryPill: {
+      flexDirection: row, alignItems: 'center', gap: 6,
+      paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.full, borderWidth: 1,
+    },
+    categoryPillText: { fontSize: FS.sm, fontFamily: FONT.semibold, textAlign: start },
 
-  emptyCard: { backgroundColor: 'rgba(47,108,255,0.08)', borderRadius: RADIUS.xl, padding: 24, alignItems: 'center', gap: 10, borderWidth: 1, borderColor: 'rgba(47,108,255,0.2)' },
-  emptyTitle: { fontSize: FS.lg, fontWeight: '700', fontFamily: FONT.bold, color: COLORS.primary },
-  emptyText: { fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22 },
-})
+    resultsList: { gap: 10 },
+    resultCard: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.surfaceBorder, borderRadius: RADIUS.xl, padding: 14, flexDirection: row, alignItems: 'center', gap: 12 },
+    resultThumb: { width: 44, height: 44, borderRadius: 12 },
+    resultIconCircle: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+    resultTextBlock: { flex: 1, gap: 6, alignItems: isRTL ? 'flex-end' : 'flex-start' },
+    resultTitle: { fontSize: FS.md, fontWeight: '700', fontFamily: FONT.semibold, color: COLORS.text, textAlign: start },
+    resultBadge: { borderRadius: RADIUS.md, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
+    resultBadgeText: { fontSize: FS.xs, fontWeight: '700', fontFamily: FONT.bold },
+
+    emptyCard: { backgroundColor: 'rgba(47,108,255,0.08)', borderRadius: RADIUS.xl, padding: 24, alignItems: 'center', gap: 10, borderWidth: 1, borderColor: 'rgba(47,108,255,0.2)' },
+    emptyTitle: { fontSize: FS.lg, fontWeight: '700', fontFamily: FONT.bold, color: COLORS.primary },
+    emptyText: { fontSize: FS.sm, fontFamily: FONT.regular, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22 },
+  })
+}

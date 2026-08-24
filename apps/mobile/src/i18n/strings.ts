@@ -161,6 +161,18 @@ export const strings = {
       hoursAgo: 'منذ {n} ساعة',
       daysAgo: 'منذ {n} يوم',
     },
+    search: {
+      title: 'اكتشف وتعلم',
+      subtitle: 'ابحث عن المهارات والدورات',
+      searchPlaceholder: 'ابحث عن مهارة، دورة، أو مجال...',
+      all: 'الكل',
+      latest: 'الأحدث',
+      searchResults: 'نتائج البحث',
+      emptyBrowsingTitle: 'المحتوى قيد الإضافة',
+      emptyBrowsingText: 'نعمل على إضافة المزيد من الدورات والمهارات. ترقّب التحديثات!',
+      emptyResultsTitle: 'لا توجد نتائج',
+      emptyResultsText: 'جرّب كلمة بحث أخرى أو اختر مجالاً مختلفاً.',
+    },
   },
   en: {
     common: {
@@ -319,6 +331,18 @@ export const strings = {
       minutesAgo: '{n}m ago',
       hoursAgo: '{n}h ago',
       daysAgo: '{n}d ago',
+    },
+    search: {
+      title: 'Discover & Learn',
+      subtitle: 'Search for skills and courses',
+      searchPlaceholder: 'Search for a skill, course, or field...',
+      all: 'All',
+      latest: 'Latest',
+      searchResults: 'Search Results',
+      emptyBrowsingTitle: 'Content coming soon',
+      emptyBrowsingText: "We're working on adding more courses and skills. Stay tuned!",
+      emptyResultsTitle: 'No results found',
+      emptyResultsText: 'Try a different search term or pick another category.',
     },
   },
 } as const
