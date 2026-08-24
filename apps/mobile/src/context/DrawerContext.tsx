@@ -121,21 +121,32 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
                 <Ionicons name="chevron-forward" size={14} color={COLORS.textMuted} />
               </TouchableOpacity>
             ))}
+
+            <View style={S.menuRow}>
+              <View style={S.menuIconCircle}>
+                <Ionicons name="language-outline" size={18} color={COLORS.primary} />
+              </View>
+              <Text style={S.menuLabel}>{t('common.language')}</Text>
+              <View style={S.langSwitch}>
+                <TouchableOpacity
+                  style={[S.langOption, language === 'ar' && S.langOptionActive]}
+                  onPress={() => setLanguage('ar')}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[S.langOptionText, language === 'ar' && S.langOptionTextActive]}>AR</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[S.langOption, language === 'en' && S.langOptionActive]}
+                  onPress={() => setLanguage('en')}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[S.langOptionText, language === 'en' && S.langOptionTextActive]}>EN</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </ScrollView>
 
           <View style={[S.drawerFooter, { paddingBottom: insets.bottom + 20 }]}>
-            <TouchableOpacity
-              style={S.langRow}
-              onPress={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-              activeOpacity={0.75}
-            >
-              <Ionicons name="language-outline" size={18} color={COLORS.primary} />
-              <Text style={S.langText}>{t('common.language')}</Text>
-              <View style={S.langBadge}>
-                <Text style={S.langBadgeText}>{language === 'ar' ? 'EN' : 'AR'}</Text>
-              </View>
-            </TouchableOpacity>
-
             <TouchableOpacity
               style={S.logoutRow}
               onPress={async () => {
@@ -199,13 +210,14 @@ const createStyles = (isRTL: boolean) => {
     },
     menuLabel: { flex: 1, fontSize: FS.md, fontFamily: FONT.semibold, fontWeight: '600', color: COLORS.textSecondary, textAlign: start },
     drawerFooter: { borderTopWidth: 1, borderTopColor: 'rgba(15,18,33,0.07)', padding: 24, gap: 18 },
-    langRow: { flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 10 },
-    langText: { flex: 1, fontSize: FS.md, fontFamily: FONT.semibold, fontWeight: '600', color: COLORS.textSecondary, textAlign: start },
-    langBadge: {
-      borderWidth: 1, borderColor: COLORS.primary + '40', backgroundColor: COLORS.primary + '12',
-      borderRadius: RADIUS.full, paddingHorizontal: 10, paddingVertical: 4,
+    langSwitch: {
+      flexDirection: 'row', backgroundColor: 'rgba(15,18,33,0.06)',
+      borderRadius: RADIUS.full, padding: 3, gap: 2,
     },
-    langBadgeText: { fontSize: FS.xs, fontFamily: FONT.bold, fontWeight: '700', color: COLORS.primary },
+    langOption: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: RADIUS.full },
+    langOptionActive: { backgroundColor: COLORS.primary },
+    langOptionText: { fontSize: FS.xs, fontFamily: FONT.bold, fontWeight: '700', color: COLORS.textMuted },
+    langOptionTextActive: { color: '#fff' },
     logoutRow: { flexDirection: 'row', alignItems: 'center', justifyContent: isRTL ? 'flex-end' : 'flex-start', gap: 10 },
     logoutText: { fontSize: FS.md, fontFamily: FONT.bold, fontWeight: '700', color: COLORS.error },
   })
