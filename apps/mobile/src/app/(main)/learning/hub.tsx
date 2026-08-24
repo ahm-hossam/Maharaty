@@ -12,17 +12,22 @@ import {
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'expo-router'
 import { useQuery } from '@tanstack/react-query'
 import { COLORS, FONT, RADIUS, SHADOW, FS } from '../../../constants/theme'
 import { api } from '../../../services/api'
 import { useActivity } from '../../../hooks/useActivity'
 import { useDrawer } from '../../../context/DrawerContext'
+import { useLanguage } from '../../../i18n/LanguageContext'
 
 const { width } = Dimensions.get('window')
 
 // ─── Data ─────────────────────────────────────────────────────
+
+// Sentinel for the "all categories" pill — stays Arabic since it's compared
+// against backend category values, not displayed directly (label is translated).
+const ALL_CATEGORY = 'الكل'
 
 // Icon + color mapping for known categories (fallback for unknown ones)
 const CATEGORY_META: Record<string, { icon: string; color: string }> = {
@@ -99,7 +104,7 @@ interface CourseItem {
   type?: string
 }
 
-function CourseCard({ course, onPress }: { course: CourseItem; onPress: () => void }) {
+function CourseCard({ course, onPress, S }: { course: CourseItem; onPress: () => void; S: ReturnType<typeof createStyles> }) {
   const color = course.color || COLORS.primary
   const icon  = course.icon || 'school'
 
@@ -144,7 +149,7 @@ function CourseCard({ course, onPress }: { course: CourseItem; onPress: () => vo
 
 // ─── Skeleton shimmer card ────────────────────────────────────
 
-function SkeletonCard() {
+function SkeletonCard({ S }: { S: ReturnType<typeof createStyles> }) {
   return (
     <View style={[S.courseCard, S.skeletonCard]}>
       <View style={S.courseRow}>
@@ -165,7 +170,9 @@ export default function LearningHubScreen() {
   const router = useRouter()
   const { openDrawer } = useDrawer()
   const { trackActivity } = useActivity()
-  const [activeCategory, setActiveCategory] = useState('الكل')
+  const { t, isRTL } = useLanguage()
+  const S = useMemo(() => createStyles(isRTL), [isRTL])
+  const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY)
   const [searchQuery, setSearchQuery] = useState('')
 
   const [refreshing, setRefreshing] = useState(false)
@@ -193,9 +200,9 @@ export default function LearningHubScreen() {
     setRefreshing(false)
   }
 
-  // Build category list: "الكل" always first, then API categories
+  // Build category list: "All" pill always first, then API categories
   const categories = [
-    { label: 'الكل', icon: 'apps', color: COLORS.primary },
+    { label: ALL_CATEGORY, icon: 'apps', color: COLORS.primary },
     ...apiCategories.map((label, i) => ({ label, ...getCategoryMeta(label, i) })),
   ]
 
@@ -210,7 +217,7 @@ export default function LearningHubScreen() {
   }))
 
   const courses = rawCourses.filter((c: CourseItem) =>
-    activeCategory === 'الكل' || c.category === activeCategory
+    activeCategory === ALL_CATEGORY || c.category === activeCategory
   ).filter((c: CourseItem) =>
     !searchQuery || c.titleAr?.toLowerCase().includes(searchQuery.toLowerCase())
   )
@@ -240,7 +247,7 @@ export default function LearningHubScreen() {
         <View style={S.header}>
           {/* Top row: back button + title */}
           <View style={S.headerTopRow}>
-            <Text style={S.headerTitle}>اكتشف وتعلّم</Text>
+            <Text style={S.headerTitle}>{t('learningHub.title')}</Text>
             <TouchableOpacity style={S.backBtn} onPress={openDrawer}>
               <Ionicons name="menu-outline" size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
@@ -248,7 +255,7 @@ export default function LearningHubScreen() {
 
           {/* Subtitle */}
           <Text style={S.headerSubtitle}>
-            طوّر مهاراتك مع أفضل الدورات والمحتوى
+            {t('learningHub.subtitle')}
           </Text>
 
           {/* Search bar */}
@@ -256,11 +263,11 @@ export default function LearningHubScreen() {
             <Ionicons name="search" size={18} color={COLORS.textMuted} style={S.searchIcon} />
             <TextInput
               style={S.searchInput}
-              placeholder="ابحث عن مهارة، دورة، أو مجال..."
+              placeholder={t('learningHub.searchPlaceholder')}
               placeholderTextColor={COLORS.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              textAlign="right"
+              textAlign={isRTL ? 'right' : 'left'}
             />
           </View>
         </View>
@@ -292,7 +299,7 @@ export default function LearningHubScreen() {
                     { color: isActive ? '#fff' : COLORS.textMuted },
                   ]}
                 >
-                  {cat.label}
+                  {cat.label === ALL_CATEGORY ? t('learningHub.all') : cat.label}
                 </Text>
               </TouchableOpacity>
             )
@@ -355,19 +362,19 @@ export default function LearningHubScreen() {
         {/* ── Section Title ── */}
         <View style={S.sectionHeader}>
           <View style={S.sectionLine} />
-          <Text style={S.sectionTitle}>الدورات الموصى بها</Text>
+          <Text style={S.sectionTitle}>{t('learningHub.recommendedCourses')}</Text>
         </View>
 
         {/* ── Course Cards ── */}
         <View style={S.courseList}>
           {isLoading
-            ? [1, 2, 3].map((k) => <SkeletonCard key={k} />)
+            ? [1, 2, 3].map((k) => <SkeletonCard key={k} S={S} />)
             : courses.length === 0
               ? (
                 <View style={S.emptyState}>
                   <Ionicons name="school-outline" size={40} color={COLORS.textMuted} />
-                  <Text style={S.emptyText}>لا توجد دورات منشورة حالياً</Text>
-                  <Text style={S.emptySubText}>ترقّب! قريباً سيتم إضافة محتوى جديد</Text>
+                  <Text style={S.emptyText}>{t('learningHub.noCourses')}</Text>
+                  <Text style={S.emptySubText}>{t('learningHub.noCoursesSub')}</Text>
                 </View>
               )
               : courses.map((course: CourseItem) => (
@@ -375,6 +382,7 @@ export default function LearningHubScreen() {
                   key={course.id}
                   course={course}
                   onPress={() => handleCoursePress(course)}
+                  S={S}
                 />
               ))}
         </View>
@@ -404,391 +412,396 @@ export default function LearningHubScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────
 
-const S = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: COLORS.canvas,
-  },
+const createStyles = (isRTL: boolean) => {
+  const start: 'left' | 'right' = isRTL ? 'right' : 'left'
+  const row = isRTL ? 'row-reverse' : 'row'
 
-  scrollContent: {
-    paddingBottom: 60,
-  },
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: COLORS.canvas,
+    },
 
-  // ── Header ──
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 20,
-    gap: 12,
-  },
+    scrollContent: {
+      paddingBottom: 60,
+    },
 
-  headerTopRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
+    // ── Header ──
+    header: {
+      paddingHorizontal: 24,
+      paddingTop: 16,
+      paddingBottom: 20,
+      gap: 12,
+    },
 
-  backBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOW.sm,
-  },
+    headerTopRow: {
+      flexDirection: row,
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
 
-  headerTitle: {
-    fontSize: FS.h2,
-    fontFamily: FONT.black,
-    color: COLORS.text,
-    textAlign: 'right',
-  },
+    backBtn: {
+      width: 42,
+      height: 42,
+      borderRadius: RADIUS.lg,
+      backgroundColor: COLORS.surface,
+      borderWidth: 1,
+      borderColor: COLORS.surfaceBorder,
+      justifyContent: 'center',
+      alignItems: 'center',
+      ...SHADOW.sm,
+    },
 
-  headerSubtitle: {
-    fontSize: FS.sm,
-    fontFamily: FONT.regular,
-    color: COLORS.textMuted,
-    textAlign: 'right',
-    lineHeight: 20,
-  },
+    headerTitle: {
+      fontSize: FS.h2,
+      fontFamily: FONT.black,
+      color: COLORS.text,
+      textAlign: start,
+    },
 
-  // ── Search bar ──
-  searchBar: {
-    height: 52,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
-    borderRadius: RADIUS.xl,
-    paddingHorizontal: 16,
-    gap: 10,
-  },
+    headerSubtitle: {
+      fontSize: FS.sm,
+      fontFamily: FONT.regular,
+      color: COLORS.textMuted,
+      textAlign: start,
+      lineHeight: 20,
+    },
 
-  searchIcon: {
-    flexShrink: 0,
-  },
+    // ── Search bar ──
+    searchBar: {
+      height: 52,
+      flexDirection: row,
+      alignItems: 'center',
+      backgroundColor: COLORS.surface,
+      borderWidth: 1,
+      borderColor: COLORS.surfaceBorder,
+      borderRadius: RADIUS.xl,
+      paddingHorizontal: 16,
+      gap: 10,
+    },
 
-  searchInput: {
-    flex: 1,
-    fontSize: FS.md,
-    fontFamily: FONT.regular,
-    color: COLORS.text,
-    textAlign: 'right',
-    paddingVertical: 0,
-  },
+    searchIcon: {
+      flexShrink: 0,
+    },
 
-  // ── Category pills ──
-  categoryGrid: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
-    gap: 10,
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
+    searchInput: {
+      flex: 1,
+      fontSize: FS.md,
+      fontFamily: FONT.regular,
+      color: COLORS.text,
+      textAlign: start,
+      paddingVertical: 0,
+    },
 
-  categoryPill: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: RADIUS.full,
-    borderWidth: 1,
-  },
+    // ── Category pills ──
+    categoryGrid: {
+      flexDirection: row,
+      flexWrap: 'wrap',
+      gap: 10,
+      paddingHorizontal: 24,
+      marginBottom: 24,
+    },
 
-  categoryPillText: {
-    fontSize: FS.sm,
-    fontFamily: FONT.semibold,
-    textAlign: 'right',
-  },
+    categoryPill: {
+      flexDirection: row,
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: RADIUS.full,
+      borderWidth: 1,
+    },
 
-  // ── Featured card ──
-  featuredWrapper: {
-    paddingHorizontal: 24,
-    marginBottom: 28,
-  },
+    categoryPillText: {
+      fontSize: FS.sm,
+      fontFamily: FONT.semibold,
+      textAlign: start,
+    },
 
-  featuredCard: {
-    height: 220,
-    borderRadius: RADIUS.xxl,
-    padding: 24,
-    justifyContent: 'space-between',
-    overflow: 'hidden',
-    ...SHADOW.md,
-  },
+    // ── Featured card ──
+    featuredWrapper: {
+      paddingHorizontal: 24,
+      marginBottom: 28,
+    },
 
-  featuredIconTop: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-    opacity: 0.9,
-  },
+    featuredCard: {
+      height: 220,
+      borderRadius: RADIUS.xxl,
+      padding: 24,
+      justifyContent: 'space-between',
+      overflow: 'hidden',
+      ...SHADOW.md,
+    },
 
-  featuredContent: {
-    gap: 8,
-    marginTop: 4,
-  },
+    featuredIconTop: {
+      position: 'absolute',
+      top: 20,
+      [start]: 20,
+      opacity: 0.9,
+    },
 
-  featuredTitle: {
-    fontSize: FS.h2,
-    fontFamily: FONT.black,
-    color: '#fff',
-    textAlign: 'right',
-  },
+    featuredContent: {
+      gap: 8,
+      marginTop: 4,
+    },
 
-  featuredSubtitle: {
-    fontSize: FS.sm,
-    fontFamily: FONT.regular,
-    color: 'rgba(255,255,255,0.8)',
-    textAlign: 'right',
-    lineHeight: 19,
-  },
+    featuredTitle: {
+      fontSize: FS.h2,
+      fontFamily: FONT.black,
+      color: '#fff',
+      textAlign: start,
+    },
 
-  featuredBottom: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
+    featuredSubtitle: {
+      fontSize: FS.sm,
+      fontFamily: FONT.regular,
+      color: 'rgba(255,255,255,0.8)',
+      textAlign: start,
+      lineHeight: 19,
+    },
 
-  featuredViewsChip: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(0,0,0,0.22)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: RADIUS.full,
-  },
+    featuredBottom: {
+      flexDirection: row,
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
 
-  featuredViewsText: {
-    fontSize: FS.xs,
-    fontFamily: FONT.medium,
-    color: 'rgba(255,255,255,0.85)',
-    textAlign: 'right',
-  },
+    featuredViewsChip: {
+      flexDirection: row,
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: 'rgba(0,0,0,0.22)',
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: RADIUS.full,
+    },
 
-  featuredCTA: {
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: RADIUS.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
-  },
+    featuredViewsText: {
+      fontSize: FS.xs,
+      fontFamily: FONT.medium,
+      color: 'rgba(255,255,255,0.85)',
+      textAlign: start,
+    },
 
-  featuredCTAText: {
-    fontSize: FS.sm,
-    fontFamily: FONT.bold,
-    color: '#fff',
-    textAlign: 'right',
-  },
+    featuredCTA: {
+      backgroundColor: 'rgba(255,255,255,0.22)',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: RADIUS.full,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.35)',
+    },
 
-  // ── Section title ──
-  sectionHeader: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 24,
-    marginBottom: 16,
-  },
+    featuredCTAText: {
+      fontSize: FS.sm,
+      fontFamily: FONT.bold,
+      color: '#fff',
+      textAlign: start,
+    },
 
-  sectionLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(15,18,33,0.08)',
-  },
+    // ── Section title ──
+    sectionHeader: {
+      flexDirection: row,
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: 24,
+      marginBottom: 16,
+    },
 
-  sectionTitle: {
-    fontSize: FS.sm,
-    fontFamily: FONT.extrabold,
-    color: COLORS.textMuted,
-    textAlign: 'right',
-  },
+    sectionLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: 'rgba(15,18,33,0.08)',
+    },
 
-  // ── Course list ──
-  courseList: {
-    paddingHorizontal: 24,
-    gap: 12,
-    marginBottom: 24,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 40,
-    gap: 8,
-  },
-  emptyText: {
-    fontSize: FS.md,
-    fontFamily: FONT.bold,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
-  emptySubText: {
-    fontSize: FS.sm,
-    fontFamily: FONT.regular,
-    color: COLORS.textMuted,
-    textAlign: 'center',
-  },
+    sectionTitle: {
+      fontSize: FS.sm,
+      fontFamily: FONT.extrabold,
+      color: COLORS.textMuted,
+      textAlign: start,
+    },
 
-  courseCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.xl,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
-  },
+    // ── Course list ──
+    courseList: {
+      paddingHorizontal: 24,
+      gap: 12,
+      marginBottom: 24,
+    },
+    emptyState: {
+      alignItems: 'center',
+      paddingVertical: 40,
+      gap: 8,
+    },
+    emptyText: {
+      fontSize: FS.md,
+      fontFamily: FONT.bold,
+      color: COLORS.textSecondary,
+      textAlign: 'center',
+    },
+    emptySubText: {
+      fontSize: FS.sm,
+      fontFamily: FONT.regular,
+      color: COLORS.textMuted,
+      textAlign: 'center',
+    },
 
-  courseRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 14,
-  },
+    courseCard: {
+      backgroundColor: COLORS.surface,
+      borderRadius: RADIUS.xl,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: COLORS.surfaceBorder,
+    },
 
-  courseThumb: {
-    width: 56,
-    height: 56,
-    borderRadius: RADIUS.md,
-    flexShrink: 0,
-    backgroundColor: COLORS.surfaceBorder,
-  },
+    courseRow: {
+      flexDirection: row,
+      alignItems: 'center',
+      gap: 14,
+    },
 
-  courseIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: RADIUS.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0,
-  },
+    courseThumb: {
+      width: 56,
+      height: 56,
+      borderRadius: RADIUS.md,
+      flexShrink: 0,
+      backgroundColor: COLORS.surfaceBorder,
+    },
 
-  featuredBgImage: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: RADIUS.xxl,
-    opacity: 0.35,
-  },
+    courseIconCircle: {
+      width: 56,
+      height: 56,
+      borderRadius: RADIUS.md,
+      justifyContent: 'center',
+      alignItems: 'center',
+      flexShrink: 0,
+    },
 
-  featuredOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    borderRadius: RADIUS.xxl,
-  },
+    featuredBgImage: {
+      ...StyleSheet.absoluteFillObject,
+      borderRadius: RADIUS.xxl,
+      opacity: 0.35,
+    },
 
-  courseTextBlock: {
-    flex: 1,
-    gap: 8,
-  },
+    featuredOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.25)',
+      borderRadius: RADIUS.xxl,
+    },
 
-  courseTitle: {
-    fontSize: FS.md,
-    fontFamily: FONT.bold,
-    color: COLORS.text,
-    textAlign: 'right',
-    lineHeight: 22,
-  },
+    courseTextBlock: {
+      flex: 1,
+      gap: 8,
+    },
 
-  courseMeta: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
+    courseTitle: {
+      fontSize: FS.md,
+      fontFamily: FONT.bold,
+      color: COLORS.text,
+      textAlign: start,
+      lineHeight: 22,
+    },
 
-  courseViewsRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 4,
-  },
+    courseMeta: {
+      flexDirection: row,
+      alignItems: 'center',
+      gap: 8,
+      flexWrap: 'wrap',
+    },
 
-  courseViews: {
-    fontSize: FS.xs,
-    fontFamily: FONT.medium,
-    color: COLORS.textMuted,
-    textAlign: 'right',
-  },
+    courseViewsRow: {
+      flexDirection: row,
+      alignItems: 'center',
+      gap: 4,
+    },
 
-  courseBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: RADIUS.full,
-    borderWidth: 1,
-  },
+    courseViews: {
+      fontSize: FS.xs,
+      fontFamily: FONT.medium,
+      color: COLORS.textMuted,
+      textAlign: start,
+    },
 
-  courseBadgeText: {
-    fontSize: FS.xs,
-    fontFamily: FONT.semibold,
-    textAlign: 'right',
-  },
+    courseBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: RADIUS.full,
+      borderWidth: 1,
+    },
 
-  // ── Skeleton shimmer ──
-  skeletonCard: {
-    backgroundColor: COLORS.surface,
-  },
-  skeletonIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: RADIUS.md,
-    backgroundColor: 'rgba(15,18,33,0.07)',
-    flexShrink: 0,
-  },
-  skeletonTextBlock: {
-    flex: 1,
-    gap: 8,
-  },
-  skeletonLine: {
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: 'rgba(15,18,33,0.07)',
-    width: '85%',
-    alignSelf: 'flex-end',
-  },
+    courseBadgeText: {
+      fontSize: FS.xs,
+      fontFamily: FONT.semibold,
+      textAlign: start,
+    },
 
-  // ── Coming soon ──
-  comingSoonWrapper: {
-    paddingHorizontal: 24,
-  },
+    // ── Skeleton shimmer ──
+    skeletonCard: {
+      backgroundColor: COLORS.surface,
+    },
+    skeletonIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: RADIUS.md,
+      backgroundColor: 'rgba(15,18,33,0.07)',
+      flexShrink: 0,
+    },
+    skeletonTextBlock: {
+      flex: 1,
+      gap: 8,
+    },
+    skeletonLine: {
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: 'rgba(15,18,33,0.07)',
+      width: '85%',
+      alignSelf: isRTL ? 'flex-end' : 'flex-start',
+    },
 
-  comingSoonCard: {
-    borderRadius: RADIUS.xl,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: COLORS.primary + '30',
-  },
+    // ── Coming soon ──
+    comingSoonWrapper: {
+      paddingHorizontal: 24,
+    },
 
-  comingSoonGrad: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    gap: 12,
-  },
+    comingSoonCard: {
+      borderRadius: RADIUS.xl,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: COLORS.primary + '30',
+    },
 
-  comingSoonIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.primary + '18',
-    borderWidth: 1,
-    borderColor: COLORS.primary + '40',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
+    comingSoonGrad: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 32,
+      paddingHorizontal: 24,
+      gap: 12,
+    },
 
-  comingSoonText: {
-    fontSize: FS.md,
-    fontFamily: FONT.extrabold,
-    color: COLORS.text,
-    textAlign: 'center',
-  },
+    comingSoonIconWrap: {
+      width: 56,
+      height: 56,
+      borderRadius: RADIUS.lg,
+      backgroundColor: COLORS.primary + '18',
+      borderWidth: 1,
+      borderColor: COLORS.primary + '40',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
 
-  comingSoonSub: {
-    fontSize: FS.sm,
-    fontFamily: FONT.regular,
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-})
+    comingSoonText: {
+      fontSize: FS.md,
+      fontFamily: FONT.extrabold,
+      color: COLORS.text,
+      textAlign: 'center',
+    },
+
+    comingSoonSub: {
+      fontSize: FS.sm,
+      fontFamily: FONT.regular,
+      color: COLORS.textMuted,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+  })
+}

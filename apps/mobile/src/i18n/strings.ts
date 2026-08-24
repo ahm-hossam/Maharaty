@@ -173,6 +173,15 @@ export const strings = {
       emptyResultsTitle: 'لا توجد نتائج',
       emptyResultsText: 'جرّب كلمة بحث أخرى أو اختر مجالاً مختلفاً.',
     },
+    learningHub: {
+      title: 'اكتشف وتعلّم',
+      subtitle: 'طوّر مهاراتك مع أفضل الدورات والمحتوى',
+      searchPlaceholder: 'ابحث عن مهارة، دورة، أو مجال...',
+      all: 'الكل',
+      recommendedCourses: 'الدورات الموصى بها',
+      noCourses: 'لا توجد دورات منشورة حالياً',
+      noCoursesSub: 'ترقّب! قريباً سيتم إضافة محتوى جديد',
+    },
   },
   en: {
     common: {
@@ -343,6 +352,15 @@ export const strings = {
       emptyBrowsingText: "We're working on adding more courses and skills. Stay tuned!",
       emptyResultsTitle: 'No results found',
       emptyResultsText: 'Try a different search term or pick another category.',
+    },
+    learningHub: {
+      title: 'Discover & Learn',
+      subtitle: 'Grow your skills with the best courses and content',
+      searchPlaceholder: 'Search for a skill, course, or field...',
+      all: 'All',
+      recommendedCourses: 'Recommended Courses',
+      noCourses: 'No courses published yet',
+      noCoursesSub: 'Stay tuned! New content is coming soon',
     },
   },
 } as const
