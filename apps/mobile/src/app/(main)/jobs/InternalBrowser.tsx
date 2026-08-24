@@ -2,14 +2,17 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, StatusBar,
 import { WebView } from 'react-native-webview'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { COLORS, FONT, RADIUS, FS } from '@/constants/theme'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
+import { useLanguage } from '../../../i18n/LanguageContext'
 
 export default function InternalBrowserScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { t, isRTL } = useLanguage()
+  const S = useMemo(() => createStyles(isRTL), [isRTL])
   const { url, name, accent } = useLocalSearchParams<{ url: string; name: string; accent: string }>()
 
   const [loading, setLoading] = useState(true)
@@ -121,8 +124,8 @@ export default function InternalBrowserScreen() {
         {hasError && (
           <View style={S.errorOverlay}>
             <Ionicons name="wifi-outline" size={60} color={COLORS.textMuted} />
-            <Text style={S.errorTitle}>تعذّر تحميل الصفحة</Text>
-            <Text style={S.errorSub}>تحقق من اتصالك بالإنترنت</Text>
+            <Text style={S.errorTitle}>{t('internalBrowser.loadError')}</Text>
+            <Text style={S.errorSub}>{t('internalBrowser.checkConnection')}</Text>
             <TouchableOpacity
               onPress={() => webViewRef.current?.reload()}
               style={S.retryBtn}
@@ -134,7 +137,7 @@ export default function InternalBrowserScreen() {
                 end={{ x: 1, y: 0 }}
                 style={S.retryGrad}
               >
-                <Text style={S.retryText}>إعادة المحاولة</Text>
+                <Text style={S.retryText}>{t('internalBrowser.retry')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -144,7 +147,10 @@ export default function InternalBrowserScreen() {
   )
 }
 
-const S = StyleSheet.create({
+const createStyles = (isRTL: boolean) => {
+  const row = isRTL ? 'row-reverse' : 'row' as const
+
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.canvas },
 
   header: {
@@ -155,7 +161,7 @@ const S = StyleSheet.create({
     borderBottomColor: 'rgba(15,18,33,0.07)',
   },
   headerRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: row,
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 10,
@@ -239,4 +245,5 @@ const S = StyleSheet.create({
     fontSize: FS.md,
     color: '#fff',
   },
-})
+  })
+}
