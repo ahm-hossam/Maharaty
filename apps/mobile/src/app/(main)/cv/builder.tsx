@@ -18,23 +18,13 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useNavigation } from 'expo-router'
-import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react'
 import { COLORS, RADIUS, SHADOW, FONT, FS } from '@/constants/theme'
 import { useCvStore } from '@/store/cvStore'
 import { getCvSuggestions, CvSuggestion } from '@/services/mockAi'
 import type { ExperienceItem, EducationItem, SkillItem } from '@/store/cvStore'
 import { useActivity } from '../../../hooks/useActivity'
-
-const STEPS = [
-  { id: 0, label: 'معلومات شخصية', icon: 'person' },
-  { id: 1, label: 'الخبرة العملية', icon: 'briefcase' },
-  { id: 2, label: 'التعليم', icon: 'school' },
-  { id: 3, label: 'المهارات', icon: 'star' },
-  { id: 4, label: 'الشهادات', icon: 'ribbon' },
-  { id: 5, label: 'اللغات', icon: 'globe' },
-]
-
-const SKILL_LEVELS = ['مبتدئ', 'متوسط', 'متقدم', 'خبير'] as const
+import { useLanguage } from '../../../i18n/LanguageContext'
 
 function uid() {
   return Math.random().toString(36).slice(2, 10)
@@ -42,12 +32,13 @@ function uid() {
 
 // ─── Neon Progress Line ───────────────────────────────────────
 
-function NeonProgressLine({ step }: { step: number }) {
-  const fillAnim = useRef(new Animated.Value((step + 1) / STEPS.length)).current
+function NeonProgressLine({ step, t, S }: { step: number; t: (key: string) => string; S: ReturnType<typeof createStyles> }) {
+  const STEP_KEYS = ['stepPersonal', 'stepExperience', 'stepEducation', 'stepSkills', 'stepCertifications', 'stepLanguages']
+  const fillAnim = useRef(new Animated.Value((step + 1) / STEP_KEYS.length)).current
 
   useEffect(() => {
     Animated.timing(fillAnim, {
-      toValue: (step + 1) / STEPS.length,
+      toValue: (step + 1) / STEP_KEYS.length,
       duration: 500,
       useNativeDriver: false,
     }).start()
@@ -63,7 +54,7 @@ function NeonProgressLine({ step }: { step: number }) {
       </View>
       {/* Minimal step dots */}
       <View style={S.stepDots}>
-        {STEPS.map((_, i) => (
+        {STEP_KEYS.map((_, i) => (
           <View
             key={i}
             style={[
@@ -74,7 +65,7 @@ function NeonProgressLine({ step }: { step: number }) {
           />
         ))}
       </View>
-      <Text style={S.stepLabel}>{STEPS[step].label}</Text>
+      <Text style={S.stepLabel}>{t(`cvBuilder.${STEP_KEYS[step]}`)}</Text>
     </View>
   )
 }
@@ -90,11 +81,13 @@ interface FieldInputProps {
   editable?: boolean
   multiline?: boolean
   numberOfLines?: number
+  isRTL: boolean
+  S: ReturnType<typeof createStyles>
 }
 
 function FloatingLabelInput({
   label, value, onChangeText, keyboardType = 'default',
-  editable = true, multiline = false, numberOfLines,
+  editable = true, multiline = false, numberOfLines, isRTL, S,
 }: FieldInputProps) {
   const [focused, setFocused] = useState(false)
   const anim = useRef(new Animated.Value(value ? 1 : 0)).current
@@ -130,7 +123,7 @@ function FloatingLabelInput({
         editable={editable}
         multiline={multiline}
         numberOfLines={numberOfLines}
-        textAlign="right"
+        textAlign={isRTL ? 'right' : 'left'}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         placeholderTextColor="transparent"
@@ -152,9 +145,11 @@ interface AiSheetProps {
   onSelect: (text: string) => void
   fieldType: 'bullet' | 'summary'
   role?: string
+  t: (key: string, params?: Record<string, string | number>) => string
+  S: ReturnType<typeof createStyles>
 }
 
-function AiSuggestSheet({ visible, onClose, onSelect, fieldType, role }: AiSheetProps) {
+function AiSuggestSheet({ visible, onClose, onSelect, fieldType, role, t, S }: AiSheetProps) {
   const [loading, setLoading] = useState(false)
   const [suggestions, setSuggestions] = useState<CvSuggestion[]>([])
   const slideAnim = useRef(new Animated.Value(500)).current
@@ -196,18 +191,18 @@ function AiSuggestSheet({ visible, onClose, onSelect, fieldType, role }: AiSheet
               style={S.aiChip}
             >
               <Ionicons name="sparkles" size={13} color="#fff" />
-              <Text style={S.aiChipText}>مساعد AI</Text>
+              <Text style={S.aiChipText}>{t('cvBuilder.aiAssistant')}</Text>
             </LinearGradient>
             <Text style={S.sheetTitle}>
-              {fieldType === 'summary' ? 'اقتراحات الملخص المهني' : 'اقتراحات إعادة صياغة الإنجاز'}
+              {fieldType === 'summary' ? t('cvBuilder.summarySuggestions') : t('cvBuilder.bulletSuggestions')}
             </Text>
-            <Text style={S.sheetSub}>اختر اقتراحاً وعدّله كما تشاء</Text>
+            <Text style={S.sheetSub}>{t('cvBuilder.chooseAndEdit')}</Text>
           </View>
 
           {loading ? (
             <View style={S.sheetLoader}>
               <ActivityIndicator size="large" color={COLORS.primary} />
-              <Text style={S.sheetLoadingText}>يحلل AI نصّك...</Text>
+              <Text style={S.sheetLoadingText}>{t('cvBuilder.analyzing')}</Text>
             </View>
           ) : (
             <FlatList
@@ -224,7 +219,7 @@ function AiSuggestSheet({ visible, onClose, onSelect, fieldType, role }: AiSheet
                   <Text style={S.suggestionText}>{item.text}</Text>
                   <View style={S.suggestionAction}>
                     <Ionicons name="checkmark-circle" size={18} color={COLORS.teal} />
-                    <Text style={S.suggestionActionText}>استخدم هذا</Text>
+                    <Text style={S.suggestionActionText}>{t('cvBuilder.useThis')}</Text>
                   </View>
                 </TouchableOpacity>
               )}
@@ -238,7 +233,7 @@ function AiSuggestSheet({ visible, onClose, onSelect, fieldType, role }: AiSheet
 
 // ─── Shared sub-components ────────────────────────────────────
 
-function StepSection({ title, children }: { title: string; children: React.ReactNode }) {
+function StepSection({ title, children, S }: { title: string; children: React.ReactNode; S: ReturnType<typeof createStyles> }) {
   return (
     <View style={S.section}>
       <Text style={S.sectionTitle}>{title}</Text>
@@ -249,43 +244,35 @@ function StepSection({ title, children }: { title: string; children: React.React
 
 // ─── Step 0: Personal Info ────────────────────────────────────
 
-function PersonalStep() {
+function PersonalStep({ t, isRTL, S }: { t: (key: string, params?: Record<string, string | number>) => string; isRTL: boolean; S: ReturnType<typeof createStyles> }) {
   const { draft, updatePersonal } = useCvStore()
   const [aiVisible, setAiVisible] = useState(false)
   const p = draft.personal
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.stepContent}>
-      <StepSection title="الاسم والمسمى الوظيفي">
-        <FloatingLabelInput label="الاسم الكامل" value={p.fullName} onChangeText={(v) => updatePersonal({ fullName: v })} />
-        <FloatingLabelInput label="المسمى الوظيفي" value={p.title} onChangeText={(v) => updatePersonal({ title: v })} />
+      <StepSection title={t('cvBuilder.nameAndTitle')} S={S}>
+        <FloatingLabelInput label={t('cvBuilder.fullName')} value={p.fullName} onChangeText={(v) => updatePersonal({ fullName: v })} isRTL={isRTL} S={S} />
+        <FloatingLabelInput label={t('cvBuilder.jobTitle')} value={p.title} onChangeText={(v) => updatePersonal({ title: v })} isRTL={isRTL} S={S} />
       </StepSection>
 
-      <StepSection title="التواصل">
-        <FloatingLabelInput label="البريد الإلكتروني" value={p.email} onChangeText={(v) => updatePersonal({ email: v })} keyboardType="email-address" />
-        <FloatingLabelInput label="رقم الهاتف" value={p.phone} onChangeText={(v) => updatePersonal({ phone: v })} keyboardType="phone-pad" />
-        <FloatingLabelInput label="المدينة" value={p.city} onChangeText={(v) => updatePersonal({ city: v })} />
-        <FloatingLabelInput label="LinkedIn" value={p.linkedIn} onChangeText={(v) => updatePersonal({ linkedIn: v })} />
+      <StepSection title={t('cvBuilder.contactInfo')} S={S}>
+        <FloatingLabelInput label={t('cvBuilder.email')} value={p.email} onChangeText={(v) => updatePersonal({ email: v })} keyboardType="email-address" isRTL={isRTL} S={S} />
+        <FloatingLabelInput label={t('cvBuilder.phone')} value={p.phone} onChangeText={(v) => updatePersonal({ phone: v })} keyboardType="phone-pad" isRTL={isRTL} S={S} />
+        <FloatingLabelInput label={t('cvBuilder.city')} value={p.city} onChangeText={(v) => updatePersonal({ city: v })} isRTL={isRTL} S={S} />
+        <FloatingLabelInput label="LinkedIn" value={p.linkedIn} onChangeText={(v) => updatePersonal({ linkedIn: v })} isRTL={isRTL} S={S} />
       </StepSection>
 
-      <StepSection title="الملخص المهني">
+      <StepSection title={t('cvBuilder.professionalSummary')} S={S}>
         <FloatingLabelInput
-          label="اكتب ملخصك المهني..."
+          label={t('cvBuilder.writeSummary')}
           value={p.summary}
           onChangeText={(v) => updatePersonal({ summary: v })}
           multiline
           numberOfLines={5}
+          isRTL={isRTL}
+          S={S}
         />
-        {/* <TouchableOpacity style={S.aiBtnWrap} onPress={() => setAiVisible(true)}>
-          <LinearGradient
-            colors={[COLORS.primary, COLORS.secondary]}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={S.aiBtnGrad}
-          >
-            <Ionicons name="sparkles" size={14} color="#fff" />
-            <Text style={S.aiBtnText}>اقتراح AI</Text>
-          </LinearGradient>
-        </TouchableOpacity> */}
       </StepSection>
 
       <AiSuggestSheet
@@ -294,6 +281,8 @@ function PersonalStep() {
         onSelect={(text) => updatePersonal({ summary: text })}
         fieldType="summary"
         role={p.title}
+        t={t}
+        S={S}
       />
     </ScrollView>
   )
@@ -301,7 +290,7 @@ function PersonalStep() {
 
 // ─── Step 1: Experience ───────────────────────────────────────
 
-function ExperienceStep() {
+function ExperienceStep({ t, isRTL, S }: { t: (key: string, params?: Record<string, string | number>) => string; isRTL: boolean; S: ReturnType<typeof createStyles> }) {
   const { draft, addExperience, updateExperience, removeExperience } = useCvStore()
   const [aiVisible, setAiVisible] = useState(false)
   const [aiTargetId, setAiTargetId] = useState<string | null>(null)
@@ -337,22 +326,24 @@ function ExperienceStep() {
             <TouchableOpacity style={S.deleteBtn} onPress={() => removeExperience(exp.id)}>
               <Ionicons name="trash-outline" size={16} color={COLORS.error} />
             </TouchableOpacity>
-            <Text style={S.cardNum}>خبرة #{expIdx + 1}</Text>
+            <Text style={S.cardNum}>{t('cvBuilder.experienceNum', { n: expIdx + 1 })}</Text>
           </View>
 
-          <FloatingLabelInput label="المسمى الوظيفي" value={exp.role} onChangeText={(v) => updateExperience(exp.id, { role: v })} />
-          <FloatingLabelInput label="اسم الشركة" value={exp.company} onChangeText={(v) => updateExperience(exp.id, { company: v })} />
+          <FloatingLabelInput label={t('cvBuilder.jobTitle')} value={exp.role} onChangeText={(v) => updateExperience(exp.id, { role: v })} isRTL={isRTL} S={S} />
+          <FloatingLabelInput label={t('cvBuilder.companyName')} value={exp.company} onChangeText={(v) => updateExperience(exp.id, { company: v })} isRTL={isRTL} S={S} />
 
           <View style={S.row2}>
             <View style={{ flex: 1 }}>
-              <FloatingLabelInput label="تاريخ البداية" value={exp.startDate} onChangeText={(v) => updateExperience(exp.id, { startDate: v })} />
+              <FloatingLabelInput label={t('cvBuilder.startDate')} value={exp.startDate} onChangeText={(v) => updateExperience(exp.id, { startDate: v })} isRTL={isRTL} S={S} />
             </View>
             <View style={{ flex: 1 }}>
               <FloatingLabelInput
-                label={exp.isCurrent ? 'حتى الآن' : 'تاريخ النهاية'}
-                value={exp.isCurrent ? 'حتى الآن' : exp.endDate}
+                label={exp.isCurrent ? t('cvBuilder.present') : t('cvBuilder.endDate')}
+                value={exp.isCurrent ? t('cvBuilder.present') : exp.endDate}
                 onChangeText={(v) => updateExperience(exp.id, { endDate: v })}
                 editable={!exp.isCurrent}
+                isRTL={isRTL}
+                S={S}
               />
             </View>
           </View>
@@ -361,10 +352,10 @@ function ExperienceStep() {
             <View style={[S.checkbox, exp.isCurrent && S.checkboxActive]}>
               {exp.isCurrent && <Ionicons name="checkmark" size={11} color="#fff" />}
             </View>
-            <Text style={S.checkLabel}>أعمل هنا حالياً</Text>
+            <Text style={S.checkLabel}>{t('cvBuilder.currentlyWorking')}</Text>
           </TouchableOpacity>
 
-          <Text style={S.fieldSubLabel}>الإنجازات والمهام</Text>
+          <Text style={S.fieldSubLabel}>{t('cvBuilder.achievementsAndTasks')}</Text>
           {exp.bullets.map((bullet, bIdx) => (
             <View key={bIdx} style={S.bulletRow}>
               <View style={{ flex: 1 }}>
@@ -375,9 +366,9 @@ function ExperienceStep() {
                     const nb = [...exp.bullets]; nb[bIdx] = v
                     updateExperience(exp.id, { bullets: nb })
                   }}
-                  placeholder={`إنجاز ${bIdx + 1}...`}
+                  placeholder={t('cvBuilder.achievementPlaceholder', { n: bIdx + 1 })}
                   placeholderTextColor={COLORS.textMuted}
-                  textAlign="right"
+                  textAlign={isRTL ? 'right' : 'left'}
                   multiline
                   selectionColor={COLORS.primary}
                 />
@@ -393,14 +384,14 @@ function ExperienceStep() {
             onPress={() => updateExperience(exp.id, { bullets: [...exp.bullets, ''] })}
           >
             <Ionicons name="add-circle-outline" size={17} color={COLORS.teal} />
-            <Text style={S.addBulletText}>إضافة إنجاز</Text>
+            <Text style={S.addBulletText}>{t('cvBuilder.addAchievement')}</Text>
           </TouchableOpacity>
         </View>
       ))}
 
       <TouchableOpacity style={S.addCardBtn} onPress={addNew}>
         <Ionicons name="add-circle" size={20} color={COLORS.primary} />
-        <Text style={S.addCardText}>إضافة خبرة عملية</Text>
+        <Text style={S.addCardText}>{t('cvBuilder.addExperience')}</Text>
       </TouchableOpacity>
 
       <AiSuggestSheet
@@ -409,6 +400,8 @@ function ExperienceStep() {
         onSelect={handleAiSelect}
         fieldType="bullet"
         role={currentRole}
+        t={t}
+        S={S}
       />
     </ScrollView>
   )
@@ -416,7 +409,7 @@ function ExperienceStep() {
 
 // ─── Step 2: Education ────────────────────────────────────────
 
-function EducationStep() {
+function EducationStep({ t, isRTL, S }: { t: (key: string, params?: Record<string, string | number>) => string; isRTL: boolean; S: ReturnType<typeof createStyles> }) {
   const { draft, addEducation, updateEducation, removeEducation } = useCvStore()
 
   const addNew = () => {
@@ -432,24 +425,24 @@ function EducationStep() {
             <TouchableOpacity style={S.deleteBtn} onPress={() => removeEducation(edu.id)}>
               <Ionicons name="trash-outline" size={16} color={COLORS.error} />
             </TouchableOpacity>
-            <Text style={S.cardNum}>مؤهل #{i + 1}</Text>
+            <Text style={S.cardNum}>{t('cvBuilder.qualificationNum', { n: i + 1 })}</Text>
           </View>
-          <FloatingLabelInput label="المؤسسة التعليمية" value={edu.institution} onChangeText={(v) => updateEducation(edu.id, { institution: v })} />
-          <FloatingLabelInput label="الدرجة العلمية" value={edu.degree} onChangeText={(v) => updateEducation(edu.id, { degree: v })} />
-          <FloatingLabelInput label="التخصص" value={edu.field} onChangeText={(v) => updateEducation(edu.id, { field: v })} />
+          <FloatingLabelInput label={t('cvBuilder.institution')} value={edu.institution} onChangeText={(v) => updateEducation(edu.id, { institution: v })} isRTL={isRTL} S={S} />
+          <FloatingLabelInput label={t('cvBuilder.degree')} value={edu.degree} onChangeText={(v) => updateEducation(edu.id, { degree: v })} isRTL={isRTL} S={S} />
+          <FloatingLabelInput label={t('cvBuilder.fieldOfStudy')} value={edu.field} onChangeText={(v) => updateEducation(edu.id, { field: v })} isRTL={isRTL} S={S} />
           <View style={S.row2}>
             <View style={{ flex: 1 }}>
-              <FloatingLabelInput label="سنة التخرج" value={edu.graduationYear} onChangeText={(v) => updateEducation(edu.id, { graduationYear: v })} keyboardType="number-pad" />
+              <FloatingLabelInput label={t('cvBuilder.graduationYear')} value={edu.graduationYear} onChangeText={(v) => updateEducation(edu.id, { graduationYear: v })} keyboardType="number-pad" isRTL={isRTL} S={S} />
             </View>
             <View style={{ flex: 1 }}>
-              <FloatingLabelInput label="المعدل (اختياري)" value={edu.gpa} onChangeText={(v) => updateEducation(edu.id, { gpa: v })} />
+              <FloatingLabelInput label={t('cvBuilder.gpaOptional')} value={edu.gpa} onChangeText={(v) => updateEducation(edu.id, { gpa: v })} isRTL={isRTL} S={S} />
             </View>
           </View>
         </View>
       ))}
       <TouchableOpacity style={S.addCardBtn} onPress={addNew}>
         <Ionicons name="add-circle" size={20} color={COLORS.primary} />
-        <Text style={S.addCardText}>إضافة مؤهل دراسي</Text>
+        <Text style={S.addCardText}>{t('cvBuilder.addEducation')}</Text>
       </TouchableOpacity>
     </ScrollView>
   )
@@ -457,14 +450,15 @@ function EducationStep() {
 
 // ─── Step 3: Skills ───────────────────────────────────────────
 
-function SkillsStep() {
+function SkillsStep({ t, isRTL, S }: { t: (key: string, params?: Record<string, string | number>) => string; isRTL: boolean; S: ReturnType<typeof createStyles> }) {
   const { draft, addSkill, removeSkill } = useCvStore()
+  const SKILL_LEVELS = [t('cvBuilder.levelBeginner'), t('cvBuilder.levelIntermediate'), t('cvBuilder.levelAdvanced'), t('cvBuilder.levelExpert')]
   const [name, setName] = useState('')
-  const [level, setLevel] = useState<SkillItem['level']>('متوسط')
+  const [level, setLevel] = useState<SkillItem['level']>(SKILL_LEVELS[1] as SkillItem['level'])
   const [error, setError] = useState('')
 
   const add = () => {
-    if (!name.trim()) { setError('أدخل اسم المهارة أولاً'); return }
+    if (!name.trim()) { setError(t('cvBuilder.skillNameRequired')); return }
     setError('')
     addSkill({ id: uid(), name: name.trim(), level })
     setName('')
@@ -472,16 +466,16 @@ function SkillsStep() {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.stepContent}>
-      <StepSection title="أضف مهاراتك التقنية والناعمة">
-        <FloatingLabelInput label="اسم المهارة" value={name} onChangeText={(v) => { setName(v); setError('') }} />
+      <StepSection title={t('cvBuilder.addYourSkills')} S={S}>
+        <FloatingLabelInput label={t('cvBuilder.skillName')} value={name} onChangeText={(v) => { setName(v); setError('') }} isRTL={isRTL} S={S} />
         {error ? <Text style={S.fieldError}>{error}</Text> : null}
-        <Text style={S.fieldSubLabel}>مستوى الإتقان</Text>
+        <Text style={S.fieldSubLabel}>{t('cvBuilder.proficiencyLevel')}</Text>
         <View style={S.levelRow}>
           {SKILL_LEVELS.map((l) => (
             <TouchableOpacity
               key={l}
               style={[S.levelChip, level === l && S.levelChipActive]}
-              onPress={() => setLevel(l)}
+              onPress={() => setLevel(l as SkillItem['level'])}
             >
               <Text style={[S.levelChipText, level === l && S.levelChipTextActive]}>{l}</Text>
             </TouchableOpacity>
@@ -494,7 +488,7 @@ function SkillsStep() {
             style={S.addItemGrad}
           >
             <Ionicons name="add" size={18} color="#fff" />
-            <Text style={S.addItemText}>إضافة</Text>
+            <Text style={S.addItemText}>{t('cvBuilder.add')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </StepSection>
@@ -510,7 +504,7 @@ function SkillsStep() {
           </View>
         ))}
         {draft.skills.length === 0 && (
-          <Text style={S.emptyHint}>لا توجد مهارات بعد — أضف أولى مهاراتك أعلاه</Text>
+          <Text style={S.emptyHint}>{t('cvBuilder.noSkillsYet')}</Text>
         )}
       </View>
     </ScrollView>
@@ -519,13 +513,13 @@ function SkillsStep() {
 
 // ─── Step 4: Certifications ───────────────────────────────────
 
-function CertificationsStep() {
+function CertificationsStep({ t, isRTL, S }: { t: (key: string, params?: Record<string, string | number>) => string; isRTL: boolean; S: ReturnType<typeof createStyles> }) {
   const { draft, addCertification, removeCertification } = useCvStore()
   const [form, setForm] = useState({ name: '', issuer: '', date: '' })
   const [certError, setCertError] = useState('')
 
   const add = () => {
-    if (!form.name.trim()) { setCertError('أدخل اسم الشهادة أولاً'); return }
+    if (!form.name.trim()) { setCertError(t('cvBuilder.certNameRequired')); return }
     setCertError('')
     addCertification({ id: uid(), ...form })
     setForm({ name: '', issuer: '', date: '' })
@@ -533,11 +527,11 @@ function CertificationsStep() {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.stepContent}>
-      <StepSection title="أضف شهاداتك ودوراتك">
-        <FloatingLabelInput label="اسم الشهادة" value={form.name} onChangeText={(v) => { setForm((f) => ({ ...f, name: v })); setCertError('') }} />
+      <StepSection title={t('cvBuilder.addYourCertifications')} S={S}>
+        <FloatingLabelInput label={t('cvBuilder.certificateName')} value={form.name} onChangeText={(v) => { setForm((f) => ({ ...f, name: v })); setCertError('') }} isRTL={isRTL} S={S} />
         {certError ? <Text style={S.fieldError}>{certError}</Text> : null}
-        <FloatingLabelInput label="الجهة المانحة" value={form.issuer} onChangeText={(v) => setForm((f) => ({ ...f, issuer: v }))} />
-        <FloatingLabelInput label="تاريخ الحصول" value={form.date} onChangeText={(v) => setForm((f) => ({ ...f, date: v }))} />
+        <FloatingLabelInput label={t('cvBuilder.issuingOrg')} value={form.issuer} onChangeText={(v) => setForm((f) => ({ ...f, issuer: v }))} isRTL={isRTL} S={S} />
+        <FloatingLabelInput label={t('cvBuilder.dateObtained')} value={form.date} onChangeText={(v) => setForm((f) => ({ ...f, date: v }))} isRTL={isRTL} S={S} />
         <TouchableOpacity style={S.addItemBtn} onPress={add}>
           <LinearGradient
             colors={[COLORS.primary, COLORS.secondary]}
@@ -545,7 +539,7 @@ function CertificationsStep() {
             style={S.addItemGrad}
           >
             <Ionicons name="add" size={18} color="#fff" />
-            <Text style={S.addItemText}>إضافة شهادة</Text>
+            <Text style={S.addItemText}>{t('cvBuilder.addCertificate')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </StepSection>
@@ -568,16 +562,15 @@ function CertificationsStep() {
 
 // ─── Step 5: Languages ────────────────────────────────────────
 
-const LANG_LEVELS = ['أساسي', 'جيد', 'جيد جداً', 'ممتاز', 'لغة أم']
-
-function LanguagesStep() {
+function LanguagesStep({ t, isRTL, S }: { t: (key: string, params?: Record<string, string | number>) => string; isRTL: boolean; S: ReturnType<typeof createStyles> }) {
   const { draft, addLanguage, removeLanguage } = useCvStore()
+  const LANG_LEVELS = [t('cvBuilder.langBasic'), t('cvBuilder.langGood'), t('cvBuilder.langVeryGood'), t('cvBuilder.langExcellent'), t('cvBuilder.langNative')]
   const [langName, setLangName] = useState('')
   const [langLevel, setLangLevel] = useState(LANG_LEVELS[3])
   const [langError, setLangError] = useState('')
 
   const add = () => {
-    if (!langName.trim()) { setLangError('أدخل اسم اللغة أولاً'); return }
+    if (!langName.trim()) { setLangError(t('cvBuilder.langNameRequired')); return }
     setLangError('')
     addLanguage({ id: uid(), name: langName.trim(), level: langLevel })
     setLangName('')
@@ -585,10 +578,10 @@ function LanguagesStep() {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.stepContent}>
-      <StepSection title="اللغات التي تتحدثها">
-        <FloatingLabelInput label="اللغة" value={langName} onChangeText={(v) => { setLangName(v); setLangError('') }} />
+      <StepSection title={t('cvBuilder.languagesYouSpeak')} S={S}>
+        <FloatingLabelInput label={t('cvBuilder.languageLabel')} value={langName} onChangeText={(v) => { setLangName(v); setLangError('') }} isRTL={isRTL} S={S} />
         {langError ? <Text style={S.fieldError}>{langError}</Text> : null}
-        <Text style={S.fieldSubLabel}>مستوى الإجادة</Text>
+        <Text style={S.fieldSubLabel}>{t('cvBuilder.proficiencyLevel')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
           <View style={S.levelRow}>
             {LANG_LEVELS.map((l) => (
@@ -609,7 +602,7 @@ function LanguagesStep() {
             style={S.addItemGrad}
           >
             <Ionicons name="add" size={18} color="#fff" />
-            <Text style={S.addItemText}>إضافة</Text>
+            <Text style={S.addItemText}>{t('cvBuilder.add')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </StepSection>
@@ -621,7 +614,7 @@ function LanguagesStep() {
             borderColor: 'rgba(0,245,212,0.28)',
           }]}>
             <Text style={S.tagText}>{lang.name}</Text>
-            <Text style={[S.tagLevel, { borderRightColor: 'rgba(0,245,212,0.25)', color: COLORS.teal }]}>{lang.level}</Text>
+            <Text style={[S.tagLevel, { color: COLORS.teal }]}>{lang.level}</Text>
             <TouchableOpacity onPress={() => removeLanguage(lang.id)}>
               <Ionicons name="close-circle" size={15} color="rgba(15,18,33,0.35)" />
             </TouchableOpacity>
@@ -634,7 +627,7 @@ function LanguagesStep() {
 
 // ─── CV Preview Panel ─────────────────────────────────────────
 
-function CvPreview() {
+function CvPreview({ t, S }: { t: (key: string, params?: Record<string, string | number>) => string; S: ReturnType<typeof createStyles> }) {
   const { draft } = useCvStore()
   const p = draft.personal
 
@@ -646,8 +639,8 @@ function CvPreview() {
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={S.previewHeader}
         >
-          <Text style={S.previewName}>{p.fullName || 'اسمك الكامل'}</Text>
-          <Text style={S.previewTitle}>{p.title || 'المسمى الوظيفي'}</Text>
+          <Text style={S.previewName}>{p.fullName || t('cvBuilder.previewYourName')}</Text>
+          <Text style={S.previewTitle}>{p.title || t('cvBuilder.previewYourTitle')}</Text>
           <View style={S.previewContact}>
             {p.email ? <Text style={S.previewContactItem}>{p.email}</Text> : null}
             {p.phone ? <Text style={S.previewContactItem}>{p.phone}</Text> : null}
@@ -656,17 +649,17 @@ function CvPreview() {
         </LinearGradient>
 
         {p.summary ? (
-          <PreviewSection title="الملخص المهني">
+          <PreviewSection title={t('cvBuilder.professionalSummary')} S={S}>
             <Text style={S.previewBody}>{p.summary}</Text>
           </PreviewSection>
         ) : null}
 
         {draft.experiences.length > 0 && (
-          <PreviewSection title="الخبرة العملية">
+          <PreviewSection title={t('cvBuilder.stepExperience')} S={S}>
             {draft.experiences.map((exp) => (
               <View key={exp.id} style={S.previewItem}>
                 <Text style={S.previewItemTitle}>{exp.role || '—'}</Text>
-                <Text style={S.previewItemSub}>{exp.company} · {exp.startDate} — {exp.isCurrent ? 'حتى الآن' : exp.endDate}</Text>
+                <Text style={S.previewItemSub}>{exp.company} · {exp.startDate} — {exp.isCurrent ? t('cvBuilder.present') : exp.endDate}</Text>
                 {exp.bullets.filter(Boolean).map((b, i) => (
                   <Text key={i} style={S.previewBullet}>• {b}</Text>
                 ))}
@@ -676,7 +669,7 @@ function CvPreview() {
         )}
 
         {draft.education.length > 0 && (
-          <PreviewSection title="التعليم">
+          <PreviewSection title={t('cvBuilder.stepEducation')} S={S}>
             {draft.education.map((edu) => (
               <View key={edu.id} style={S.previewItem}>
                 <Text style={S.previewItemTitle}>{edu.degree} — {edu.field}</Text>
@@ -687,7 +680,7 @@ function CvPreview() {
         )}
 
         {draft.skills.length > 0 && (
-          <PreviewSection title="المهارات">
+          <PreviewSection title={t('cvBuilder.stepSkills')} S={S}>
             <View style={S.previewSkillsWrap}>
               {draft.skills.map((sk) => (
                 <View key={sk.id} style={S.previewSkillBadge}>
@@ -699,7 +692,7 @@ function CvPreview() {
         )}
 
         {draft.languages.length > 0 && (
-          <PreviewSection title="اللغات">
+          <PreviewSection title={t('cvBuilder.stepLanguages')} S={S}>
             {draft.languages.map((lang) => (
               <Text key={lang.id} style={S.previewBody}>{lang.name} — {lang.level}</Text>
             ))}
@@ -707,7 +700,7 @@ function CvPreview() {
         )}
 
         {draft.certifications.length > 0 && (
-          <PreviewSection title="الشهادات والدورات">
+          <PreviewSection title={t('cvBuilder.certificationsAndCourses')} S={S}>
             {draft.certifications.map((cert) => (
               <View key={cert.id} style={S.previewItem}>
                 <Text style={S.previewItemTitle}>{cert.name}</Text>
@@ -721,7 +714,7 @@ function CvPreview() {
   )
 }
 
-function PreviewSection({ title, children }: { title: string; children: React.ReactNode }) {
+function PreviewSection({ title, children, S }: { title: string; children: React.ReactNode; S: ReturnType<typeof createStyles> }) {
   return (
     <View style={S.previewSection}>
       <View style={S.previewSectionHeader}>
@@ -737,44 +730,25 @@ function PreviewSection({ title, children }: { title: string; children: React.Re
 
 type CvFormatType = 'زمنية' | 'وظيفية' | 'مختلطة'
 
-const FORMAT_OPTIONS: Array<{
-  value: CvFormatType
-  icon: string
-  title: string
-  desc: string
-}> = [
-  {
-    value: 'زمنية',
-    icon: 'time-outline',
-    title: 'زمنية',
-    desc: 'مرتبة حسب الترتيب الزمني — الأنسب للمسارات المهنية المتواصلة',
-  },
-  {
-    value: 'وظيفية',
-    icon: 'briefcase-outline',
-    title: 'وظيفية',
-    desc: 'مرتبة حسب الكفاءات والمهارات — للتحولات المهنية',
-  },
-  {
-    value: 'مختلطة',
-    icon: 'git-merge-outline',
-    title: 'مختلطة',
-    desc: 'تجمع بين الزمني والوظيفي — الأفضل لمعظم المرشحين (موصى)',
-  },
-]
-
 interface FormatSelectionScreenProps {
   cvFormat: CvFormatType
   setCvFormat: (f: CvFormatType) => void
   onContinue: () => void
+  t: (key: string, params?: Record<string, string | number>) => string
+  isRTL: boolean
+  S: ReturnType<typeof createStyles>
 }
 
-const FORMAT_TIP = 'السيرة الذاتية الزمنية تعرض تاريخك الوظيفي من الأحدث إلى الأقدم، وهي الأنسب لمن لديهم خبرة واضحة في مجال واحد. السيرة الوظيفية تركز على مهاراتك وكفاءاتك، وهي مثالية لمن يغيرون مجالهم المهني. أما المختلطة فتجمع بين الأسلوبين وتناسب معظم المرشحين.'
-
-function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSelectionScreenProps) {
+function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue, t, isRTL, S }: FormatSelectionScreenProps) {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const [playingAudio, setPlayingAudio] = useState(false)
+
+  const FORMAT_OPTIONS: Array<{ value: CvFormatType; icon: string; title: string; desc: string }> = [
+    { value: 'زمنية', icon: 'time-outline', title: t('cvBuilder.formatChronological'), desc: t('cvBuilder.formatChronologicalDesc') },
+    { value: 'وظيفية', icon: 'briefcase-outline', title: t('cvBuilder.formatFunctional'), desc: t('cvBuilder.formatFunctionalDesc') },
+    { value: 'مختلطة', icon: 'git-merge-outline', title: t('cvBuilder.formatHybrid'), desc: t('cvBuilder.formatHybridDesc') },
+  ]
 
   const toggleAudio = () => {
     if (playingAudio) {
@@ -782,8 +756,8 @@ function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSele
       setPlayingAudio(false)
     } else {
       setPlayingAudio(true)
-      Speech.speak(FORMAT_TIP, {
-        language: 'ar',
+      Speech.speak(t('cvBuilder.formatTip'), {
+        language: isRTL ? 'ar' : 'en',
         onDone: () => setPlayingAudio(false),
         onStopped: () => setPlayingAudio(false),
         onError: () => setPlayingAudio(false),
@@ -799,7 +773,7 @@ function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSele
           <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={S.headerTitle}>منشئ السيرة الذاتية</Text>
+          <Text style={S.headerTitle}>{t('cvBuilder.headerTitle')}</Text>
         </View>
       </View>
 
@@ -808,8 +782,8 @@ function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSele
         contentContainerStyle={[S.stepContent, { paddingBottom: insets.bottom + 32 }]}
       >
         {/* Title block */}
-        <Text style={S.fmtHeading}>اختر تنسيق السيرة الذاتية</Text>
-        <Text style={S.fmtSubtitle}>اختر النمط الأنسب لمسارك المهني</Text>
+        <Text style={S.fmtHeading}>{t('cvBuilder.chooseCvFormat')}</Text>
+        <Text style={S.fmtSubtitle}>{t('cvBuilder.choosePattern')}</Text>
 
         {/* Format option cards */}
         {FORMAT_OPTIONS.map((opt) => {
@@ -822,7 +796,7 @@ function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSele
               onPress={() => setCvFormat(opt.value)}
             >
               <View style={S.fmtCardInner}>
-                {/* Radio circle (right side in RTL) */}
+                {/* Radio circle (leading edge) */}
                 <View style={[S.fmtRadio, selected && S.fmtRadioSelected]}>
                   {selected && <View style={S.fmtRadioDot} />}
                 </View>
@@ -833,7 +807,7 @@ function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSele
                   <Text style={S.fmtDesc}>{opt.desc}</Text>
                 </View>
 
-                {/* Icon (left side in RTL) */}
+                {/* Icon (trailing edge) */}
                 <Ionicons
                   name={opt.icon as any}
                   size={28}
@@ -848,7 +822,7 @@ function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSele
         <View style={S.audioCard}>
           <View style={S.audioRow}>
             <Ionicons name="volume-medium-outline" size={22} color={COLORS.teal} />
-            <Text style={S.audioLabel}>استمع للشرح</Text>
+            <Text style={S.audioLabel}>{t('cvBuilder.listenToExplanation')}</Text>
             <TouchableOpacity
               style={S.audioBtn}
               activeOpacity={0.75}
@@ -875,7 +849,7 @@ function FormatSelectionScreen({ cvFormat, setCvFormat, onContinue }: FormatSele
             end={{ x: 1, y: 0 }}
             style={S.fmtNextGrad}
           >
-            <Text style={S.fmtNextText}>التالي — ابدأ بناء سيرتك</Text>
+            <Text style={S.fmtNextText}>{t('cvBuilder.nextStartBuilding')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
@@ -891,6 +865,8 @@ export default function CvBuilderScreen() {
   const navigation = useNavigation()
   const { currentStep, setStep, draft } = useCvStore()
   const { trackActivity } = useActivity()
+  const { t, isRTL } = useLanguage()
+  const S = useMemo(() => createStyles(isRTL), [isRTL])
 
   // Hide the tab bar while the CV wizard is focused — otherwise it sits on top of
   // this screen's bottom-anchored buttons (format picker's "Next", the step footer nav)
@@ -905,25 +881,25 @@ export default function CvBuilderScreen() {
     const lines: string[] = [
       personal.fullName && `${personal.fullName}`,
       personal.title && `${personal.title}`,
-      personal.email && `البريد: ${personal.email}`,
-      personal.phone && `الهاتف: ${personal.phone}`,
-      personal.city && `المدينة: ${personal.city}`,
+      personal.email && `${t('cvBuilder.shareEmailLabel')}: ${personal.email}`,
+      personal.phone && `${t('cvBuilder.sharePhoneLabel')}: ${personal.phone}`,
+      personal.city && `${t('cvBuilder.shareCityLabel')}: ${personal.city}`,
       '',
-      experiences.length > 0 && '── الخبرة العملية ──',
-      ...experiences.map((e) => `• ${e.role} — ${e.company} (${e.startDate} - ${e.isCurrent ? 'حتى الآن' : e.endDate})`),
+      experiences.length > 0 && t('cvBuilder.shareExperienceHeader'),
+      ...experiences.map((e) => `• ${e.role} — ${e.company} (${e.startDate} - ${e.isCurrent ? t('cvBuilder.present') : e.endDate})`),
       '',
-      education.length > 0 && '── التعليم ──',
+      education.length > 0 && t('cvBuilder.shareEducationHeader'),
       ...education.map((e) => `• ${e.degree} — ${e.institution} (${e.graduationYear})`),
       '',
-      skills.length > 0 && `── المهارات ──\n${skills.map((s) => `${s.name} (${s.level})`).join(' · ')}`,
+      skills.length > 0 && `${t('cvBuilder.shareSkillsHeader')}\n${skills.map((s) => `${s.name} (${s.level})`).join(' · ')}`,
       '',
-      languages.length > 0 && `── اللغات ──\n${languages.map((l) => `${l.name} (${l.level})`).join(' · ')}`,
+      languages.length > 0 && `${t('cvBuilder.shareLanguagesHeader')}\n${languages.map((l) => `${l.name} (${l.level})`).join(' · ')}`,
       '',
-      certifications.length > 0 && '── الشهادات ──',
+      certifications.length > 0 && t('cvBuilder.shareCertificationsHeader'),
       ...certifications.map((c) => `• ${c.name} — ${c.issuer} (${c.date})`),
     ].filter(Boolean) as string[]
 
-    await Share.share({ message: lines.join('\n'), title: `سيرة ذاتية — ${personal.fullName || 'مهاراتي'}` })
+    await Share.share({ message: lines.join('\n'), title: t('cvBuilder.shareTitle', { name: personal.fullName || 'Maharaty' }) })
   }
   const [previewVisible, setPreviewVisible] = useState(false)
   const [formatSelected, setFormatSelected] = useState(false)
@@ -944,6 +920,9 @@ export default function CvBuilderScreen() {
         cvFormat={cvFormat}
         setCvFormat={setCvFormat}
         onContinue={() => setFormatSelected(true)}
+        t={t}
+        isRTL={isRTL}
+        S={S}
       />
     )
   }
@@ -963,15 +942,15 @@ export default function CvBuilderScreen() {
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setPreviewVisible(true)} style={S.previewBtn}>
           <Ionicons name="eye-outline" size={18} color={COLORS.primary} />
-          <Text style={S.previewBtnText}>معاينة</Text>
+          <Text style={S.previewBtnText}>{t('cvBuilder.previewBtn')}</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={S.headerTitle}>منشئ السيرة الذاتية</Text>
+          <Text style={S.headerTitle}>{t('cvBuilder.headerTitle')}</Text>
         </View>
       </View>
 
       {/* ── Neon progress line ── */}
-      <NeonProgressLine step={currentStep} />
+      <NeonProgressLine step={currentStep} t={t} S={S} />
 
       {/* ── Active step ── */}
       <KeyboardAvoidingView
@@ -979,10 +958,12 @@ export default function CvBuilderScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={insets.top + 130}
       >
-        <ActiveStep />
+        <ActiveStep t={t} isRTL={isRTL} S={S} />
       </KeyboardAvoidingView>
 
       {/* ── Footer nav ── */}
+      {/* Prev/next controls are physically fixed regardless of language, like a
+          media player — icons already point the universally correct direction. */}
       <View style={[S.footer, { paddingBottom: insets.bottom + 14 }]}>
         <TouchableOpacity
           style={[S.navBtn, currentStep === 0 && { opacity: 0.25 }]}
@@ -990,10 +971,10 @@ export default function CvBuilderScreen() {
           disabled={currentStep === 0}
         >
           <Ionicons name="arrow-back" size={18} color={COLORS.primary} />
-          <Text style={S.navBtnText}>السابق</Text>
+          <Text style={S.navBtnText}>{t('cvBuilder.previous')}</Text>
         </TouchableOpacity>
 
-        <Text style={S.stepCounter}>{currentStep + 1} / {STEPS.length}</Text>
+        <Text style={S.stepCounter}>{currentStep + 1} / 6</Text>
 
         {currentStep < 5 ? (
           <Animated.View style={{ transform: [{ scale: scaleNext }] }}>
@@ -1004,14 +985,14 @@ export default function CvBuilderScreen() {
               onPressOut={releaseNext}
               activeOpacity={1}
             >
-              <Text style={S.navBtnPrimaryText}>التالي</Text>
+              <Text style={S.navBtnPrimaryText}>{t('cvBuilder.next')}</Text>
               <Ionicons name="arrow-forward" size={18} color="#fff" />
             </TouchableOpacity>
           </Animated.View>
         ) : (
           <TouchableOpacity style={S.navBtnPrimary} onPress={() => setPreviewVisible(true)}>
             <Ionicons name="checkmark-circle" size={18} color="#fff" />
-            <Text style={S.navBtnPrimaryText}>معاينة نهائية</Text>
+            <Text style={S.navBtnPrimaryText}>{t('cvBuilder.finalPreview')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -1023,12 +1004,12 @@ export default function CvBuilderScreen() {
             <TouchableOpacity onPress={() => setPreviewVisible(false)}>
               <Ionicons name="close" size={24} color="#1F2937" />
             </TouchableOpacity>
-            <Text style={S.previewModalTitle}>معاينة السيرة الذاتية</Text>
+            <Text style={S.previewModalTitle}>{t('cvBuilder.previewModalTitle')}</Text>
             <TouchableOpacity onPress={handleShare}>
               <Ionicons name="share-outline" size={22} color={COLORS.primary} />
             </TouchableOpacity>
           </View>
-          <CvPreview />
+          <CvPreview t={t} S={S} />
         </View>
       </Modal>
     </View>
@@ -1037,12 +1018,20 @@ export default function CvBuilderScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────
 
-const S = StyleSheet.create({
+const createStyles = (isRTL: boolean) => {
+  const start: 'left' | 'right' = isRTL ? 'right' : 'left'
+  const end: 'left' | 'right' = isRTL ? 'left' : 'right'
+  // Rows that reorder children between languages
+  const rowRev = isRTL ? 'row-reverse' : 'row' as const
+  // Rows that keep physical child order and only flip which edge they pack to
+  const justifyStart = isRTL ? 'flex-end' : 'flex-start' as const
+
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.canvas },
 
   // Header
   header: {
-    flexDirection: 'row-reverse', alignItems: 'center',
+    flexDirection: rowRev, alignItems: 'center',
     paddingHorizontal: 24, paddingVertical: 18, gap: 14,
     borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.07)',
   },
@@ -1052,7 +1041,7 @@ const S = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.surfaceBorder,
     justifyContent: 'center', alignItems: 'center',
   },
-  headerTitle: { fontSize: FS.xl, fontWeight: '800', color: COLORS.text, textAlign: 'right', fontFamily: FONT.extrabold },
+  headerTitle: { fontSize: FS.xl, fontWeight: '800', color: COLORS.text, textAlign: start, fontFamily: FONT.extrabold },
   previewBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     borderWidth: 1, borderColor: COLORS.primary + '55',
@@ -1064,7 +1053,7 @@ const S = StyleSheet.create({
   // Neon progress line
   progressTrack: {
     height: 3, backgroundColor: 'rgba(15,18,33,0.08)', overflow: 'hidden',
-    flexDirection: 'row-reverse',
+    flexDirection: rowRev,
   },
   progressFill: {
     height: '100%', backgroundColor: COLORS.primary,
@@ -1072,7 +1061,7 @@ const S = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 }, shadowOpacity: 1, shadowRadius: 8,
   },
   stepDots: {
-    flexDirection: 'row-reverse', justifyContent: 'center',
+    flexDirection: rowRev, justifyContent: 'center',
     gap: 6, paddingTop: 18, paddingBottom: 4,
   },
   stepDot: {
@@ -1089,9 +1078,9 @@ const S = StyleSheet.create({
 
   // Floating Label Input
   floatWrap: { paddingTop: 26, marginBottom: 22, position: 'relative' },
-  floatLabel: { position: 'absolute', right: 0, fontWeight: '600', fontFamily: FONT.semibold },
+  floatLabel: { position: 'absolute', [start]: 0, fontWeight: '600', fontFamily: FONT.semibold },
   floatInput: {
-    fontSize: FS.lg, color: COLORS.text, textAlign: 'right',
+    fontSize: FS.lg, color: COLORS.text, textAlign: start,
     paddingVertical: 6, paddingHorizontal: 0,
     backgroundColor: 'transparent', fontFamily: FONT.regular,
   },
@@ -1109,11 +1098,6 @@ const S = StyleSheet.create({
     backgroundColor: 'rgba(47,108,255,0.08)',
     borderBottomLeftRadius: 4, borderBottomRightRadius: 4,
   },
-
-  // AI Button
-  aiBtnWrap: { borderRadius: RADIUS.full, overflow: 'hidden', alignSelf: 'flex-end', marginTop: 8 },
-  aiBtnGrad: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 18, paddingVertical: 10 },
-  aiBtnText: { fontSize: FS.sm, color: '#fff', fontWeight: '700', fontFamily: FONT.bold },
 
   // Glass card
   glassCard: {
@@ -1133,9 +1117,9 @@ const S = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
 
-  row2: { flexDirection: 'row-reverse', gap: 16 },
+  row2: { flexDirection: rowRev, gap: 16 },
 
-  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20, justifyContent: 'flex-end' },
+  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20, justifyContent: justifyStart },
   checkbox: {
     width: 22, height: 22, borderRadius: 6,
     borderWidth: 2, borderColor: COLORS.primary,
@@ -1144,10 +1128,10 @@ const S = StyleSheet.create({
   checkboxActive: { backgroundColor: COLORS.primary },
   checkLabel: { fontSize: FS.sm, color: COLORS.textSecondary, fontFamily: FONT.regular },
 
-  fieldError: { fontSize: FS.xs, color: '#EF4444', fontFamily: FONT.regular, textAlign: 'right', marginTop: -8, marginBottom: 8 },
+  fieldError: { fontSize: FS.xs, color: '#EF4444', fontFamily: FONT.regular, textAlign: start, marginTop: -8, marginBottom: 8 },
   fieldSubLabel: {
     fontSize: FS.xs, color: COLORS.textMuted,
-    textAlign: 'right', marginBottom: 12,
+    textAlign: start, marginBottom: 12,
     fontWeight: '600', fontFamily: FONT.semibold,
   },
 
@@ -1156,7 +1140,7 @@ const S = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(15,18,33,0.07)', paddingBottom: 8,
   },
   bulletInput: {
-    fontSize: FS.md, color: COLORS.text, textAlign: 'right',
+    fontSize: FS.md, color: COLORS.text, textAlign: start,
     paddingVertical: 4, backgroundColor: 'transparent', fontFamily: FONT.regular,
   },
   bulletAiBtn: {
@@ -1167,7 +1151,7 @@ const S = StyleSheet.create({
   },
   addBulletBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    justifyContent: 'flex-end', marginTop: 8,
+    justifyContent: justifyStart, marginTop: 8,
   },
   addBulletText: { fontSize: FS.sm, color: COLORS.teal, fontWeight: '600', fontFamily: FONT.semibold },
 
@@ -1184,12 +1168,12 @@ const S = StyleSheet.create({
   section: { marginBottom: 32 },
   sectionTitle: {
     fontSize: FS.lg, fontWeight: '800', color: COLORS.text,
-    textAlign: 'right', marginBottom: 20, fontFamily: FONT.extrabold,
+    textAlign: start, marginBottom: 20, fontFamily: FONT.extrabold,
   },
 
   stepContent: { padding: 24, paddingBottom: 48 },
 
-  levelRow: { flexDirection: 'row-reverse', gap: 8, flexWrap: 'wrap', marginBottom: 20, justifyContent: 'flex-end' },
+  levelRow: { flexDirection: rowRev, gap: 8, flexWrap: 'wrap', marginBottom: 20, justifyContent: justifyStart },
   levelChip: {
     paddingHorizontal: 16, paddingVertical: 9, borderRadius: RADIUS.full,
     borderWidth: 1, borderColor: 'rgba(15,18,33,0.12)',
@@ -1207,9 +1191,9 @@ const S = StyleSheet.create({
   },
   addItemText: { fontSize: FS.md, color: '#fff', fontWeight: '800', fontFamily: FONT.extrabold },
 
-  tagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4, justifyContent: 'flex-end' },
+  tagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4, justifyContent: justifyStart },
   tag: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 8,
+    flexDirection: rowRev, alignItems: 'center', gap: 8,
     backgroundColor: 'rgba(47,108,255,0.14)',
     borderWidth: 1, borderColor: 'rgba(47,108,255,0.3)',
     borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 8,
@@ -1217,8 +1201,11 @@ const S = StyleSheet.create({
   tagText: { fontSize: FS.sm, color: COLORS.text, fontWeight: '600', fontFamily: FONT.semibold },
   tagLevel: {
     fontSize: FS.xs, color: COLORS.textMuted,
-    borderRightWidth: 1, borderRightColor: 'rgba(15,18,33,0.15)', paddingRight: 8, fontFamily: FONT.regular,
-  },
+    [`border${isRTL ? 'Right' : 'Left'}Width`]: 1,
+    [`border${isRTL ? 'Right' : 'Left'}Color`]: 'rgba(15,18,33,0.15)',
+    [isRTL ? 'paddingRight' : 'paddingLeft']: 8,
+    fontFamily: FONT.regular,
+  } as any,
   emptyHint: { fontSize: FS.sm, color: COLORS.textMuted, textAlign: 'center', flex: 1, paddingVertical: 12, fontFamily: FONT.regular },
 
   certCard: {
@@ -1227,9 +1214,9 @@ const S = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.surfaceBorder,
     borderRadius: RADIUS.xl, padding: 16, marginBottom: 12, gap: 14, overflow: 'hidden',
   },
-  certAccent: { width: 3, height: '100%', borderRadius: 2, backgroundColor: COLORS.teal, position: 'absolute', right: 0, top: 0, bottom: 0 },
-  certName: { fontSize: FS.md, color: COLORS.text, fontWeight: '700', textAlign: 'right', marginBottom: 3, fontFamily: FONT.bold },
-  certIssuer: { fontSize: FS.sm, color: COLORS.textMuted, textAlign: 'right', fontFamily: FONT.regular },
+  certAccent: { width: 3, height: '100%', borderRadius: 2, backgroundColor: COLORS.teal, position: 'absolute', [start]: 0, top: 0, bottom: 0 },
+  certName: { fontSize: FS.md, color: COLORS.text, fontWeight: '700', textAlign: start, marginBottom: 3, fontFamily: FONT.bold },
+  certIssuer: { fontSize: FS.sm, color: COLORS.textMuted, textAlign: start, fontFamily: FONT.regular },
 
   // Footer
   footer: {
@@ -1263,14 +1250,14 @@ const S = StyleSheet.create({
     width: 38, height: 4, backgroundColor: 'rgba(15,18,33,0.18)',
     borderRadius: 2, alignSelf: 'center', marginBottom: 20,
   },
-  sheetHeader: { paddingHorizontal: 24, marginBottom: 20, alignItems: 'flex-end' },
+  sheetHeader: { paddingHorizontal: 24, marginBottom: 20, alignItems: isRTL ? 'flex-end' : 'flex-start' },
   aiChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 12,
   },
   aiChipText: { fontSize: FS.sm, color: '#fff', fontWeight: '800', fontFamily: FONT.extrabold },
-  sheetTitle: { fontSize: FS.xl, fontWeight: '900', color: COLORS.text, textAlign: 'right', marginBottom: 4, fontFamily: FONT.black },
-  sheetSub: { fontSize: FS.sm, color: COLORS.textMuted, textAlign: 'right', fontFamily: FONT.regular },
+  sheetTitle: { fontSize: FS.xl, fontWeight: '900', color: COLORS.text, textAlign: start, marginBottom: 4, fontFamily: FONT.black },
+  sheetSub: { fontSize: FS.sm, color: COLORS.textMuted, textAlign: start, fontFamily: FONT.regular },
   sheetLoader: { alignItems: 'center', paddingVertical: 56, gap: 16 },
   sheetLoadingText: { fontSize: FS.md, color: COLORS.textMuted, fontFamily: FONT.regular },
 
@@ -1281,10 +1268,10 @@ const S = StyleSheet.create({
   },
   suggestionText: {
     fontSize: FS.md, color: COLORS.text, lineHeight: 23,
-    textAlign: 'right', marginBottom: 14, fontFamily: FONT.regular,
+    textAlign: start, marginBottom: 14, fontFamily: FONT.regular,
   },
   suggestionAction: {
-    flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'flex-end',
+    flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: justifyStart,
   },
   suggestionActionText: { fontSize: FS.sm, color: COLORS.teal, fontWeight: '700', fontFamily: FONT.bold },
 
@@ -1298,38 +1285,38 @@ const S = StyleSheet.create({
   previewModalTitle: { fontSize: FS.lg, fontWeight: '700', color: '#1F2937', fontFamily: FONT.bold },
 
   previewDoc: { margin: 16, backgroundColor: '#fff', borderRadius: 18, overflow: 'hidden', ...SHADOW.lg },
-  previewHeader: { padding: 24, alignItems: 'flex-end' },
-  previewName: { fontSize: FS.h3, fontWeight: '800', color: '#fff', textAlign: 'right', fontFamily: FONT.extrabold },
-  previewTitle: { fontSize: FS.md, color: 'rgba(255,255,255,0.82)', textAlign: 'right', marginTop: 4, fontFamily: FONT.regular },
-  previewContact: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12, justifyContent: 'flex-end' },
+  previewHeader: { padding: 24, alignItems: isRTL ? 'flex-end' : 'flex-start' },
+  previewName: { fontSize: FS.h3, fontWeight: '800', color: '#fff', textAlign: start, fontFamily: FONT.extrabold },
+  previewTitle: { fontSize: FS.md, color: 'rgba(255,255,255,0.82)', textAlign: start, marginTop: 4, fontFamily: FONT.regular },
+  previewContact: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12, justifyContent: justifyStart },
   previewContactItem: { fontSize: FS.sm, color: 'rgba(255,255,255,0.75)', fontFamily: FONT.regular },
 
   previewSection: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
   previewSectionHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    marginBottom: 12, justifyContent: 'flex-end',
+    flexDirection: rowRev, alignItems: 'center', gap: 10,
+    marginBottom: 12, justifyContent: justifyStart,
   },
-  previewSectionTitle: { fontSize: FS.sm, fontWeight: '800', color: '#1F2937', textAlign: 'right', fontFamily: FONT.extrabold },
+  previewSectionTitle: { fontSize: FS.sm, fontWeight: '800', color: '#1F2937', textAlign: start, fontFamily: FONT.extrabold },
   previewSectionLine: { flex: 1, height: 2, backgroundColor: COLORS.primary },
 
   previewItem: { marginBottom: 12 },
-  previewItemTitle: { fontSize: FS.md, fontWeight: '700', color: '#1F2937', textAlign: 'right', fontFamily: FONT.bold },
-  previewItemSub: { fontSize: FS.sm, color: '#6B7280', textAlign: 'right', marginTop: 2, fontFamily: FONT.regular },
-  previewBullet: { fontSize: FS.sm, color: '#374151', textAlign: 'right', lineHeight: 20, marginTop: 4, paddingRight: 8, fontFamily: FONT.regular },
-  previewBody: { fontSize: FS.sm, color: '#374151', textAlign: 'right', lineHeight: 20, fontFamily: FONT.regular },
+  previewItemTitle: { fontSize: FS.md, fontWeight: '700', color: '#1F2937', textAlign: start, fontFamily: FONT.bold },
+  previewItemSub: { fontSize: FS.sm, color: '#6B7280', textAlign: start, marginTop: 2, fontFamily: FONT.regular },
+  previewBullet: { fontSize: FS.sm, color: '#374151', textAlign: start, lineHeight: 20, marginTop: 4, [isRTL ? 'paddingRight' : 'paddingLeft']: 8, fontFamily: FONT.regular } as any,
+  previewBody: { fontSize: FS.sm, color: '#374151', textAlign: start, lineHeight: 20, fontFamily: FONT.regular },
 
-  previewSkillsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' },
+  previewSkillsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: justifyStart },
   previewSkillBadge: { backgroundColor: '#EEF2FF', borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 5 },
   previewSkillText: { fontSize: FS.sm, color: '#4F46E5', fontWeight: '600', fontFamily: FONT.semibold },
 
   // Format Selection Screen
   fmtHeading: {
     fontSize: FS.h2, color: COLORS.text, fontFamily: FONT.black,
-    textAlign: 'right', marginBottom: 8,
+    textAlign: start, marginBottom: 8,
   },
   fmtSubtitle: {
     fontSize: FS.md, color: COLORS.textMuted, fontFamily: FONT.regular,
-    textAlign: 'right', marginBottom: 28,
+    textAlign: start, marginBottom: 28,
   },
   fmtCard: {
     backgroundColor: COLORS.surface,
@@ -1341,7 +1328,7 @@ const S = StyleSheet.create({
     backgroundColor: 'rgba(47,108,255,0.10)',
   },
   fmtCardInner: {
-    flexDirection: 'row-reverse', alignItems: 'center',
+    flexDirection: rowRev, alignItems: 'center',
   },
   fmtRadio: {
     width: 24, height: 24, borderRadius: 12,
@@ -1358,24 +1345,23 @@ const S = StyleSheet.create({
   },
   fmtTitle: {
     fontSize: FS.lg, color: COLORS.text, fontFamily: FONT.bold,
-    textAlign: 'right', marginBottom: 4,
+    textAlign: start, marginBottom: 4,
   },
   fmtDesc: {
     fontSize: FS.sm, color: COLORS.textMuted, fontFamily: FONT.regular,
-    textAlign: 'right', lineHeight: 20,
+    textAlign: start, lineHeight: 20,
   },
-  fmtIcon: {},
   audioCard: {
     backgroundColor: 'rgba(0,245,212,0.06)',
     borderWidth: 1, borderColor: 'rgba(0,245,212,0.2)',
     borderRadius: RADIUS.xl, padding: 14, marginTop: 8, marginBottom: 32,
   },
   audioRow: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 12,
+    flexDirection: rowRev, alignItems: 'center', gap: 12,
   },
   audioLabel: {
     flex: 1, fontSize: FS.md, color: COLORS.teal,
-    fontFamily: FONT.semibold, textAlign: 'right',
+    fontFamily: FONT.semibold, textAlign: start,
   },
   audioBtn: {
     width: 36, height: 36, borderRadius: 18,
@@ -1393,4 +1379,5 @@ const S = StyleSheet.create({
   fmtNextText: {
     fontSize: FS.md, color: '#fff', fontFamily: FONT.extrabold, fontWeight: '800',
   },
-})
+  })
+}

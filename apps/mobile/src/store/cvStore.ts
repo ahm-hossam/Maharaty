@@ -32,7 +32,7 @@ export interface EducationItem {
 export interface SkillItem {
   id: string
   name: string
-  level: 'مبتدئ' | 'متوسط' | 'متقدم' | 'خبير'
+  level: string
 }
 
 export interface CertItem {
