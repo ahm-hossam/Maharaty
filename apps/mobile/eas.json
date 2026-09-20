@@ -21,14 +21,14 @@
         "distribution": "internal"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://maharaty-api.onrender.com/v1"
+        "EXPO_PUBLIC_API_URL": "https://backend-production-4e2a.up.railway.app/v1"
       },
       "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://maharaty-api.onrender.com/v1"
+        "EXPO_PUBLIC_API_URL": "https://backend-production-4e2a.up.railway.app/v1"
       },
       "channel": "production"
     }
