@@ -514,7 +514,7 @@ const createResultBlockStyles = (isRTL: boolean) => {
 const RS = StyleSheet.create({
   content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 60 },
   hero: { borderRadius: RADIUS.xxl, overflow: 'hidden', alignItems: 'center', paddingVertical: 44, marginBottom: 24 },
-  heroBg: { ...StyleSheet.absoluteFillObject },
+  heroBg: { ...{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 } },
   heroIcon: { width: 88, height: 88, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.18)', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
   profileType: { fontSize: FS.sm, color: 'rgba(255,255,255,0.7)', fontWeight: '800', marginBottom: 8, fontFamily: FONT.extrabold },
   profileTitle: { fontSize: FS.h2, fontWeight: '900', color: '#fff', marginBottom: 6, fontFamily: FONT.black },

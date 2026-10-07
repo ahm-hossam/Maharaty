@@ -183,11 +183,11 @@ function CockpitBackdrop({ timerRatio }: { timerRatio: number }) {
 }
 
 const CB = StyleSheet.create({
-  root:   { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
+  root:   { ...{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, overflow: 'hidden' },
   gridLine: { position: 'absolute', backgroundColor: 'rgba(15, 18, 33, 0.05)' },
   gridH:    { left: 0, right: 0, height: 1 },
   gridV:    { top: 0, bottom: 0, width: 1 },
-  radialWrap: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center' },
+  radialWrap: { ...{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, justifyContent: 'center', alignItems: 'center' },
   radialRing: { position: 'absolute', borderWidth: 1, borderRadius: 9999 },
   radialRing1: { width: 220, height: 220 },
   radialRing2: { width: 320, height: 320 },
@@ -511,7 +511,7 @@ const createSummaryStyles = (isRTL: boolean) => {
   const start: 'left' | 'right' = isRTL ? 'right' : 'left'
   return StyleSheet.create({
     hero: { alignItems: 'center', paddingVertical: 40, overflow: 'hidden', borderRadius: RADIUS.xxl, marginBottom: 28 },
-    heroBg: { ...StyleSheet.absoluteFillObject, borderRadius: RADIUS.xxl },
+    heroBg: { ...{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, borderRadius: RADIUS.xxl },
     heroTitle: { fontSize: FS.h2, fontWeight: '900', color: COLORS.text, marginBottom: 24, fontFamily: FONT.black },
     avgBadge: { borderWidth: 2, borderRadius: 24, paddingHorizontal: 24, paddingVertical: 12, flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginBottom: 10 },
     avgNum: { fontSize: FS.d2, fontWeight: '900', fontFamily: FONT.black },

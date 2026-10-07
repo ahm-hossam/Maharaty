@@ -611,7 +611,7 @@ const createStyles = (isRTL: boolean) => {
     } as any,
 
     // Sheets shared
-    overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.72)' },
+    overlay: { ...{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, backgroundColor: 'rgba(0,0,0,0.72)' },
 
     // ── Career path sheet ────────────────────────────────────────
     pathSheet: {

@@ -188,7 +188,7 @@ const createStyles = (isRTL: boolean) => {
   const end: 'left' | 'right' = isRTL ? 'left' : 'right'
 
   return StyleSheet.create({
-    overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.72)' },
+    overlay: { ...{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, backgroundColor: 'rgba(0,0,0,0.72)' },
     drawer: {
       position: 'absolute', top: 0, [start]: 0, bottom: 0,
       width: DRAWER_WIDTH,

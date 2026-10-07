@@ -7,11 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "maharaty",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "backgroundColor": "#F5F7FF",
-      "resizeMode": "contain"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.maharaty.app"
@@ -42,7 +37,8 @@
       ],
       "./plugins/withGradleWrapper",
       "./plugins/withGradleProperties",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true

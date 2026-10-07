@@ -106,7 +106,7 @@ function VideoPlayer({ lecture, t, S }: { lecture: Lecture; t: (key: string) => 
           width={W}
           videoId={ytId}
           play={playing}
-          onChangeState={(s) => { if (s === 'ended') setPlaying(false) }}
+          onChangeState={(s: string) => { if (s === 'ended') setPlaying(false) }}
           webViewProps={{
             allowsFullscreenVideo: true,
             allowsInlineMediaPlayback: true,
