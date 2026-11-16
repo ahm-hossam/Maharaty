@@ -26,6 +26,10 @@ function TabIcon({ name, focused, label, S }: { name: any; focused: boolean; lab
   )
 }
 
+export const unstable_settings = {
+  initialRouteName: 'home',
+}
+
 const TAB_DEFS = [
   { name: 'search', iconOn: 'search', iconOff: 'search-outline', labelKey: 'search' },
   { name: 'community', iconOn: 'people', iconOff: 'people-outline', labelKey: 'community' },
@@ -44,7 +48,6 @@ function MainTabs() {
 
   return (
     <Tabs
-      initialRouteName="home"
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
