@@ -48,6 +48,7 @@ function MainTabs() {
 
   return (
     <Tabs
+      backBehavior="initialRoute"
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
@@ -70,14 +71,16 @@ function MainTabs() {
           }}
         />
       ))}
-      {/* Hidden screens — not in tab bar */}
-      <Tabs.Screen name="cv/builder"            options={{ href: null }} />
-      <Tabs.Screen name="interview/simulator"   options={{ href: null }} />
-      <Tabs.Screen name="quiz"                  options={{ href: null }} />
-      <Tabs.Screen name="self-assessment"       options={{ href: null }} />
-      <Tabs.Screen name="jobs/portals"          options={{ href: null }} />
-      <Tabs.Screen name="jobs/InternalBrowser"  options={{ href: null }} />
-      <Tabs.Screen name="learning"              options={{ href: null }} />
+      {/* Hidden screens — not in tab bar. tabBarButton: () => null (not
+          href: null) because href: null also blocks router.push/navigate
+          to these routes in this expo-router version, not just the tab icon. */}
+      <Tabs.Screen name="cv/builder"            options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="interview/simulator"   options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="quiz"                  options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="self-assessment"       options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="jobs/portals"          options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="jobs/InternalBrowser"  options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="learning"              options={{ tabBarButton: () => null }} />
     </Tabs>
   )
 }
