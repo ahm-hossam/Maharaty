@@ -17,6 +17,7 @@ export const strings = {
       close: 'إغلاق',
       loading: 'جارٍ التحميل...',
       genericError: 'حدث خطأ، حاول مجدداً',
+      requiredFieldsError: 'يرجى تعبئة جميع الحقول المطلوبة',
       language: 'اللغة',
     },
     tabs: {
@@ -403,6 +404,7 @@ export const strings = {
       close: 'Close',
       loading: 'Loading...',
       genericError: 'Something went wrong, please try again',
+      requiredFieldsError: 'Please fill in all required fields',
       language: 'Language',
     },
     tabs: {

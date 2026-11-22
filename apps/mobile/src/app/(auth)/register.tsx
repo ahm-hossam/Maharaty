@@ -141,8 +141,10 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     const needsFieldOfStudy = education !== HIGH_SCHOOL_VALUE
-    if (!name || !email || !password || !governorate || !gender || !education) return
-    if (needsFieldOfStudy && !fieldOfStudy) return
+    if (!name || !email || !password || !governorate || !gender || !education || (needsFieldOfStudy && !fieldOfStudy)) {
+      setError(t('common.requiredFieldsError'))
+      return
+    }
     setLoading(true)
     setError('')
     try {
